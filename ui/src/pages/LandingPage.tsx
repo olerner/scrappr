@@ -104,7 +104,7 @@ export function LandingPage() {
 
       {/* How It Works */}
       <section className="bg-gray-50 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-16">How it works</h2>
 
           <div className="grid md:grid-cols-2 gap-12 lg:gap-20">

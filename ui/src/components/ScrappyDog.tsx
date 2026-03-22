@@ -9,10 +9,10 @@ export function ScrappyDog({ size = 40 }: { size?: number }) {
       aria-label="Scrappy the dog mascot"
     >
       {/* Ears */}
-      <ellipse cx="16" cy="14" rx="10" ry="14" fill="#065F46" />
-      <ellipse cx="48" cy="14" rx="10" ry="14" fill="#065F46" />
-      <ellipse cx="16" cy="14" rx="7" ry="10" fill="#059669" />
-      <ellipse cx="48" cy="14" rx="7" ry="10" fill="#059669" />
+      <ellipse cx="16" cy="18" rx="10" ry="14" fill="#065F46" />
+      <ellipse cx="48" cy="18" rx="10" ry="14" fill="#065F46" />
+      <ellipse cx="16" cy="18" rx="7" ry="10" fill="#059669" />
+      <ellipse cx="48" cy="18" rx="7" ry="10" fill="#059669" />
 
       {/* Head */}
       <circle cx="32" cy="34" r="22" fill="#059669" />

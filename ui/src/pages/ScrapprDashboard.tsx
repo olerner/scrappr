@@ -183,7 +183,7 @@ export function ScrapprDashboard() {
             </div>
 
             {/* List */}
-            <div className={`${mobileView === 'list' ? 'flex' : 'hidden'} sm:flex w-full sm:w-[40%] flex-col bg-white sm:border-l border-gray-200 overflow-y-auto`}>
+            <div className={`${mobileView === 'list' ? 'flex' : 'hidden'} sm:flex w-full sm:w-[40%] flex-col bg-white sm:border-l border-gray-200 overflow-y-auto overflow-x-hidden`}>
               <div className="p-4 space-y-3">
                 {availableListings.length === 0 ? (
                   <div className="text-center py-12">
@@ -266,14 +266,14 @@ function AvailableCard({
             </span>
           </div>
           <p className="text-gray-600 text-xs line-clamp-2 mb-2">{listing.description}</p>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1 text-xs text-gray-400">
-              <MapPin size={12} />
-              {distance} away
+              <MapPin size={12} className="flex-shrink-0" />
+              <span>{distance} away</span>
             </div>
             <button
               onClick={onClaim}
-              className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-all"
+              className="flex-shrink-0 px-4 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-all"
             >
               Claim Pickup
             </button>

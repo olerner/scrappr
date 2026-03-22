@@ -1,7 +1,5 @@
 import type { Listing, CategoryInfo, BlockedCategory } from './types';
 
-export const MAPBOX_TOKEN = 'pk.eyJ1Ijoic2NyYXBwci1kZW1vIiwiYSI6ImNsdXBsYWNlaG9sZGVyIn0.placeholder';
-
 export const CATEGORIES: CategoryInfo[] = [
   { name: 'Appliances', icon: 'Wrench', payoutLabel: '$5 - $18 flat', color: '#059669' },
   { name: 'Copper', icon: 'Cable', payoutLabel: '$1.10 - $4.80/lb', color: '#b45309' },
@@ -31,7 +29,7 @@ export const MOCK_LISTINGS: Listing[] = [
     id: '1',
     category: 'Copper',
     description: 'Approx 15 lbs of stripped copper pipe from bathroom remodel. Clean, no fittings.',
-    photoUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=300&h=200&fit=crop',
+    photoUrl: 'https://images.unsplash.com/photo-1652785723146-ca1a6daf5ecc?w=300&h=200&fit=crop',
     lat: 44.9778,
     lng: -93.2650,
     address: '123 Hennepin Ave, Minneapolis',
@@ -43,7 +41,7 @@ export const MOCK_LISTINGS: Listing[] = [
     id: '2',
     category: 'Copper',
     description: 'Box of copper wire scraps from electrical job. About 8 lbs, mixed insulated and bare.',
-    photoUrl: 'https://images.unsplash.com/photo-1530124566582-a45a7e3a4b4e?w=300&h=200&fit=crop',
+    photoUrl: 'https://images.unsplash.com/photo-1687038520563-2310e8b06ed2?w=300&h=200&fit=crop',
     lat: 44.9537,
     lng: -93.0900,
     address: '456 Robert St, St. Paul',

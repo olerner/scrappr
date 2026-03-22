@@ -159,7 +159,7 @@ function NewListingModal({
       id: Date.now().toString(),
       category: category as Category,
       description,
-      photoUrl: photoPreview || 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=300&h=200&fit=crop',
+      photoUrl: photoPreview || 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=300&h=200&fit=crop',
       lat: 44.96 + (Math.random() - 0.5) * 0.05,
       lng: -93.22 + (Math.random() - 0.5) * 0.1,
       address: address || 'Minneapolis, MN',
