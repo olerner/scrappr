@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+    outputs:
+      preview_url: ${{ steps.cdk.outputs.preview_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -34,17 +36,21 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
+
       - name: Deploy CDK preview stack
         id: cdk
         run: |
-          OUTPUT=$(yarn workspace @scrappr/ui build && cd packages/infra && npx cdk deploy scrappr-ui-pr-${{ github.event.pull_request.number }} --require-approval never -c env=pr-${{ github.event.pull_request.number }} --outputs-file /tmp/cdk-outputs.json 2>&1)
-          echo "$OUTPUT"
+          yarn workspace @scrappr/ui build
+          cd packages/infra && npx cdk deploy scrappr-ui-pr-${{ github.event.pull_request.number }} --require-approval never -c env=pr-${{ github.event.pull_request.number }} --outputs-file /tmp/cdk-outputs.json
           PREVIEW_URL=$(node -e "const o=require('/tmp/cdk-outputs.json'); const stack=Object.keys(o)[0]; console.log(o[stack].CloudFrontUrl)")
           echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Comment preview URL on PR
         uses: actions/github-script@v7
@@ -72,3 +78,37 @@ jobs:
                 body,
               });
             }
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: deploy-preview
+    if: needs.deploy-preview.outputs.preview_url != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/e2e
+
+      - name: Run E2E tests against preview
+        run: yarn workspace @scrappr/e2e test
+        env:
+          BASE_URL: ${{ needs.deploy-preview.outputs.preview_url }}
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: packages/e2e/test-results/
+          retention-days: 7
