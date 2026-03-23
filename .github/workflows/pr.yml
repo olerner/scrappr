@@ -51,6 +51,7 @@ jobs:
           VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
           VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_COGNITO_DOMAIN: ${{ secrets.VITE_COGNITO_DOMAIN }}
 
       - name: Comment preview URL on PR
         uses: actions/github-script@v7
@@ -104,6 +105,7 @@ jobs:
           VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
           VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_COGNITO_DOMAIN: ${{ secrets.VITE_COGNITO_DOMAIN }}
 
       - name: Upload test artifacts
         if: failure()
