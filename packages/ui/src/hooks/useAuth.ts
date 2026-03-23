@@ -1,8 +1,4 @@
-import {
-  AuthenticationDetails,
-  CognitoUser,
-  CognitoUserPool,
-} from "amazon-cognito-identity-js";
+import { AuthenticationDetails, CognitoUser, CognitoUserPool } from "amazon-cognito-identity-js";
 import { useCallback, useEffect, useState } from "react";
 
 const userPool = new CognitoUserPool({
@@ -32,7 +28,13 @@ export function useAuth(): AuthState {
     const currentUser = userPool.getCurrentUser();
     if (currentUser) {
       currentUser.getSession(
-        (err: Error | null, session: { isValid: () => boolean; getAccessToken: () => { getJwtToken: () => string } } | null) => {
+        (
+          err: Error | null,
+          session: {
+            isValid: () => boolean;
+            getAccessToken: () => { getJwtToken: () => string };
+          } | null,
+        ) => {
           if (!err && session?.isValid()) {
             setIsAuthenticated(true);
             setAccessToken(session.getAccessToken().getJwtToken());

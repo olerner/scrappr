@@ -19,7 +19,15 @@ import type { BlockedCategory, Category, Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 
 export function ScrappeeDashboard() {
-  const { isAuthenticated, isLoading: authLoading, email, accessToken, signIn, signOut, error: authError } = useAuth();
+  const {
+    isAuthenticated,
+    isLoading: authLoading,
+    email,
+    accessToken,
+    signIn,
+    signOut,
+    error: authError,
+  } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loadingListings, setLoadingListings] = useState(false);
@@ -76,7 +84,11 @@ export function ScrappeeDashboard() {
             <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
             <p className="text-gray-500 text-sm mt-1">
               Signed in as {email}{" "}
-              <button type="button" onClick={signOut} className="text-emerald-600 hover:underline inline-flex items-center gap-1 ml-2">
+              <button
+                type="button"
+                onClick={signOut}
+                className="text-emerald-600 hover:underline inline-flex items-center gap-1 ml-2"
+              >
                 <LogOut size={12} /> Sign out
               </button>
             </p>
@@ -122,7 +134,13 @@ export function ScrappeeDashboard() {
   );
 }
 
-function SignInForm({ onSignIn, error }: { onSignIn: (email: string, password: string) => Promise<void>; error: string | null }) {
+function SignInForm({
+  onSignIn,
+  error,
+}: {
+  onSignIn: (email: string, password: string) => Promise<void>;
+  error: string | null;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

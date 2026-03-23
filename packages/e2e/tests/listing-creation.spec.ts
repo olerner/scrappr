@@ -46,6 +46,8 @@ test.describe("Listing Creation Flow", () => {
     await expect(page.getByTestId("submit-listing-btn")).not.toBeVisible({ timeout: 15_000 });
 
     // 12. Assert listing appears in My Listings
-    await expect(page.getByText("Test copper pipe, about 10 lbs").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Test copper pipe, about 10 lbs").first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });
