@@ -2,40 +2,38 @@
 
 Two-sided gig marketplace for scrap metal pickup in the Twin Cities. Scrappees list unwanted scrap for free pickup; Scrapprs claim listings, haul the metal, and sell at scrap yards.
 
-Early-stage MVP — UI only, no backend yet.
-
 ## Stack
 
-- TypeScript, React 19, Vite, Tailwind CSS 4, Zustand, Leaflet + OpenStreetMap
-- Yarn workspaces monorepo — single `ui` workspace for now
+- **Web:** Vite, React, Tailwind CSS, Zustand, Leaflet, react-router-dom
+- **Infra:** AWS CDK (TypeScript) — Cognito (auth), S3 + CloudFront + ACM + Route53 (hosting)
+- **Linting:** Biome (TS/JS), Prettier (JSON, YAML, MD)
+- **Monorepo:** Yarn workspaces
 
 ## Structure
 
-- `ui/src/pages/` — three routes: LandingPage (`/`), ScrappeeDashboard (`/scrappee`), ScrapprDashboard (`/scrappr`)
-- `ui/src/components/` — shared components (Header, MapView, CategoryIcon, StatusBadge, ScrappyDog)
-- `ui/src/store/useStore.ts` — Zustand store (listings state + actions)
-- `ui/src/data/types.ts` — shared TypeScript interfaces
-- `ui/src/data/mockData.ts` — mock listings and constants (no backend yet)
-- `docs/executive-summary.md` — business context
+- `packages/ui/` — @scrappr/ui: Vite/React web app
+- `packages/infra/` — @scrappr/infra: CDK stacks (AuthStack, UiStack)
 
 ## Commands
 
 ```bash
-yarn install          # install dependencies
-yarn ui               # start dev server (localhost:5173)
-yarn workspace @scrappr/ui build   # typecheck + build
-yarn workspace @scrappr/ui lint    # eslint
+yarn install                            # install all workspace deps
+yarn ui                                 # start Vite dev server (localhost:5173)
+yarn deploy                             # build UI + cdk deploy all stacks
+yarn infra:diff                         # diff CDK changes
+yarn run check                          # biome + prettier check
+yarn lint:fix                           # biome auto-fix
+yarn format                             # prettier auto-fix
 ```
 
 ## Key decisions
 
-- Leaflet + OpenStreetMap for maps (free, no token needed) — README mentions Mapbox but we use Leaflet
-- All styling via Tailwind utility classes — no CSS modules or styled-components
-- Mock data uses real Twin Cities coordinates
+- All infra is CDK — no imperative deploy scripts
+- Twin Cities only — no geohash, client-side distance filtering
+- Address privacy: full address hidden until listing is claimed
+- Mobile app shelved on `mobile-ui-polish` branch for later
 
-## About this file
+## AWS
 
-Keep this file short (<60 lines) and universally applicable ([principles](https://www.humanlayer.dev/blog/writing-a-good-claude-md)). Every line here is read at the start of every conversation, so low-value content has a real cost.
-
-**Add:** project purpose, stack, structure, dev commands, non-obvious architectural decisions
-**Don't add:** style/formatting rules (use linters), code patterns obvious from reading the source, task-specific instructions, anything already in code comments or docs. For detailed workflows, create separate docs and point to them from here.
+- Region: us-east-1
+- Domain: scrappr.trevor.fail

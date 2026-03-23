@@ -2,9 +2,20 @@
   "name": "scrappr",
   "private": true,
   "workspaces": [
-    "ui"
+    "packages/*"
   ],
   "scripts": {
-    "ui": "yarn workspace @scrappr/ui dev"
+    "ui": "yarn workspace @scrappr/ui dev",
+    "deploy": "yarn workspace @scrappr/ui build && yarn workspace @scrappr/infra deploy",
+    "infra:diff": "yarn workspace @scrappr/infra diff",
+    "lint": "biome check packages/",
+    "lint:fix": "biome check --fix packages/",
+    "format": "prettier --write '**/*.{json,yaml,yml,md}'",
+    "format:check": "prettier --check '**/*.{json,yaml,yml,md}'",
+    "check": "biome check packages/ && prettier --check '**/*.{json,yaml,yml,md}'"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.8",
+    "prettier": "^3.8.1"
   }
 }

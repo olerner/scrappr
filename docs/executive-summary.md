@@ -16,11 +16,11 @@ According to a 2024 report by The Recycling Partnership, only 21% of U.S. reside
 
 The implication is clear: fixing sorting facilities does not fix recycling. Fixing household access and incentive does.
 
-| Where Recyclables Are Lost | Share of Total Loss |
-| --- | --- |
-| Lost at the household (never placed in a bin) | 76% |
-| Lost at the sorting facility (contamination, rejection) | 3% |
-| Actually recycled | 21% |
+| Where Recyclables Are Lost                              | Share of Total Loss |
+| ------------------------------------------------------- | ------------------- |
+| Lost at the household (never placed in a bin)           | 76%                 |
+| Lost at the sorting facility (contamination, rejection) | 3%                  |
+| Actually recycled                                       | 21%                 |
 
 ### The Multifamily Gap
 
@@ -45,11 +45,11 @@ The result is that material with genuine commodity value, copper at $4.80 per po
 
 Scrappr is a mobile-first web application connecting two distinct user types around a shared transaction: the transfer of scrap metal from someone who has it to someone who can monetize it.
 
-| Role | Name | What They Do | What They Get |
-| --- | --- | --- | --- |
-| Resident / Homeowner | Scrappee | Lists scrap metal with photo, category, and location | Free removal, optional tip income |
-| Independent Hauler | Scrappr | Claims listings, picks up metal, delivers to scrap yard | Commodity income from yard payout |
-| Scrap Yard | Partner | Purchases metal by weight from Scrappr haulers | Predictable volume, referral relationship |
+| Role                 | Name     | What They Do                                            | What They Get                             |
+| -------------------- | -------- | ------------------------------------------------------- | ----------------------------------------- |
+| Resident / Homeowner | Scrappee | Lists scrap metal with photo, category, and location    | Free removal, optional tip income         |
+| Independent Hauler   | Scrappr  | Claims listings, picks up metal, delivers to scrap yard | Commodity income from yard payout         |
+| Scrap Yard           | Partner  | Purchases metal by weight from Scrappr haulers          | Predictable volume, referral relationship |
 
 ### The Scrappee Experience
 
@@ -83,34 +83,34 @@ Cans are included in Scrappr for two strategic reasons. First, they increase lis
 
 The following prices are sourced from Express Metals, a Minneapolis-area independent scrap yard, dated February 13, 2026. These represent the buy-side prices a hauler receives when delivering material.
 
-| Category | Material | Price per Pound |
-| --- | --- | --- |
-| Copper | Bare Bright (highest grade) | $4.80 |
-| Copper | #1 Copper | $4.60 |
-| Copper | #2 Copper | $4.50 |
-| Aluminum | Aluminum Cans | $0.65 |
-| Aluminum | Extruded (mill grade) | $1.20 |
-| Aluminum | Copper-Aluminum Radiators | $2.35 |
-| Brass | Yellow Brass | $2.85 |
-| Brass | Red Brass | $3.70 |
-| Steel | Cast Iron | $0.05 |
-| Steel | Prepared Steel | $0.08 |
-| Appliances (flat) | Washer or Dryer | $5.00 to $7.50 |
-| Appliances (flat) | Water Heater (large) | $16.00 |
-| Appliances (flat) | Riding Lawnmower | $18.00 |
+| Category          | Material                    | Price per Pound |
+| ----------------- | --------------------------- | --------------- |
+| Copper            | Bare Bright (highest grade) | $4.80           |
+| Copper            | #1 Copper                   | $4.60           |
+| Copper            | #2 Copper                   | $4.50           |
+| Aluminum          | Aluminum Cans               | $0.65           |
+| Aluminum          | Extruded (mill grade)       | $1.20           |
+| Aluminum          | Copper-Aluminum Radiators   | $2.35           |
+| Brass             | Yellow Brass                | $2.85           |
+| Brass             | Red Brass                   | $3.70           |
+| Steel             | Cast Iron                   | $0.05           |
+| Steel             | Prepared Steel              | $0.08           |
+| Appliances (flat) | Washer or Dryer             | $5.00 to $7.50  |
+| Appliances (flat) | Water Heater (large)        | $16.00          |
+| Appliances (flat) | Riding Lawnmower            | $18.00          |
 
 These prices illustrate the wide spread in material value. Copper is dramatically more valuable per pound than steel. This spread is exactly what allows haulers to prioritize high-value pickups and build profitable routes. Scrappr surfaces this information at the listing level so haulers can make informed routing decisions.
 
 ### Sample Hauler Route Economics
 
-| Item | Estimated Weight | Price | Payout |
-| --- | --- | --- | --- |
-| Large water heater (flat rate) | N/A | Flat | $16.00 |
-| 30 feet of #2 copper pipe | ~8 lbs | $4.50/lb | $36.00 |
-| 2 bags aluminum cans | ~4 lbs | $0.65/lb | $2.60 |
-| Old washer | N/A | Flat | $7.50 |
-| Misc steel (old grill) | ~15 lbs | $0.05/lb | $0.75 |
-| **Total (half-day route, 4 stops)** | | | **$62.85** |
+| Item                                | Estimated Weight | Price    | Payout     |
+| ----------------------------------- | ---------------- | -------- | ---------- |
+| Large water heater (flat rate)      | N/A              | Flat     | $16.00     |
+| 30 feet of #2 copper pipe           | ~8 lbs           | $4.50/lb | $36.00     |
+| 2 bags aluminum cans                | ~4 lbs           | $0.65/lb | $2.60      |
+| Old washer                          | N/A              | Flat     | $7.50      |
+| Misc steel (old grill)              | ~15 lbs          | $0.05/lb | $0.75      |
+| **Total (half-day route, 4 stops)** |                  |          | **$62.85** |
 
 A hauler running 4 pickups in a half-day earns roughly $60 to $80 before fuel, depending on material mix. Routes anchored in copper-heavy categories (renovations, contractor surplus, plumbing) can earn significantly more. The platform's map and filter tools are designed specifically to help haulers build high-yield routes.
 
@@ -122,11 +122,11 @@ Scrappr operates a dual-track monetization strategy combining predictable subscr
 
 Scrapprs pay a monthly platform fee for access to the listing feed, map tools, and route optimization features. This is the primary day-one revenue stream because it requires no third-party partnerships and scales directly with hauler acquisition.
 
-| Tier | Monthly Fee | Features |
-| --- | --- | --- |
-| Basic | $12/month | Listing feed access, map view, claim up to 10 listings/month |
-| Pro | $29/month | Unlimited claims, route optimizer, material filters, priority notifications |
-| Fleet | $79/month | Multi-hauler management, analytics dashboard, bulk claim tools |
+| Tier  | Monthly Fee | Features                                                                    |
+| ----- | ----------- | --------------------------------------------------------------------------- |
+| Basic | $12/month   | Listing feed access, map view, claim up to 10 listings/month                |
+| Pro   | $29/month   | Unlimited claims, route optimizer, material filters, priority notifications |
+| Fleet | $79/month   | Multi-hauler management, analytics dashboard, bulk claim tools              |
 
 At 200 active Pro haulers, the subscription track generates approximately $5,800 per month in recurring revenue. This is achievable in a single metro market with aggressive hauler acquisition.
 
@@ -148,13 +148,13 @@ Subscriptions provide baseline MRR with no dependency on yard relationships. Yar
 
 No direct competitor operates a gig-economy marketplace specifically for residential scrap metal pickup. Adjacent categories include:
 
-| Competitor / Category | What They Do | Why Scrappr Is Different |
-| --- | --- | --- |
-| Junk removal (1-800-GOT-JUNK, Loadup) | Charge the resident to haul everything away | Scrappr is free to residents; haulers earn from the metal itself |
-| Municipal bulk pickup | Scheduled city service, no resident payment | Infrequent, not on-demand, no financial incentive for speed |
-| Craigslist free listings | Residents post free items for anyone to pick up | No structure, no categories, no route tools, no yard partnerships |
-| iScrap App | Displays scrap yard prices and locations | Informational only, no marketplace or hauler coordination |
-| Habitat for Humanity ReStore | Accepts appliance donations | Drop-off required, no metal-specific focus, no payment |
+| Competitor / Category                 | What They Do                                    | Why Scrappr Is Different                                          |
+| ------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------- |
+| Junk removal (1-800-GOT-JUNK, Loadup) | Charge the resident to haul everything away     | Scrappr is free to residents; haulers earn from the metal itself  |
+| Municipal bulk pickup                 | Scheduled city service, no resident payment     | Infrequent, not on-demand, no financial incentive for speed       |
+| Craigslist free listings              | Residents post free items for anyone to pick up | No structure, no categories, no route tools, no yard partnerships |
+| iScrap App                            | Displays scrap yard prices and locations        | Informational only, no marketplace or hauler coordination         |
+| Habitat for Humanity ReStore          | Accepts appliance donations                     | Drop-off required, no metal-specific focus, no payment            |
 
 Scrappr occupies a white space: a structured, incentive-aligned marketplace that turns scrap metal recovery from a civic obligation into an economic opportunity. The platform does not compete with junk removal because the economics are inverted. Junk removal charges for convenience. Scrappr creates value.
 
