@@ -3,22 +3,69 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Image as ImageIcon,
+  Loader2,
+  LogOut,
   MapPin,
   Plus,
   Upload,
   X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createListing, getMyListings, getPresignedUrl, uploadPhoto } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
 import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
 import type { BlockedCategory, Category, Listing } from "../data/types";
-import { useStore } from "../store/useStore";
+import { useAuth } from "../hooks/useAuth";
 
 export function ScrappeeDashboard() {
-  const { listings, addListing } = useStore();
+  const { isAuthenticated, isLoading: authLoading, email, accessToken, signIn, signOut, error: authError } = useAuth();
+  const [listings, setListings] = useState<Listing[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const myListings = listings; // In a real app, filter by user
+  const [loadingListings, setLoadingListings] = useState(false);
+
+  const fetchListings = useCallback(async () => {
+    if (!accessToken) return;
+    setLoadingListings(true);
+    try {
+      const data = await getMyListings(accessToken);
+      const mapped: Listing[] = (data.listings || []).map((item: Record<string, unknown>) => ({
+        id: (item.listingId as string) || "",
+        category: (item.category as Category) || "Mixed",
+        description: (item.description as string) || "",
+        photoUrl: (item.photoUrl as string) || "",
+        lat: (item.lat as number) || 0,
+        lng: (item.lng as number) || 0,
+        address: (item.address as string) || "",
+        status: (item.status as Listing["status"]) || "available",
+        datePosted: (item.datePosted as string) || "",
+        estimatedValue: (item.estimatedValue as string) || "Varies",
+      }));
+      setListings(mapped);
+    } catch {
+      // silently fail for now
+    } finally {
+      setLoadingListings(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (isAuthenticated && accessToken) {
+      fetchListings();
+    }
+  }, [isAuthenticated, accessToken, fetchListings]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="animate-spin text-emerald-600" size={32} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <SignInForm onSignIn={signIn} error={authError} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -27,7 +74,12 @@ export function ScrappeeDashboard() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage your scrap metal listings</p>
+            <p className="text-gray-500 text-sm mt-1">
+              Signed in as {email}{" "}
+              <button type="button" onClick={signOut} className="text-emerald-600 hover:underline inline-flex items-center gap-1 ml-2">
+                <LogOut size={12} /> Sign out
+              </button>
+            </p>
           </div>
           <button
             type="button"
@@ -40,11 +92,15 @@ export function ScrappeeDashboard() {
         </div>
 
         {/* Listings */}
-        {myListings.length === 0 ? (
+        {loadingListings ? (
+          <div className="text-center py-20">
+            <Loader2 className="animate-spin text-emerald-600 mx-auto" size={32} />
+          </div>
+        ) : listings.length === 0 ? (
           <EmptyState onNewListing={() => setShowModal(true)} />
         ) : (
           <div className="grid gap-4">
-            {myListings.map((listing) => (
+            {listings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
@@ -52,15 +108,74 @@ export function ScrappeeDashboard() {
       </div>
 
       {/* New Listing Modal */}
-      {showModal && (
+      {showModal && accessToken && (
         <NewListingModal
+          accessToken={accessToken}
           onClose={() => setShowModal(false)}
-          onSubmit={(listing) => {
-            addListing(listing);
+          onCreated={() => {
             setShowModal(false);
+            fetchListings();
           }}
         />
       )}
+    </div>
+  );
+}
+
+function SignInForm({ onSignIn, error }: { onSignIn: (email: string, password: string) => Promise<void>; error: string | null }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await onSignIn(email, password);
+    } catch {
+      // error is handled by useAuth
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
+        <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">Sign In to Scrappr</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40"
+          >
+            {loading ? "Signing in..." : "Sign In"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -92,11 +207,17 @@ function ListingCard({ listing }: { listing: Listing }) {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
       <div className="flex gap-4">
         <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-          <img
-            src={listing.photoUrl}
-            alt={listing.category}
-            className="w-full h-full object-cover"
-          />
+          {listing.photoUrl ? (
+            <img
+              src={listing.photoUrl}
+              alt={listing.category}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <ImageIcon size={24} className="text-gray-300" />
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
@@ -120,22 +241,26 @@ function ListingCard({ listing }: { listing: Listing }) {
 }
 
 function NewListingModal({
+  accessToken,
   onClose,
-  onSubmit,
+  onCreated,
 }: {
+  accessToken: string;
   onClose: () => void;
-  onSubmit: (listing: Listing) => void;
+  onCreated: () => void;
 }) {
   const [category, setCategory] = useState<Category | "">("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showBlocked, setShowBlocked] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleCategorySelect = (cat: string) => {
-    // Check if blocked
     if (BLOCKED_CATEGORIES.includes(cat as BlockedCategory)) {
       setShowBlocked(cat);
       setCategory("");
@@ -153,41 +278,47 @@ function NewListingModal({
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!category || !description) return;
-    const newListing: Listing = {
-      id: Date.now().toString(),
-      category: category as Category,
-      description,
-      photoUrl:
-        photoPreview ||
-        "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=300&h=200&fit=crop",
-      lat: 44.96 + (Math.random() - 0.5) * 0.05,
-      lng: -93.22 + (Math.random() - 0.5) * 0.1,
-      address: address || "Minneapolis, MN",
-      status: "available",
-      datePosted: new Date().toISOString().split("T")[0],
-      estimatedValue: CATEGORIES.find((c) => c.name === category)?.payoutLabel || "Varies",
-    };
-    onSubmit(newListing);
-  };
+    setSubmitting(true);
+    setSubmitError(null);
 
-  const _selectableCategories = [
-    ...CATEGORIES.map((c) => c.name),
-    "Refrigerators",
-    "Freezers",
-    "Dehumidifiers",
-    "Microwaves",
-    "Propane tanks",
-    "E-waste",
-    "Tires",
-  ];
+    try {
+      let photoUrl = "";
+
+      // Upload photo if selected
+      if (photoFile) {
+        const presign = await getPresignedUrl(accessToken, photoFile.type);
+        await uploadPhoto(presign.uploadUrl, photoFile);
+        photoUrl = presign.photoUrl;
+      }
+
+      const catInfo = CATEGORIES.find((c) => c.name === category);
+
+      await createListing(accessToken, {
+        category: category as string,
+        description,
+        photoUrl,
+        lat: 44.96 + (Math.random() - 0.5) * 0.05,
+        lng: -93.22 + (Math.random() - 0.5) * 0.1,
+        address: address || "Minneapolis, MN",
+        estimatedValue: catInfo?.payoutLabel || "Varies",
+      });
+
+      onCreated();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to create listing");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -215,6 +346,7 @@ function NewListingModal({
               accept="image/*"
               onChange={handlePhotoUpload}
               className="hidden"
+              data-testid="photo-input"
             />
             {photoPreview ? (
               <div className="relative w-full h-48 rounded-xl overflow-hidden">
@@ -223,6 +355,7 @@ function NewListingModal({
                   type="button"
                   onClick={() => {
                     setPhotoPreview(null);
+                    setPhotoFile(null);
                     if (fileRef.current) fileRef.current.value = "";
                   }}
                   className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"
@@ -235,6 +368,7 @@ function NewListingModal({
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-emerald-400 hover:bg-emerald-50/50 transition-all"
+                data-testid="photo-upload-btn"
               >
                 <Upload size={24} className="text-gray-400" />
                 <span className="text-sm text-gray-500">Click to upload a photo</span>
@@ -256,6 +390,7 @@ function NewListingModal({
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                       : "border-gray-200 text-gray-600 hover:border-emerald-200 hover:bg-emerald-50/50"
                   }`}
+                  data-testid={`category-${cat.name.toLowerCase()}`}
                 >
                   <CategoryIcon
                     category={cat.name}
@@ -323,6 +458,7 @@ function NewListingModal({
               rows={3}
               placeholder="Describe the metal type, approximate weight, and condition..."
               className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+              data-testid="description-input"
             />
           </div>
 
@@ -340,9 +476,16 @@ function NewListingModal({
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Enter address or use current location"
                 className="w-full rounded-xl border border-gray-300 pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                data-testid="address-input"
               />
             </div>
           </div>
+
+          {submitError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              {submitError}
+            </div>
+          )}
         </div>
 
         {/* Submit */}
@@ -350,10 +493,17 @@ function NewListingModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!category || !description}
+            disabled={!category || !description || submitting}
             className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+            data-testid="submit-listing-btn"
           >
-            Post Listing
+            {submitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="animate-spin" size={16} /> Creating...
+              </span>
+            ) : (
+              "Post Listing"
+            )}
           </button>
         </div>
       </div>

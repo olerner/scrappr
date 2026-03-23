@@ -17,3 +17,4 @@ cdk.out
 *.mobileprovision
 *.orig.*
 web-build/
+packages/e2e/test-results/

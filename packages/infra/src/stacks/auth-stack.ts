@@ -82,7 +82,14 @@ export class AuthStack extends cdk.Stack {
           "http://localhost:8081/auth/sign-out",
         ],
       },
-      supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.GOOGLE],
+      authFlows: {
+        userPassword: true,
+        userSrp: true,
+      },
+      supportedIdentityProviders: [
+        cognito.UserPoolClientIdentityProvider.COGNITO,
+        cognito.UserPoolClientIdentityProvider.GOOGLE,
+      ],
     });
 
     // Ensure Google provider is created before the client references it
