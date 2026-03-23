@@ -1,3 +1,4 @@
+import { existsSync, mkdirSync } from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as cdk from "aws-cdk-lib";
@@ -12,6 +13,11 @@ import type { Construct } from "constructs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UI_DIST_PATH = path.join(__dirname, "../../../ui/dist");
+
+// Ensure dist directory exists so CDK synth works even without a build (e.g. cdk destroy)
+if (!existsSync(UI_DIST_PATH)) {
+  mkdirSync(UI_DIST_PATH, { recursive: true });
+}
 
 interface UiStackProps extends cdk.StackProps {
   envName: string;
