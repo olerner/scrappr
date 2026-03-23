@@ -23,6 +23,8 @@ jobs:
 
   deploy-preview:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +34,13 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
-      - run: yarn workspace @scrappr/ui build && cd packages/infra && npx cdk deploy scrappr-ui-pr-${{ github.event.pull_request.number }} --require-approval never -c env=pr-${{ github.event.pull_request.number }}
+      - name: Deploy CDK preview stack
+        id: cdk
+        run: |
+          OUTPUT=$(yarn workspace @scrappr/ui build && cd packages/infra && npx cdk deploy scrappr-ui-pr-${{ github.event.pull_request.number }} --require-approval never -c env=pr-${{ github.event.pull_request.number }} --outputs-file /tmp/cdk-outputs.json 2>&1)
+          echo "$OUTPUT"
+          PREVIEW_URL=$(node -e "const o=require('/tmp/cdk-outputs.json'); const stack=Object.keys(o)[0]; console.log(o[stack].CloudFrontUrl)")
+          echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -43,7 +51,9 @@ jobs:
         with:
           script: |
             const prNum = context.payload.pull_request.number;
-            const body = `**Preview deployed!** CloudFront may take a few minutes to propagate.\n\nEnvironment: \`pr-${prNum}\``;
+            const previewUrl = '${{ steps.cdk.outputs.preview_url }}';
+            const urlLine = previewUrl ? `\n\n🔗 **Preview URL:** ${previewUrl}` : '';
+            const body = `**Preview deployed!** CloudFront may take a few minutes to propagate.\n\nEnvironment: \`pr-${prNum}\`${urlLine}`;
             const { data: comments } = await github.rest.issues.listComments({
               ...context.repo,
               issue_number: prNum,
