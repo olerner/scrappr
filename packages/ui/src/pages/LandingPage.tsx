@@ -210,7 +210,7 @@ export function LandingPage() {
             <ScrappyDog size={32} />
             <span className="text-lg font-bold text-white">Scrappr</span>
           </div>
-          <p className="text-emerald-400 text-sm">Your scrap. Their hustle. Zero waste.</p>
+          <p className="text-emerald-400 text-sm">Your scrap. Their hustle. Zero waste. 🌍</p>
           <p className="text-emerald-600 text-xs">2026 Scrappr. Built for the Twin Cities.</p>
         </div>
       </footer>
