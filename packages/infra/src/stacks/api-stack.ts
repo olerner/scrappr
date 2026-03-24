@@ -4,9 +4,14 @@ import * as cdk from "aws-cdk-lib";
 import * as apigatewayv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as authorizers from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import * as integrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
+import * as cw_actions from "aws-cdk-lib/aws-cloudwatch-actions";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as logs from "aws-cdk-lib/aws-logs";
 import type * as s3 from "aws-cdk-lib/aws-s3";
+import * as sns from "aws-cdk-lib/aws-sns";
+import * as subs from "aws-cdk-lib/aws-sns-subscriptions";
 import type { Construct } from "constructs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -116,7 +121,72 @@ export class ApiStack extends cdk.Stack {
       authorizer: jwtAuthorizer,
     });
 
+    // ── Frontend Error Reporting Lambda ──────────────────────────────
+
+    const reportErrorFn = new lambda.Function(this, "ReportErrorFn", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "report-error.handler",
+      code: lambda.Code.fromAsset(lambdasDir),
+      timeout: cdk.Duration.seconds(10),
+    });
+
+    httpApi.addRoutes({
+      path: "/errors",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration("ReportErrorInt", reportErrorFn),
+      // No authorizer — unauthenticated so frontend can report errors before/after sign-in
+    });
+
     this.apiUrl = httpApi.apiEndpoint;
+
+    // ── SNS Alert Topic ───────────────────────────────────────────
+
+    const alertTopic = new sns.Topic(this, "ErrorAlertTopic", {
+      topicName: `scrappr-errors-${stageName}`,
+    });
+    alertTopic.addSubscription(new subs.EmailSubscription("trevbot@trevor.fail"));
+    alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
+
+    // ── CloudWatch Alarms ─────────────────────────────────────────
+
+    const allFns = [
+      { id: "Presign", fn: presignFn },
+      { id: "CreateListing", fn: createListingFn },
+      { id: "GetListings", fn: getListingsFn },
+      { id: "ReportError", fn: reportErrorFn },
+    ];
+
+    for (const { id, fn } of allFns) {
+      // Alarm on Lambda invocation errors (crashes, timeouts, OOM)
+      const invocationAlarm = fn
+        .metricErrors({ period: cdk.Duration.minutes(5) })
+        .createAlarm(this, `${id}ErrorAlarm`, {
+          alarmName: `scrappr-${id}-errors-${stageName}`,
+          threshold: 1,
+          evaluationPeriods: 1,
+          treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        });
+      invocationAlarm.addAlarmAction(new cw_actions.SnsAction(alertTopic));
+
+      // Alarm on application-level errors (caught 500s logged as "level":"ERROR")
+      const logGroup = fn.logGroup;
+      const metricFilter = new logs.MetricFilter(this, `${id}AppErrorFilter`, {
+        logGroup,
+        filterPattern: logs.FilterPattern.literal('"level":"ERROR"'),
+        metricNamespace: `Scrappr/${stageName}`,
+        metricName: `${id}AppErrors`,
+        metricValue: "1",
+      });
+
+      const appErrorAlarm = new cloudwatch.Alarm(this, `${id}AppErrorAlarm`, {
+        alarmName: `scrappr-${id}-app-errors-${stageName}`,
+        metric: metricFilter.metric({ period: cdk.Duration.minutes(5), statistic: "Sum" }),
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+      appErrorAlarm.addAlarmAction(new cw_actions.SnsAction(alertTopic));
+    }
 
     // ── Outputs ─────────────────────────────────────────────────────
 
