@@ -37,7 +37,7 @@ Automated Playwright tests live in `tests/` and validate critical user flows. Th
 
 3. **Tests must be independent and idempotent.** Each test creates its own data and doesn't depend on state from other tests. Tests should pass whether run once or ten times in a row.
 
-4. **Use a dedicated test account.** All e2e tests authenticate as `test@scrappr.dev`. This account exists in the dev Cognito pool and is shared across preview environments.
+4. **Use a dedicated test account.** All e2e tests authenticate as `test@scrappr.dev` / `TestPass123!`. This account exists in the dev Cognito pool and is shared across preview environments.
 
 5. **Select elements by `data-testid` or visible user text.** Never use CSS classes, IDs, or DOM structure to find elements. Use `data-testid` attributes for interactive elements and `getByText` for asserting visible content. Add `data-testid` to components if they don't have one.
 
