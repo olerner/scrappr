@@ -13,13 +13,22 @@ export default defineConfig({
   },
   webServer: process.env.BASE_URL
     ? undefined
-    : {
-        command: "yarn workspace @scrappr/ui dev",
-        port: 5173,
-        cwd: "../..",
-        reuseExistingServer: true,
-        timeout: 30_000,
-      },
+    : [
+        {
+          command: "docker compose up -d dynamodb-local && yarn api-setup-db && yarn api",
+          port: 3001,
+          cwd: "../..",
+          reuseExistingServer: true,
+          timeout: 30_000,
+        },
+        {
+          command: "yarn workspace @scrappr/ui dev",
+          port: 5173,
+          cwd: "../..",
+          reuseExistingServer: true,
+          timeout: 30_000,
+        },
+      ],
   projects: [
     {
       name: "chromium",

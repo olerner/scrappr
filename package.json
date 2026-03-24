@@ -5,6 +5,9 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "docker compose up -d dynamodb-local && yarn api-setup-db && concurrently -n api,ui -c blue,green \"yarn api\" \"yarn ui\"",
+    "api": "yarn workspace @scrappr/api-local dev",
+    "api-setup-db": "yarn workspace @scrappr/api-local setup-db",
     "ui": "yarn workspace @scrappr/ui dev",
     "deploy": "yarn workspace @scrappr/ui build && yarn workspace @scrappr/infra deploy",
     "infra:diff": "yarn workspace @scrappr/infra diff",
@@ -17,6 +20,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",
     "@playwright/test": "^1.58.2",
+    "concurrently": "^9.2.1",
     "prettier": "^3.8.1"
   }
 }

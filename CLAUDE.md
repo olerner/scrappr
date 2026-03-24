@@ -13,13 +13,16 @@ Two-sided gig marketplace for scrap metal pickup in the Twin Cities. Scrappees l
 
 - `packages/ui/` — @scrappr/ui: Vite/React web app
 - `packages/infra/` — @scrappr/infra: CDK stacks (AuthStack, ApiStack, StorageStack, UiStack)
+- `packages/api-local/` — @scrappr/api-local: Local Express dev server wrapping Lambda handlers
 - `packages/e2e/` — @scrappr/e2e: Playwright e2e tests
 
 ## Commands
 
 ```bash
 yarn install                            # install all workspace deps
-yarn ui                                 # start Vite dev server (localhost:5173)
+yarn dev                                # start everything: DynamoDB Local + API + UI
+yarn ui                                 # start Vite dev server only (localhost:5173)
+yarn api                                # start local API server only (localhost:3001)
 yarn deploy                             # build UI + cdk deploy all stacks
 yarn infra:diff                         # diff CDK changes
 yarn run check                          # biome + prettier check

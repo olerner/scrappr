@@ -18,3 +18,6 @@ cdk.out
 *.orig.*
 web-build/
 packages/e2e/test-results/
+
+# Local dev
+packages/api-local/uploads/
