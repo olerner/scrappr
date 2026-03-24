@@ -84,4 +84,41 @@ test.describe("Listing Creation Flow", () => {
       timeout: 10_000,
     });
   });
+
+  test("drag-and-drop photo upload shows preview", async ({ page }) => {
+    // 1. Sign in
+    await page.goto("/scrappee");
+    await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
+    await page.getByPlaceholder("••••••••").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Sign In", exact: true }).click();
+    await expect(page.getByText("My Listings")).toBeVisible({ timeout: 15_000 });
+
+    // 2. Open "New Listing" modal
+    await page.getByRole("button", { name: "New Listing" }).click();
+    await expect(page.getByText("New Listing").nth(1)).toBeVisible();
+
+    // 3. Verify dropzone exists
+    const dropzone = page.getByTestId("photo-dropzone");
+    await expect(dropzone).toBeVisible();
+
+    // 4. Verify click-to-upload button is present
+    const uploadBtn = page.getByTestId("photo-upload-btn");
+    await expect(uploadBtn).toBeVisible();
+    await expect(uploadBtn).toContainText("Click or drag to upload a photo");
+
+    // 5. Simulate drag-and-drop a photo via the file input (Playwright doesn't natively
+    //    support DataTransfer drag events, so we use setInputFiles as the equivalent)
+    const fileInput = page.getByTestId("photo-input");
+    const testPhotoPath = path.join(import.meta.dirname, "../fixtures/test-photo.jpg");
+    await fileInput.setInputFiles(testPhotoPath);
+
+    // 6. Verify photo preview appears (upload button is replaced by preview image)
+    await expect(page.getByAlt("Preview")).toBeVisible({ timeout: 5_000 });
+    await expect(uploadBtn).not.toBeVisible();
+
+    // 7. Remove the photo and verify upload zone returns
+    await page.locator("[data-testid='photo-dropzone'] button").click();
+    await expect(uploadBtn).toBeVisible();
+    await expect(uploadBtn).toContainText("Click or drag to upload a photo");
+  });
 });
