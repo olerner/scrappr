@@ -79,6 +79,45 @@ jobs:
           VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
           VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
 
+      - name: Add preview URL to Cognito callback URLs
+        run: |
+          PREVIEW_URL="${{ steps.cdk.outputs.preview_url }}"
+          CLIENT_CONFIG=$(aws cognito-idp describe-user-pool-client \
+            --user-pool-id "$VITE_USER_POOL_ID" \
+            --client-id "$VITE_USER_POOL_CLIENT_ID" \
+            --query 'UserPoolClient' --output json)
+          CALLBACK_URLS=$(echo "$CLIENT_CONFIG" | node -e "
+            const c = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const urls = c.CallbackURLs || [];
+            const cb = '${PREVIEW_URL}/auth/callback';
+            if (!urls.includes(cb)) urls.push(cb);
+            console.log(JSON.stringify(urls));
+          ")
+          LOGOUT_URLS=$(echo "$CLIENT_CONFIG" | node -e "
+            const c = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const urls = c.LogoutURLs || [];
+            const lo = '${PREVIEW_URL}/auth/sign-out';
+            if (!urls.includes(lo)) urls.push(lo);
+            console.log(JSON.stringify(urls));
+          ")
+          aws cognito-idp update-user-pool-client \
+            --user-pool-id "$VITE_USER_POOL_ID" \
+            --client-id "$VITE_USER_POOL_CLIENT_ID" \
+            --callback-urls "$CALLBACK_URLS" \
+            --logout-urls "$LOGOUT_URLS" \
+            --supported-identity-providers COGNITO Google \
+            --allowed-o-auth-flows code \
+            --allowed-o-auth-scopes openid email profile \
+            --allowed-o-auth-flows-user-pool-client \
+            --explicit-auth-flows ALLOW_USER_PASSWORD_AUTH ALLOW_USER_SRP_AUTH ALLOW_REFRESH_TOKEN_AUTH \
+            > /dev/null
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+
       - name: Comment preview URL on PR
         uses: actions/github-script@v7
         with:

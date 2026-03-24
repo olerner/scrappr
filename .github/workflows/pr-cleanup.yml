@@ -19,6 +19,47 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
+
+      - name: Remove preview URL from Cognito callback URLs
+        run: |
+          STACK_NAME="scrappr-ui-pr-${{ github.event.pull_request.number }}"
+          PREVIEW_URL=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontUrl'].OutputValue" --output text 2>/dev/null || echo "")
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "Stack not found or no CloudFront URL — skipping"
+            exit 0
+          fi
+          CLIENT_CONFIG=$(aws cognito-idp describe-user-pool-client \
+            --user-pool-id "$VITE_USER_POOL_ID" \
+            --client-id "$VITE_USER_POOL_CLIENT_ID" \
+            --query 'UserPoolClient' --output json)
+          CALLBACK_URLS=$(echo "$CLIENT_CONFIG" | node -e "
+            const c = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const urls = (c.CallbackURLs || []).filter(u => !u.startsWith('${PREVIEW_URL}'));
+            console.log(JSON.stringify(urls));
+          ")
+          LOGOUT_URLS=$(echo "$CLIENT_CONFIG" | node -e "
+            const c = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const urls = (c.LogoutURLs || []).filter(u => !u.startsWith('${PREVIEW_URL}'));
+            console.log(JSON.stringify(urls));
+          ")
+          aws cognito-idp update-user-pool-client \
+            --user-pool-id "$VITE_USER_POOL_ID" \
+            --client-id "$VITE_USER_POOL_CLIENT_ID" \
+            --callback-urls "$CALLBACK_URLS" \
+            --logout-urls "$LOGOUT_URLS" \
+            --supported-identity-providers COGNITO Google \
+            --allowed-o-auth-flows code \
+            --allowed-o-auth-scopes openid email profile \
+            --allowed-o-auth-flows-user-pool-client \
+            --explicit-auth-flows ALLOW_USER_PASSWORD_AUTH ALLOW_USER_SRP_AUTH ALLOW_REFRESH_TOKEN_AUTH \
+            > /dev/null
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+
       - name: Destroy preview stacks
         run: |
           cd packages/infra
