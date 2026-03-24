@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+const isLocal = !process.env.BASE_URL;
+
 export default defineConfig({
   testDir: "./tests",
   timeout: 60_000,
@@ -11,24 +13,24 @@ export default defineConfig({
     headless: true,
     screenshot: "only-on-failure",
   },
-  webServer: process.env.BASE_URL
-    ? undefined
-    : [
+  webServer: isLocal
+    ? [
         {
-          command: "docker compose up -d dynamodb-local && yarn api-setup-db && yarn api",
+          command: "yarn api",
           port: 3001,
           cwd: "../..",
           reuseExistingServer: true,
           timeout: 30_000,
         },
         {
-          command: "yarn workspace @scrappr/ui dev",
+          command: "yarn ui",
           port: 5173,
           cwd: "../..",
           reuseExistingServer: true,
           timeout: 30_000,
         },
-      ],
+      ]
+    : undefined,
   projects: [
     {
       name: "chromium",
