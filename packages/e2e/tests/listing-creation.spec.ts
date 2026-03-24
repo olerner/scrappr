@@ -37,31 +37,39 @@ test.describe("Listing Creation Flow", () => {
     await page.getByTestId("description-input").fill("Test copper pipe, about 10 lbs");
 
     // 9. Fill address via autocomplete
-    // Mock Photon API to avoid flakiness in CI
-    await page.route("**/photon.komoot.io/**", (route) => {
+    // Mock Google Places Autocomplete API
+    await page.route("**/places.googleapis.com/v1/places:autocomplete**", (route) => {
       route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          type: "FeatureCollection",
-          features: [
+          suggestions: [
             {
-              type: "Feature",
-              geometry: {
-                type: "Point",
-                coordinates: [-93.265, 44.9778],
-              },
-              properties: {
-                housenumber: "123",
-                street: "Test St",
-                city: "Minneapolis",
-                state: "Minnesota",
+              placePrediction: {
+                text: { text: "123 Test St, Minneapolis, MN, USA" },
+                placeId: "ChIJTestPlace123",
               },
             },
           ],
         }),
       });
     });
+
+    // Mock Google Places Details API
+    await page.route("**/places.googleapis.com/v1/places/ChIJTestPlace123**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          location: {
+            latitude: 44.9778,
+            longitude: -93.265,
+          },
+          formattedAddress: "123 Test St, Minneapolis, MN 55401, USA",
+        }),
+      });
+    });
+
     await page.getByTestId("address-input").fill("Minneapolis");
     await page.getByTestId("address-suggestion").first().click({ timeout: 10_000 });
 

@@ -1,55 +1,86 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+const GOOGLE_PLACES_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY ?? "";
+
 export interface AddressSuggestion {
   label: string;
   lat: number;
   lng: number;
 }
 
+export interface PlacePrediction {
+  label: string;
+  placeId: string;
+}
+
 interface UseAddressAutocompleteReturn {
-  suggestions: AddressSuggestion[];
+  predictions: PlacePrediction[];
   loading: boolean;
-  selectSuggestion: (suggestion: AddressSuggestion) => void;
-  clearSuggestions: () => void;
+  clearPredictions: () => void;
   search: (query: string) => void;
 }
 
-function formatLabel(props: Record<string, unknown>): string {
-  const parts: string[] = [];
-  const housenumber = props.housenumber as string | undefined;
-  const street = props.street as string | undefined;
-  const city = props.city as string | undefined;
-  const state = props.state as string | undefined;
+async function fetchAutocomplete(query: string, signal: AbortSignal): Promise<PlacePrediction[]> {
+  const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
+      "X-Goog-FieldMask": "suggestions.placePrediction.text,suggestions.placePrediction.placeId",
+    },
+    body: JSON.stringify({
+      input: query,
+      includedRegionCodes: ["us"],
+      languageCode: "en",
+    }),
+    signal,
+  });
 
-  if (housenumber && street) {
-    parts.push(`${housenumber} ${street}`);
-  } else if (street) {
-    parts.push(street);
-  }
+  const data = await res.json();
 
-  if (city) {
-    parts.push(city);
-  }
+  if (!data.suggestions) return [];
 
-  if (state) {
-    parts.push(state);
-  }
+  return (
+    data.suggestions as Array<{
+      placePrediction?: { text?: { text?: string }; placeId?: string };
+    }>
+  )
+    .filter((s) => s.placePrediction?.text?.text && s.placePrediction?.placeId)
+    .map((s) => ({
+      label: s.placePrediction!.text!.text!,
+      placeId: s.placePrediction!.placeId!,
+    }));
+}
 
-  return parts.join(", ") || "Unknown location";
+export async function fetchPlaceDetails(
+  placeId: string,
+  signal?: AbortSignal,
+): Promise<AddressSuggestion> {
+  const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+    headers: {
+      "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
+      "X-Goog-FieldMask": "location,formattedAddress",
+    },
+    signal,
+  });
+
+  const data = await res.json();
+
+  return {
+    lat: data.location?.latitude ?? 0,
+    lng: data.location?.longitude ?? 0,
+    label: data.formattedAddress ?? "",
+  };
 }
 
 export function useAddressAutocomplete(): UseAddressAutocompleteReturn {
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearSuggestions = useCallback(() => {
-    setSuggestions([]);
-  }, []);
-
-  const selectSuggestion = useCallback((_suggestion: AddressSuggestion) => {
-    setSuggestions([]);
+  const clearPredictions = useCallback(() => {
+    setPredictions([]);
   }, []);
 
   const search = useCallback((query: string) => {
@@ -62,7 +93,7 @@ export function useAddressAutocomplete(): UseAddressAutocompleteReturn {
     }
 
     if (query.length < 3) {
-      setSuggestions([]);
+      setPredictions([]);
       setLoading(false);
       return;
     }
@@ -74,34 +105,11 @@ export function useAddressAutocomplete(): UseAddressAutocompleteReturn {
       abortRef.current = controller;
 
       try {
-        const params = new URLSearchParams({
-          q: query,
-          lat: "44.9778",
-          lon: "-93.2650",
-          limit: "5",
-          lang: "en",
-        });
-        const res = await fetch(`https://photon.komoot.io/api/?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        const data = await res.json();
-
-        const results: AddressSuggestion[] = (
-          data.features as Array<{
-            properties: Record<string, unknown>;
-            geometry: { coordinates: [number, number] };
-          }>
-        ).map((feature) => ({
-          label: formatLabel(feature.properties),
-          // Photon returns [lng, lat] — swap!
-          lat: feature.geometry.coordinates[1],
-          lng: feature.geometry.coordinates[0],
-        }));
-
-        setSuggestions(results);
+        const results = await fetchAutocomplete(query, controller.signal);
+        setPredictions(results);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          setSuggestions([]);
+          setPredictions([]);
         }
       } finally {
         setLoading(false);
@@ -120,5 +128,5 @@ export function useAddressAutocomplete(): UseAddressAutocompleteReturn {
     };
   }, []);
 
-  return { suggestions, loading, selectSuggestion, clearSuggestions, search };
+  return { predictions, loading, clearPredictions, search };
 }

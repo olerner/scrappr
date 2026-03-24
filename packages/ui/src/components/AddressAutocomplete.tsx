@@ -1,6 +1,11 @@
 import { MapPin } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type AddressSuggestion, useAddressAutocomplete } from "../hooks/useAddressAutocomplete";
+import {
+  type AddressSuggestion,
+  fetchPlaceDetails,
+  type PlacePrediction,
+  useAddressAutocomplete,
+} from "../hooks/useAddressAutocomplete";
 
 interface AddressAutocompleteProps {
   onSelect: (suggestion: AddressSuggestion) => void;
@@ -8,11 +13,11 @@ interface AddressAutocompleteProps {
 }
 
 export function AddressAutocomplete({ onSelect, warning }: AddressAutocompleteProps) {
-  const { suggestions, loading, selectSuggestion, clearSuggestions, search } =
-    useAddressAutocomplete();
+  const { predictions, loading, clearPredictions, search } = useAddressAutocomplete();
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [resolving, setResolving] = useState(false);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -28,35 +33,45 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
   );
 
   const handleSelect = useCallback(
-    (suggestion: AddressSuggestion) => {
-      setInputValue(suggestion.label);
-      selectSuggestion(suggestion);
-      onSelect(suggestion);
+    async (prediction: PlacePrediction) => {
+      setInputValue(prediction.label);
+      clearPredictions();
       setIsOpen(false);
       setHighlightIndex(-1);
+      setResolving(true);
+
+      try {
+        const details = await fetchPlaceDetails(prediction.placeId);
+        onSelect(details);
+      } catch {
+        // If details fetch fails, still pass what we have
+        onSelect({ label: prediction.label, lat: 0, lng: 0 });
+      } finally {
+        setResolving(false);
+      }
     },
-    [selectSuggestion, onSelect],
+    [clearPredictions, onSelect],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (!isOpen || suggestions.length === 0) return;
+      if (!isOpen || predictions.length === 0) return;
 
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setHighlightIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
+        setHighlightIndex((prev) => (prev < predictions.length - 1 ? prev + 1 : 0));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setHighlightIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
+        setHighlightIndex((prev) => (prev > 0 ? prev - 1 : predictions.length - 1));
       } else if (e.key === "Enter" && highlightIndex >= 0) {
         e.preventDefault();
-        handleSelect(suggestions[highlightIndex]);
+        handleSelect(predictions[highlightIndex]);
       } else if (e.key === "Escape") {
         setIsOpen(false);
-        clearSuggestions();
+        clearPredictions();
       }
     },
-    [isOpen, suggestions, highlightIndex, handleSelect, clearSuggestions],
+    [isOpen, predictions, highlightIndex, handleSelect, clearPredictions],
   );
 
   const handleBlur = useCallback(() => {
@@ -69,16 +84,16 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
     if (blurTimeoutRef.current) {
       clearTimeout(blurTimeoutRef.current);
     }
-    if (suggestions.length > 0) {
+    if (predictions.length > 0) {
       setIsOpen(true);
     }
-  }, [suggestions.length]);
+  }, [predictions.length]);
 
   useEffect(() => {
-    if (suggestions.length > 0) {
+    if (predictions.length > 0) {
       setIsOpen(true);
     }
-  }, [suggestions]);
+  }, [predictions]);
 
   useEffect(() => {
     return () => {
@@ -101,6 +116,7 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
   }, [highlightIndex]);
 
   const showWarning = warning && inputValue.length > 0;
+  const isLoading = loading || resolving;
 
   return (
     <div className="relative">
@@ -118,18 +134,18 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
         } pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent`}
         data-testid="address-input"
       />
-      {loading && (
+      {isLoading && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-      {isOpen && suggestions.length > 0 && (
+      {isOpen && predictions.length > 0 && (
         <ul
           ref={listRef}
           className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-60 overflow-y-auto"
         >
-          {suggestions.map((suggestion, index) => (
-            <li key={`${suggestion.lat}-${suggestion.lng}-${suggestion.label}`}>
+          {predictions.map((prediction, index) => (
+            <li key={prediction.placeId}>
               <button
                 type="button"
                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
@@ -139,13 +155,13 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
                 }`}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  handleSelect(suggestion);
+                  handleSelect(prediction);
                 }}
                 data-testid="address-suggestion"
               >
                 <span className="flex items-center gap-2">
                   <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-                  {suggestion.label}
+                  {prediction.label}
                 </span>
               </button>
             </li>
