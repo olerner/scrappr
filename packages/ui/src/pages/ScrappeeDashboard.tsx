@@ -599,7 +599,7 @@ function NewListingModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!category || !description || !photoFile || submitting}
+            disabled={!category || !description || !photoFile || !address || submitting}
             className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
             data-testid="submit-listing-btn"
           >
