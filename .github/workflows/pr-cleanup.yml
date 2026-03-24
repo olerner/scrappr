@@ -19,8 +19,17 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
-      - run: cd packages/infra && npx cdk destroy scrappr-ui-pr-${{ github.event.pull_request.number }} --force -c env=pr-${{ github.event.pull_request.number }}
+      - name: Destroy preview stacks
+        run: |
+          cd packages/infra
+          npx cdk destroy \
+            scrappr-ui-pr-${{ github.event.pull_request.number }} \
+            scrappr-api-pr-${{ github.event.pull_request.number }} \
+            scrappr-storage-pr-${{ github.event.pull_request.number }} \
+            --force -c env=pr-${{ github.event.pull_request.number }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}

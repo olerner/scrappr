@@ -32,6 +32,7 @@ export function ScrappeeDashboard() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loadingListings, setLoadingListings] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const fetchListings = useCallback(async () => {
     if (!accessToken) return;
@@ -87,7 +88,7 @@ export function ScrappeeDashboard() {
               Signed in as {email}{" "}
               <button
                 type="button"
-                onClick={signOut}
+                onClick={() => setShowSignOutConfirm(true)}
                 className="text-emerald-600 hover:underline inline-flex items-center gap-1 ml-2"
               >
                 <LogOut size={12} /> Sign out
@@ -130,6 +131,36 @@ export function ScrappeeDashboard() {
             fetchListings();
           }}
         />
+      )}
+
+      {/* Sign Out Confirmation */}
+      {showSignOutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowSignOutConfirm(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign out?</h3>
+            <p className="text-sm text-gray-500 mb-5">You're signed in as {email}</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSignOutConfirm(false)}
+                className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={signOut}
+                className="flex-1 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -324,6 +355,7 @@ function NewListingModal({
   const [showChecklist, setShowChecklist] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleCategorySelect = (cat: string) => {
@@ -345,6 +377,7 @@ function NewListingModal({
     const file = e.target.files?.[0];
     if (file) {
       setPhotoFile(file);
+      setPhotoError(false);
       const reader = new FileReader();
       reader.onloadend = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -352,6 +385,10 @@ function NewListingModal({
   };
 
   const handleSubmit = async () => {
+    if (!photoFile) {
+      setPhotoError(true);
+      return;
+    }
     if (!category || !description) return;
     setSubmitting(true);
     setSubmitError(null);
@@ -439,6 +476,9 @@ function NewListingModal({
                 <Upload size={24} className="text-gray-400" />
                 <span className="text-sm text-gray-500">Click to upload a photo</span>
               </button>
+            )}
+            {photoError && (
+              <p className="text-red-600 text-sm mt-2">A photo is required to post a listing.</p>
             )}
           </div>
 
@@ -559,7 +599,7 @@ function NewListingModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!category || !description || submitting}
+            disabled={!category || !description || !photoFile || submitting}
             className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
             data-testid="submit-listing-btn"
           >

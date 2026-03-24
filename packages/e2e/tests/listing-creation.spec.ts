@@ -15,7 +15,7 @@ test.describe("Listing Creation Flow", () => {
     // 3. Sign in
     await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
     await page.getByPlaceholder("••••••••").fill(TEST_PASSWORD);
-    await page.getByRole("button", { name: "Sign In" }).click();
+    await page.getByRole("button", { name: "Sign In", exact: true }).click();
 
     // 4. Wait for dashboard to load
     await expect(page.getByText("My Listings")).toBeVisible({ timeout: 15_000 });

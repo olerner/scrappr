@@ -26,9 +26,11 @@ const awsEnv: cdk.Environment = {
   region: "us-east-1",
 };
 
+const isPreview = env.startsWith("pr-");
+
 // Auth stack — only deploy for dev/production (previews share dev Cognito)
 let authStack: AuthStack | undefined;
-if (!env.startsWith("pr-")) {
+if (!isPreview) {
   authStack = new AuthStack(app, `scrappr-auth-${env}`, {
     env: awsEnv,
     stageName: env,
@@ -37,25 +39,25 @@ if (!env.startsWith("pr-")) {
   });
 }
 
-// Storage stack — only deploy for dev/production
-let storageStack: StorageStack | undefined;
-if (!env.startsWith("pr-")) {
-  storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
-    env: awsEnv,
-    stageName: env,
-  });
-}
+// Storage stack — deploy for all environments
+const storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
+  env: awsEnv,
+  stageName: env,
+});
 
-// API stack — only deploy for dev/production
-if (!env.startsWith("pr-") && authStack && storageStack) {
-  new ApiStack(app, `scrappr-api-${env}`, {
-    env: awsEnv,
-    stageName: env,
-    userPoolId: authStack.userPool.userPoolId,
-    userPoolClientId: authStack.userPoolClient.userPoolClientId,
-    photoBucket: storageStack.photoBucket,
-  });
-}
+// API stack — deploy for all environments (previews use dev Cognito)
+const userPoolId = isPreview ? process.env.VITE_USER_POOL_ID! : authStack!.userPool.userPoolId;
+const userPoolClientId = isPreview
+  ? process.env.VITE_USER_POOL_CLIENT_ID!
+  : authStack!.userPoolClient.userPoolClientId;
+
+new ApiStack(app, `scrappr-api-${env}`, {
+  env: awsEnv,
+  stageName: env,
+  userPoolId,
+  userPoolClientId,
+  photoBucket: storageStack.photoBucket,
+});
 
 // UI stack — S3 + CloudFront + optional custom domain
 new UiStack(app, `scrappr-ui-${env}`, {

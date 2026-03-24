@@ -37,11 +37,39 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
-      - name: Deploy CDK preview stack
+      - name: Deploy API + Storage stacks
+        id: api
+        run: |
+          cd packages/infra
+          npx cdk deploy scrappr-storage-pr-${{ github.event.pull_request.number }} scrappr-api-pr-${{ github.event.pull_request.number }} \
+            --require-approval never \
+            -c env=pr-${{ github.event.pull_request.number }} \
+            --outputs-file /tmp/cdk-api-outputs.json 2>&1 | tail -50
+          API_URL=$(node -e "const o=require('/tmp/cdk-api-outputs.json'); console.log(o['scrappr-api-pr-${{ github.event.pull_request.number }}'].ApiEndpoint)")
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+
+      - name: Build UI with preview API
+        run: yarn workspace @scrappr/ui build
+        env:
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+          VITE_COGNITO_DOMAIN: ${{ secrets.VITE_COGNITO_DOMAIN }}
+          VITE_API_URL: ${{ steps.api.outputs.api_url }}
+
+      - name: Deploy UI stack
         id: cdk
         run: |
-          yarn workspace @scrappr/ui build
-          cd packages/infra && npx cdk deploy scrappr-ui-pr-${{ github.event.pull_request.number }} --require-approval never -c env=pr-${{ github.event.pull_request.number }} --outputs-file /tmp/cdk-outputs.json
+          cd packages/infra
+          npx cdk deploy scrappr-ui-pr-${{ github.event.pull_request.number }} \
+            --require-approval never \
+            -c env=pr-${{ github.event.pull_request.number }} \
+            --outputs-file /tmp/cdk-outputs.json 2>&1 | tail -20
           PREVIEW_URL=$(node -e "const o=require('/tmp/cdk-outputs.json'); const stack=Object.keys(o)[0]; console.log(o[stack].CloudFrontUrl)")
           echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
         env:
@@ -50,8 +78,6 @@ jobs:
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
           VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
           VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_COGNITO_DOMAIN: ${{ secrets.VITE_COGNITO_DOMAIN }}
 
       - name: Comment preview URL on PR
         uses: actions/github-script@v7
