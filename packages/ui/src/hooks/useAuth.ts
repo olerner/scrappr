@@ -1,10 +1,13 @@
 import { AuthenticationDetails, CognitoUser, CognitoUserPool } from "amazon-cognito-identity-js";
 import { useCallback, useEffect, useState } from "react";
 
-const userPool = new CognitoUserPool({
-  UserPoolId: import.meta.env.VITE_USER_POOL_ID,
-  ClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID,
-});
+const userPool =
+  import.meta.env.VITE_USER_POOL_ID && import.meta.env.VITE_USER_POOL_CLIENT_ID
+    ? new CognitoUserPool({
+        UserPoolId: import.meta.env.VITE_USER_POOL_ID,
+        ClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID,
+      })
+    : null;
 
 const COGNITO_DOMAIN_RAW = import.meta.env.VITE_COGNITO_DOMAIN;
 const COGNITO_DOMAIN = COGNITO_DOMAIN_RAW?.startsWith("https://")
@@ -56,7 +59,7 @@ export function useAuth(): AuthState {
     }
 
     // Fall back to Cognito user pool session
-    const currentUser = userPool.getCurrentUser();
+    const currentUser = userPool?.getCurrentUser() ?? null;
     if (currentUser) {
       currentUser.getSession(
         (
@@ -88,6 +91,12 @@ export function useAuth(): AuthState {
     setError(null);
     setIsLoading(true);
     return new Promise<void>((resolve, reject) => {
+      if (!userPool) {
+        setError("Auth not configured");
+        setIsLoading(false);
+        reject(new Error("Auth not configured"));
+        return;
+      }
       const cognitoUser = new CognitoUser({
         Username: emailInput,
         Pool: userPool,
@@ -182,7 +191,7 @@ export function useAuth(): AuthState {
     Object.values(TOKEN_KEYS).forEach((key) => localStorage.removeItem(key));
 
     // Clear Cognito session
-    const currentUser = userPool.getCurrentUser();
+    const currentUser = userPool?.getCurrentUser();
     if (currentUser) {
       currentUser.signOut();
     }
