@@ -12,7 +12,8 @@ Two-sided gig marketplace for scrap metal pickup in the Twin Cities. Scrappees l
 ## Structure
 
 - `packages/ui/` — @scrappr/ui: Vite/React web app
-- `packages/infra/` — @scrappr/infra: CDK stacks (AuthStack, UiStack)
+- `packages/infra/` — @scrappr/infra: CDK stacks (AuthStack, ApiStack, StorageStack, UiStack)
+- `packages/e2e/` — @scrappr/e2e: Playwright e2e tests
 
 ## Commands
 
@@ -25,6 +26,14 @@ yarn run check                          # biome + prettier check
 yarn lint:fix                           # biome auto-fix
 yarn format                             # prettier auto-fix
 ```
+
+## Testing
+
+All work must be browser-tested and accepted before shipping. See [`packages/e2e/README.md`](packages/e2e/README.md) for the full testing philosophy and PR workflow.
+
+## PRs
+
+Use `/pr` to open pull requests. See [`.claude/skills/pr/SKILL.md`](.claude/skills/pr/SKILL.md).
 
 ## Key decisions
 

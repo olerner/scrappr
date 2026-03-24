@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+    outputs:
+      preview_url: ${{ steps.cdk.outputs.preview_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -34,17 +36,87 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
-      - name: Deploy CDK preview stack
+
+      - name: Deploy API + Storage stacks
+        id: api
+        run: |
+          cd packages/infra
+          npx cdk deploy scrappr-storage-pr-${{ github.event.pull_request.number }} scrappr-api-pr-${{ github.event.pull_request.number }} \
+            --require-approval never \
+            -c env=pr-${{ github.event.pull_request.number }} \
+            --outputs-file /tmp/cdk-api-outputs.json 2>&1 | tail -50
+          API_URL=$(node -e "const o=require('/tmp/cdk-api-outputs.json'); console.log(o['scrappr-api-pr-${{ github.event.pull_request.number }}'].ApiEndpoint)")
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+
+      - name: Build UI with preview API
+        run: yarn workspace @scrappr/ui build
+        env:
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+          VITE_COGNITO_DOMAIN: ${{ secrets.VITE_COGNITO_DOMAIN }}
+          VITE_API_URL: ${{ steps.api.outputs.api_url }}
+
+      - name: Deploy UI stack
         id: cdk
         run: |
-          OUTPUT=$(yarn workspace @scrappr/ui build && cd packages/infra && npx cdk deploy scrappr-ui-pr-${{ github.event.pull_request.number }} --require-approval never -c env=pr-${{ github.event.pull_request.number }} --outputs-file /tmp/cdk-outputs.json 2>&1)
-          echo "$OUTPUT"
+          cd packages/infra
+          npx cdk deploy scrappr-ui-pr-${{ github.event.pull_request.number }} \
+            --require-approval never \
+            -c env=pr-${{ github.event.pull_request.number }} \
+            --outputs-file /tmp/cdk-outputs.json 2>&1 | tail -20
           PREVIEW_URL=$(node -e "const o=require('/tmp/cdk-outputs.json'); const stack=Object.keys(o)[0]; console.log(o[stack].CloudFrontUrl)")
           echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+
+      - name: Add preview URL to Cognito callback URLs
+        run: |
+          PREVIEW_URL="${{ steps.cdk.outputs.preview_url }}"
+          CLIENT_CONFIG=$(aws cognito-idp describe-user-pool-client \
+            --user-pool-id "$VITE_USER_POOL_ID" \
+            --client-id "$VITE_USER_POOL_CLIENT_ID" \
+            --query 'UserPoolClient' --output json)
+          CALLBACK_URLS=$(echo "$CLIENT_CONFIG" | node -e "
+            const c = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const urls = c.CallbackURLs || [];
+            const cb = '${PREVIEW_URL}/auth/callback';
+            if (!urls.includes(cb)) urls.push(cb);
+            console.log(JSON.stringify(urls));
+          ")
+          LOGOUT_URLS=$(echo "$CLIENT_CONFIG" | node -e "
+            const c = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const urls = c.LogoutURLs || [];
+            const lo = '${PREVIEW_URL}/auth/sign-out';
+            if (!urls.includes(lo)) urls.push(lo);
+            console.log(JSON.stringify(urls));
+          ")
+          aws cognito-idp update-user-pool-client \
+            --user-pool-id "$VITE_USER_POOL_ID" \
+            --client-id "$VITE_USER_POOL_CLIENT_ID" \
+            --callback-urls "$CALLBACK_URLS" \
+            --logout-urls "$LOGOUT_URLS" \
+            --supported-identity-providers COGNITO Google \
+            --allowed-o-auth-flows code \
+            --allowed-o-auth-scopes openid email profile \
+            --allowed-o-auth-flows-user-pool-client \
+            --explicit-auth-flows ALLOW_USER_PASSWORD_AUTH ALLOW_USER_SRP_AUTH ALLOW_REFRESH_TOKEN_AUTH \
+            > /dev/null
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
 
       - name: Comment preview URL on PR
         uses: actions/github-script@v7
@@ -72,3 +144,38 @@ jobs:
                 body,
               });
             }
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: deploy-preview
+    if: needs.deploy-preview.outputs.preview_url != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/e2e
+
+      - name: Run E2E tests against preview
+        run: yarn workspace @scrappr/e2e test
+        env:
+          BASE_URL: ${{ needs.deploy-preview.outputs.preview_url }}
+          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
+          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_COGNITO_DOMAIN: ${{ secrets.VITE_COGNITO_DOMAIN }}
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: packages/e2e/test-results/
+          retention-days: 7

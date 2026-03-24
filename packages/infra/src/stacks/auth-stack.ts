@@ -75,14 +75,25 @@ export class AuthStack extends cdk.Stack {
           "scrappr://auth/callback",
           "exp://127.0.0.1:8081/--/auth/callback",
           "http://localhost:8081/auth/callback",
+          "http://localhost:5173/auth/callback",
+          "https://scrappr.trevor.fail/auth/callback",
         ],
         logoutUrls: [
           "scrappr://auth/sign-out",
           "exp://127.0.0.1:8081/--/auth/sign-out",
           "http://localhost:8081/auth/sign-out",
+          "http://localhost:5173/auth/sign-out",
+          "https://scrappr.trevor.fail/auth/sign-out",
         ],
       },
-      supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.GOOGLE],
+      authFlows: {
+        userPassword: true,
+        userSrp: true,
+      },
+      supportedIdentityProviders: [
+        cognito.UserPoolClientIdentityProvider.COGNITO,
+        cognito.UserPoolClientIdentityProvider.GOOGLE,
+      ],
     });
 
     // Ensure Google provider is created before the client references it

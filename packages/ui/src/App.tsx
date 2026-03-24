@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Header } from "./components/Header";
+import { AuthCallback } from "./pages/AuthCallback";
 import { LandingPage } from "./pages/LandingPage";
 import { ScrappeeDashboard } from "./pages/ScrappeeDashboard";
 import { ScrapprDashboard } from "./pages/ScrapprDashboard";
@@ -14,6 +15,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/scrappee" element={<ScrappeeDashboard />} />
             <Route path="/scrappr" element={<ScrapprDashboard />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
           </Routes>
         </main>
       </div>
