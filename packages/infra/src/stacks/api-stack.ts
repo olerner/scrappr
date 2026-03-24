@@ -14,15 +14,7 @@ import * as sns from "aws-cdk-lib/aws-sns";
 import * as subs from "aws-cdk-lib/aws-sns-subscriptions";
 import type { Construct } from "constructs";
 
-import { listingsTable as listingsTableSchema } from "../schemas/listings-table.mjs";
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const DDB_TYPE_MAP: Record<string, dynamodb.AttributeType> = {
-  S: dynamodb.AttributeType.STRING,
-  N: dynamodb.AttributeType.NUMBER,
-  B: dynamodb.AttributeType.BINARY,
-};
 
 interface ApiStackProps extends cdk.StackProps {
   stageName: string;
@@ -106,14 +98,8 @@ export class ApiStack extends cdk.Stack {
 
     const listingsTable = new dynamodb.Table(this, "ListingsTable", {
       tableName: `scrappr-listings-${stageName}`,
-      partitionKey: {
-        name: listingsTableSchema.partitionKey.name,
-        type: DDB_TYPE_MAP[listingsTableSchema.partitionKey.type],
-      },
-      sortKey: {
-        name: listingsTableSchema.sortKey.name,
-        type: DDB_TYPE_MAP[listingsTableSchema.sortKey.type],
-      },
+      partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "listingId", type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: stageName === "prod" ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });

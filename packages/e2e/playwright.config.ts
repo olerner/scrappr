@@ -17,7 +17,7 @@ export default defineConfig({
     ? [
         {
           command: "yarn api",
-          port: 3001,
+          port: 3000,
           cwd: "../..",
           reuseExistingServer: true,
           timeout: 30_000,

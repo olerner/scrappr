@@ -27,10 +27,12 @@ const awsEnv: cdk.Environment = {
 };
 
 const isPreview = env.startsWith("pr-");
+const isLocalDev = env.startsWith("localdev-");
+const sharesDevAuth = isPreview || isLocalDev;
 
-// Auth stack — only deploy for dev/production (previews share dev Cognito)
+// Auth stack — only deploy for dev/production (previews and localdev share dev Cognito)
 let authStack: AuthStack | undefined;
-if (!isPreview) {
+if (!sharesDevAuth) {
   authStack = new AuthStack(app, `scrappr-auth-${env}`, {
     env: awsEnv,
     stageName: env,
@@ -45,9 +47,9 @@ const storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
   stageName: env,
 });
 
-// API stack — deploy for all environments (previews use dev Cognito)
-const userPoolId = isPreview ? process.env.VITE_USER_POOL_ID! : authStack!.userPool.userPoolId;
-const userPoolClientId = isPreview
+// API stack — deploy for all environments (previews and localdev use dev Cognito)
+const userPoolId = sharesDevAuth ? process.env.VITE_USER_POOL_ID! : authStack!.userPool.userPoolId;
+const userPoolClientId = sharesDevAuth
   ? process.env.VITE_USER_POOL_CLIENT_ID!
   : authStack!.userPoolClient.userPoolClientId;
 
@@ -59,15 +61,17 @@ new ApiStack(app, `scrappr-api-${env}`, {
   photoBucket: storageStack.photoBucket,
 });
 
-// UI stack — S3 + CloudFront + optional custom domain
-new UiStack(app, `scrappr-ui-${env}`, {
-  env: awsEnv,
-  envName: env,
-  ...(env === "dev"
-    ? {
-        domainName: "scrappr.trevor.fail",
-      }
-    : {}),
-});
+// UI stack — skip for localdev (runs locally), deploy for everything else
+if (!isLocalDev) {
+  new UiStack(app, `scrappr-ui-${env}`, {
+    env: awsEnv,
+    envName: env,
+    ...(env === "dev"
+      ? {
+          domainName: "scrappr.trevor.fail",
+        }
+      : {}),
+  });
+}
 
 app.synth();
