@@ -2,6 +2,12 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Scrappr local dev API (SAM)
 
+Parameters:
+  StageName:
+    Type: String
+  AwsAccountId:
+    Type: String
+
 Globals:
   Function:
     Runtime: nodejs20.x
@@ -17,7 +23,7 @@ Resources:
       CodeUri: packages/infra/src/lambdas/
       Environment:
         Variables:
-          PHOTO_BUCKET: scrappr-photos-localdev-trevor-404442501817
+          PHOTO_BUCKET: !Sub "scrappr-photos-${StageName}-${AwsAccountId}"
       Events:
         Api:
           Type: HttpApi
@@ -33,7 +39,7 @@ Resources:
       CodeUri: packages/infra/src/lambdas/
       Environment:
         Variables:
-          LISTINGS_TABLE: scrappr-listings-localdev-trevor
+          LISTINGS_TABLE: !Sub "scrappr-listings-${StageName}"
       Events:
         Api:
           Type: HttpApi
@@ -49,7 +55,7 @@ Resources:
       CodeUri: packages/infra/src/lambdas/
       Environment:
         Variables:
-          LISTINGS_TABLE: scrappr-listings-localdev-trevor
+          LISTINGS_TABLE: !Sub "scrappr-listings-${StageName}"
       Events:
         Api:
           Type: HttpApi
