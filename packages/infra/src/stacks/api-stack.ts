@@ -26,10 +26,71 @@ interface ApiStackProps extends cdk.StackProps {
 export class ApiStack extends cdk.Stack {
   public readonly apiUrl: string;
 
+  private readonly alertTopic: sns.Topic;
+  private readonly stageName: string;
+  private readonly lambdasDir: string;
+
+  /** Create a Lambda with alarms automatically attached. All Lambdas should use this. */
+  private createLambda(
+    id: string,
+    props: Omit<lambda.FunctionProps, "runtime" | "code">,
+  ): lambda.Function {
+    const fn = new lambda.Function(this, `${id}Fn`, {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset(this.lambdasDir),
+      timeout: cdk.Duration.seconds(10),
+      ...props,
+    });
+
+    // Alarm on Lambda invocation errors (crashes, timeouts, OOM)
+    const invocationAlarm = fn
+      .metricErrors({ period: cdk.Duration.minutes(5) })
+      .createAlarm(this, `${id}ErrorAlarm`, {
+        alarmName: `scrappr-${id}-errors-${this.stageName}`,
+        threshold: 1,
+        evaluationPeriods: 1,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+    invocationAlarm.addAlarmAction(new cw_actions.SnsAction(this.alertTopic));
+
+    // Alarm on application-level errors (caught 500s logged as "level":"ERROR")
+    const metricFilter = new logs.MetricFilter(this, `${id}AppErrorFilter`, {
+      logGroup: fn.logGroup,
+      filterPattern: logs.FilterPattern.literal('"level":"ERROR"'),
+      metricNamespace: `Scrappr/${this.stageName}`,
+      metricName: `${id}AppErrors`,
+      metricValue: "1",
+    });
+
+    const appErrorAlarm = new cloudwatch.Alarm(this, `${id}AppErrorAlarm`, {
+      alarmName: `scrappr-${id}-app-errors-${this.stageName}`,
+      metric: metricFilter.metric({ period: cdk.Duration.minutes(5), statistic: "Sum" }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    appErrorAlarm.addAlarmAction(new cw_actions.SnsAction(this.alertTopic));
+
+    return fn;
+  }
+
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
     const { stageName, userPoolId, userPoolClientId, photoBucket } = props;
+    this.stageName = stageName;
+    this.lambdasDir = path.join(__dirname, "../lambdas");
+    const isPreview = stageName.startsWith("pr-");
+
+    // ── SNS Alert Topic ───────────────────────────────────────────
+
+    this.alertTopic = new sns.Topic(this, "ErrorAlertTopic", {
+      topicName: `scrappr-errors-${stageName}`,
+    });
+    if (!isPreview) {
+      this.alertTopic.addSubscription(new subs.EmailSubscription("trevbot@trevor.fail"));
+      this.alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
+    }
 
     // ── DynamoDB Table ──────────────────────────────────────────────
 
@@ -43,40 +104,27 @@ export class ApiStack extends cdk.Stack {
 
     // ── Lambda Functions ────────────────────────────────────────────
 
-    const lambdasDir = path.join(__dirname, "../lambdas");
-
-    const presignFn = new lambda.Function(this, "PresignFn", {
-      runtime: lambda.Runtime.NODEJS_20_X,
+    const presignFn = this.createLambda("Presign", {
       handler: "presign.handler",
-      code: lambda.Code.fromAsset(lambdasDir),
-      environment: {
-        PHOTO_BUCKET: photoBucket.bucketName,
-      },
-      timeout: cdk.Duration.seconds(10),
+      environment: { PHOTO_BUCKET: photoBucket.bucketName },
     });
     photoBucket.grantPut(presignFn);
 
-    const createListingFn = new lambda.Function(this, "CreateListingFn", {
-      runtime: lambda.Runtime.NODEJS_20_X,
+    const createListingFn = this.createLambda("CreateListing", {
       handler: "create-listing.handler",
-      code: lambda.Code.fromAsset(lambdasDir),
-      environment: {
-        LISTINGS_TABLE: listingsTable.tableName,
-      },
-      timeout: cdk.Duration.seconds(10),
+      environment: { LISTINGS_TABLE: listingsTable.tableName },
     });
     listingsTable.grantWriteData(createListingFn);
 
-    const getListingsFn = new lambda.Function(this, "GetListingsFn", {
-      runtime: lambda.Runtime.NODEJS_20_X,
+    const getListingsFn = this.createLambda("GetListings", {
       handler: "get-listings.handler",
-      code: lambda.Code.fromAsset(lambdasDir),
-      environment: {
-        LISTINGS_TABLE: listingsTable.tableName,
-      },
-      timeout: cdk.Duration.seconds(10),
+      environment: { LISTINGS_TABLE: listingsTable.tableName },
     });
     listingsTable.grantReadData(getListingsFn);
+
+    const reportErrorFn = this.createLambda("ReportError", {
+      handler: "report-error.handler",
+    });
 
     // ── HTTP API Gateway ────────────────────────────────────────────
 
@@ -121,15 +169,6 @@ export class ApiStack extends cdk.Stack {
       authorizer: jwtAuthorizer,
     });
 
-    // ── Frontend Error Reporting Lambda ──────────────────────────────
-
-    const reportErrorFn = new lambda.Function(this, "ReportErrorFn", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "report-error.handler",
-      code: lambda.Code.fromAsset(lambdasDir),
-      timeout: cdk.Duration.seconds(10),
-    });
-
     httpApi.addRoutes({
       path: "/errors",
       methods: [apigatewayv2.HttpMethod.POST],
@@ -138,59 +177,6 @@ export class ApiStack extends cdk.Stack {
     });
 
     this.apiUrl = httpApi.apiEndpoint;
-
-    // ── SNS Alert Topic ───────────────────────────────────────────
-
-    const isPreview = stageName.startsWith("pr-");
-
-    const alertTopic = new sns.Topic(this, "ErrorAlertTopic", {
-      topicName: `scrappr-errors-${stageName}`,
-    });
-    if (!isPreview) {
-      alertTopic.addSubscription(new subs.EmailSubscription("trevbot@trevor.fail"));
-      alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
-    }
-
-    // ── CloudWatch Alarms ─────────────────────────────────────────
-
-    const allFns = [
-      { id: "Presign", fn: presignFn },
-      { id: "CreateListing", fn: createListingFn },
-      { id: "GetListings", fn: getListingsFn },
-      { id: "ReportError", fn: reportErrorFn },
-    ];
-
-    for (const { id, fn } of allFns) {
-      // Alarm on Lambda invocation errors (crashes, timeouts, OOM)
-      const invocationAlarm = fn
-        .metricErrors({ period: cdk.Duration.minutes(5) })
-        .createAlarm(this, `${id}ErrorAlarm`, {
-          alarmName: `scrappr-${id}-errors-${stageName}`,
-          threshold: 1,
-          evaluationPeriods: 1,
-          treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-        });
-      invocationAlarm.addAlarmAction(new cw_actions.SnsAction(alertTopic));
-
-      // Alarm on application-level errors (caught 500s logged as "level":"ERROR")
-      const logGroup = fn.logGroup;
-      const metricFilter = new logs.MetricFilter(this, `${id}AppErrorFilter`, {
-        logGroup,
-        filterPattern: logs.FilterPattern.literal('"level":"ERROR"'),
-        metricNamespace: `Scrappr/${stageName}`,
-        metricName: `${id}AppErrors`,
-        metricValue: "1",
-      });
-
-      const appErrorAlarm = new cloudwatch.Alarm(this, `${id}AppErrorAlarm`, {
-        alarmName: `scrappr-${id}-app-errors-${stageName}`,
-        metric: metricFilter.metric({ period: cdk.Duration.minutes(5), statistic: "Sum" }),
-        threshold: 1,
-        evaluationPeriods: 1,
-        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-      });
-      appErrorAlarm.addAlarmAction(new cw_actions.SnsAction(alertTopic));
-    }
 
     // ── Outputs ─────────────────────────────────────────────────────
 

@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   AWS_REGION: us-east-1
 
@@ -36,6 +40,20 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
+
+      - name: Clean up failed stacks
+        run: |
+          for STACK in scrappr-storage-pr-${{ github.event.pull_request.number }} scrappr-api-pr-${{ github.event.pull_request.number }} scrappr-ui-pr-${{ github.event.pull_request.number }}; do
+            STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+            if echo "$STATUS" | grep -qE 'ROLLBACK_COMPLETE|DELETE_FAILED|CREATE_FAILED'; then
+              echo "Deleting $STACK (status: $STATUS)"
+              aws cloudformation delete-stack --stack-name "$STACK"
+              aws cloudformation wait stack-delete-complete --stack-name "$STACK"
+            fi
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Deploy API + Storage stacks
         id: api
