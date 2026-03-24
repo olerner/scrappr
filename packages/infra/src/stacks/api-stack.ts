@@ -141,11 +141,15 @@ export class ApiStack extends cdk.Stack {
 
     // ── SNS Alert Topic ───────────────────────────────────────────
 
+    const isPreview = stageName.startsWith("pr-");
+
     const alertTopic = new sns.Topic(this, "ErrorAlertTopic", {
       topicName: `scrappr-errors-${stageName}`,
     });
-    alertTopic.addSubscription(new subs.EmailSubscription("trevbot@trevor.fail"));
-    alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
+    if (!isPreview) {
+      alertTopic.addSubscription(new subs.EmailSubscription("trevbot@trevor.fail"));
+      alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
+    }
 
     // ── CloudWatch Alarms ─────────────────────────────────────────
 
