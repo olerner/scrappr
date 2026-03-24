@@ -6,7 +6,10 @@ const userPool = new CognitoUserPool({
   ClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID,
 });
 
-const COGNITO_DOMAIN = import.meta.env.VITE_COGNITO_DOMAIN;
+const COGNITO_DOMAIN_RAW = import.meta.env.VITE_COGNITO_DOMAIN;
+const COGNITO_DOMAIN = COGNITO_DOMAIN_RAW?.startsWith("https://")
+  ? COGNITO_DOMAIN_RAW
+  : `https://${COGNITO_DOMAIN_RAW}`;
 const CLIENT_ID = import.meta.env.VITE_USER_POOL_CLIENT_ID;
 
 // Token storage keys

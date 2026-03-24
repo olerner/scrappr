@@ -1,12 +1,14 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
+import { createLogger } from "./logger.mjs";
 
 const s3 = new S3Client({});
 const BUCKET = process.env.PHOTO_BUCKET;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 
 export const handler = async (event) => {
+  const log = createLogger(event);
   try {
     const body = JSON.parse(event.body || "{}");
     const contentType = body.contentType;
@@ -37,7 +39,7 @@ export const handler = async (event) => {
       body: JSON.stringify({ uploadUrl, photoUrl, key }),
     };
   } catch (err) {
-    console.error("presign error:", err);
+    log.error("presign failed", err);
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },

@@ -1,12 +1,14 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "node:crypto";
+import { createLogger } from "./logger.mjs";
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.LISTINGS_TABLE;
 
 export const handler = async (event) => {
+  const log = createLogger(event);
   try {
     const claims = event.requestContext?.authorizer?.jwt?.claims;
     const userId = claims?.sub;
@@ -53,7 +55,7 @@ export const handler = async (event) => {
       body: JSON.stringify(item),
     };
   } catch (err) {
-    console.error("create-listing error:", err);
+    log.error("create-listing failed", err);
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
