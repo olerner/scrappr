@@ -1,6 +1,6 @@
 version = 0.1
 
 [default.local_start_api.parameters]
-parameter_overrides = "StageName=localdev-YOURNAME AwsAccountId=YOUR_AWS_ACCOUNT_ID"
+parameter_overrides = "Env=localdev-YOURNAME AwsAccountId=YOUR_AWS_ACCOUNT_ID"
 warm_containers = "EAGER"
 skip_pull_image = true

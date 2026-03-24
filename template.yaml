@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: Scrappr local dev API (SAM)
 
 Parameters:
-  StageName:
+  Env:
     Type: String
   AwsAccountId:
     Type: String
@@ -23,7 +23,7 @@ Resources:
       CodeUri: packages/infra/src/lambdas/
       Environment:
         Variables:
-          PHOTO_BUCKET: !Sub "scrappr-photos-${StageName}-${AwsAccountId}"
+          PHOTO_BUCKET: !Sub "scrappr-photos-${Env}-${AwsAccountId}"
       Events:
         Api:
           Type: HttpApi
@@ -39,7 +39,7 @@ Resources:
       CodeUri: packages/infra/src/lambdas/
       Environment:
         Variables:
-          LISTINGS_TABLE: !Sub "scrappr-listings-${StageName}"
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
       Events:
         Api:
           Type: HttpApi
@@ -55,7 +55,7 @@ Resources:
       CodeUri: packages/infra/src/lambdas/
       Environment:
         Variables:
-          LISTINGS_TABLE: !Sub "scrappr-listings-${StageName}"
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
       Events:
         Api:
           Type: HttpApi
