@@ -56,7 +56,9 @@ export class ApiStack extends cdk.Stack {
     // Alarm on application-level errors (caught 500s logged as "level":"ERROR")
     const metricFilter = new logs.MetricFilter(this, `${id}AppErrorFilter`, {
       logGroup: fn.logGroup,
-      filterPattern: logs.FilterPattern.literal('"level":"ERROR"'),
+      filterPattern: logs.FilterPattern.all(
+        logs.FilterPattern.stringValue("$.level", "=", "ERROR"),
+      ),
       metricNamespace: `Scrappr/${this.stageName}`,
       metricName: `${id}AppErrors`,
       metricValue: "1",
