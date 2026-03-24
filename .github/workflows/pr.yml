@@ -45,7 +45,15 @@ jobs:
         run: |
           for STACK in scrappr-storage-pr-${{ github.event.pull_request.number }} scrappr-api-pr-${{ github.event.pull_request.number }} scrappr-ui-pr-${{ github.event.pull_request.number }}; do
             STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
-            if echo "$STATUS" | grep -qE 'ROLLBACK_COMPLETE|DELETE_FAILED|CREATE_FAILED'; then
+            if echo "$STATUS" | grep -qE '_IN_PROGRESS'; then
+              echo "Waiting for $STACK to finish (status: $STATUS)..."
+              aws cloudformation wait stack-create-complete --stack-name "$STACK" 2>/dev/null \
+                || aws cloudformation wait stack-update-complete --stack-name "$STACK" 2>/dev/null \
+                || aws cloudformation wait stack-delete-complete --stack-name "$STACK" 2>/dev/null \
+                || true
+              STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+            fi
+            if echo "$STATUS" | grep -qE 'ROLLBACK_COMPLETE|DELETE_FAILED|CREATE_FAILED|UPDATE_ROLLBACK_COMPLETE'; then
               echo "Deleting $STACK (status: $STATUS)"
               aws cloudformation delete-stack --stack-name "$STACK"
               aws cloudformation wait stack-delete-complete --stack-name "$STACK"
