@@ -113,7 +113,7 @@ test.describe("Listing Creation Flow", () => {
     await fileInput.setInputFiles(testPhotoPath);
 
     // 6. Verify photo preview appears (upload button is replaced by preview image)
-    await expect(page.getByAlt("Preview")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByAltText("Preview")).toBeVisible({ timeout: 5_000 });
     await expect(uploadBtn).not.toBeVisible();
 
     // 7. Remove the photo and verify upload zone returns
