@@ -36,8 +36,34 @@ test.describe("Listing Creation Flow", () => {
     // 8. Fill description
     await page.getByTestId("description-input").fill("Test copper pipe, about 10 lbs");
 
-    // 9. Fill address
-    await page.getByTestId("address-input").fill("123 Test St, Minneapolis, MN");
+    // 9. Fill address via autocomplete
+    // Mock Photon API to avoid flakiness in CI
+    await page.route("**/photon.komoot.io/**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: [-93.265, 44.9778],
+              },
+              properties: {
+                housenumber: "123",
+                street: "Test St",
+                city: "Minneapolis",
+                state: "Minnesota",
+              },
+            },
+          ],
+        }),
+      });
+    });
+    await page.getByTestId("address-input").fill("Minneapolis");
+    await page.getByTestId("address-suggestion").first().click({ timeout: 10_000 });
 
     // 10. Submit
     await page.getByTestId("submit-listing-btn").click();
