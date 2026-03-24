@@ -66,7 +66,12 @@ export function useAuth(): AuthState {
           if (!err && session?.isValid()) {
             setIsAuthenticated(true);
             setAccessToken(session.getAccessToken().getJwtToken());
-            setEmail(currentUser.getUsername());
+            currentUser.getUserAttributes((_attrErr, attributes) => {
+              const emailAttr = attributes?.find((a) => a.Name === "email");
+              setEmail(emailAttr?.Value || currentUser.getUsername());
+              setIsLoading(false);
+            });
+            return;
           }
           setIsLoading(false);
         },
