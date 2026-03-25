@@ -39,6 +39,9 @@ test.describe("Listing Creation Flow", () => {
     // 9. Fill address
     await page.getByTestId("address-input").fill("123 Test St, Minneapolis, MN");
 
+    // 9b. Fill zip code (must be in service area)
+    await page.getByTestId("zip-input").fill("55426");
+
     // 10. Submit
     await page.getByTestId("submit-listing-btn").click();
 
