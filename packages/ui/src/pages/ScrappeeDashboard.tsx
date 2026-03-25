@@ -5,17 +5,18 @@ import {
   Image as ImageIcon,
   Loader2,
   LogOut,
-  MapPin,
   Plus,
   Upload,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createListing, getMyListings, getPresignedUrl, uploadPhoto } from "../api/client";
+import { AddressAutocomplete } from "../components/AddressAutocomplete";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
 import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
 import type { BlockedCategory, Category, Listing } from "../data/types";
+import type { AddressSuggestion } from "../hooks/useAddressAutocomplete";
 import { useAuth } from "../hooks/useAuth";
 
 export function ScrappeeDashboard() {
@@ -351,6 +352,9 @@ function NewListingModal({
   const [address, setAddress] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [zipError, setZipError] = useState<string | null>(null);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [addressSelected, setAddressSelected] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showBlocked, setShowBlocked] = useState<string | null>(null);
@@ -431,9 +435,9 @@ function NewListingModal({
         category: category as string,
         description,
         photoUrl,
-        lat: 44.96 + (Math.random() - 0.5) * 0.05,
-        lng: -93.22 + (Math.random() - 0.5) * 0.1,
-        address: address || "Minneapolis, MN",
+        lat: lat as number,
+        lng: lng as number,
+        address,
         zipCode: zipCode.trim(),
         estimatedValue: catInfo?.payoutLabel || "Varies",
       });
@@ -594,20 +598,15 @@ function NewListingModal({
           {/* Location */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-            <div className="relative">
-              <MapPin
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Enter address or use current location"
-                className="w-full rounded-xl border border-gray-300 pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                data-testid="address-input"
-              />
-            </div>
+            <AddressAutocomplete
+              onSelect={(suggestion: AddressSuggestion) => {
+                setAddress(suggestion.label);
+                setLat(suggestion.lat);
+                setLng(suggestion.lng);
+                setAddressSelected(true);
+              }}
+              warning={!addressSelected && address.length > 0}
+            />
           </div>
 
           {/* Zip Code */}

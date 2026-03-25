@@ -14,23 +14,30 @@ try {
       process.env[match[1]] = match[2];
     }
   }
-} catch {
-  // .env not found — env vars must be set externally (CI)
+} catch (err: unknown) {
+  const e = err as NodeJS.ErrnoException;
+  if (e?.code !== "ENOENT") {
+    console.warn(`Warning: Failed to read .env file: ${e?.message}`);
+  }
 }
 
 const app = new cdk.App();
 const env = app.node.tryGetContext("env") || "dev";
 
 const awsEnv: cdk.Environment = {
-  account: process.env.CDK_DEFAULT_ACCOUNT,
+  // Use undefined (not empty string) so CDK falls back to the Aws.ACCOUNT_ID token
+  // when CDK_DEFAULT_ACCOUNT is unset or empty (e.g. fork PR workflows without secrets).
+  account: process.env.CDK_DEFAULT_ACCOUNT || undefined,
   region: "us-east-1",
 };
 
 const isPreview = env.startsWith("pr-");
+const isLocalDev = env.startsWith("localdev-");
+const sharesDevAuth = isPreview || isLocalDev;
 
-// Auth stack — only deploy for dev/production (previews share dev Cognito)
+// Auth stack — only deploy for dev/production (previews and localdev share dev Cognito)
 let authStack: AuthStack | undefined;
-if (!isPreview) {
+if (!sharesDevAuth) {
   authStack = new AuthStack(app, `scrappr-auth-${env}`, {
     env: awsEnv,
     stageName: env,
@@ -45,9 +52,14 @@ const storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
   stageName: env,
 });
 
-// API stack — deploy for all environments (previews use dev Cognito)
-const userPoolId = isPreview ? process.env.VITE_USER_POOL_ID! : authStack!.userPool.userPoolId;
-const userPoolClientId = isPreview
+// API stack — deploy for all environments (previews and localdev use dev Cognito)
+if (sharesDevAuth && (!process.env.VITE_USER_POOL_ID || !process.env.VITE_USER_POOL_CLIENT_ID)) {
+  throw new Error(
+    "VITE_USER_POOL_ID and VITE_USER_POOL_CLIENT_ID must be set when deploying preview/localdev stacks. See CLAUDE.md for setup instructions.",
+  );
+}
+const userPoolId = sharesDevAuth ? process.env.VITE_USER_POOL_ID! : authStack!.userPool.userPoolId;
+const userPoolClientId = sharesDevAuth
   ? process.env.VITE_USER_POOL_CLIENT_ID!
   : authStack!.userPoolClient.userPoolClientId;
 
@@ -59,15 +71,17 @@ new ApiStack(app, `scrappr-api-${env}`, {
   photoBucket: storageStack.photoBucket,
 });
 
-// UI stack — S3 + CloudFront + optional custom domain
-new UiStack(app, `scrappr-ui-${env}`, {
-  env: awsEnv,
-  envName: env,
-  ...(env === "dev"
-    ? {
-        domainName: "scrappr.trevor.fail",
-      }
-    : {}),
-});
+// UI stack — skip for localdev (runs locally), deploy for everything else
+if (!isLocalDev) {
+  new UiStack(app, `scrappr-ui-${env}`, {
+    env: awsEnv,
+    envName: env,
+    ...(env === "dev"
+      ? {
+          domainName: "scrappr.trevor.fail",
+        }
+      : {}),
+  });
+}
 
 app.synth();

@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Scrappr local dev API (SAM)
+
+Parameters:
+  Env:
+    Type: String
+    AllowedPattern: "^localdev-.+$|^dev$|^pr-.+$"
+    ConstraintDescription: "Must be 'dev', 'pr-{number}', or 'localdev-{yourname}'. See CLAUDE.md for setup."
+  AwsAccountId:
+    Type: String
+    AllowedPattern: "^[0-9]{12}$"
+    ConstraintDescription: "Must be a 12-digit AWS account ID."
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    Architectures:
+      - x86_64
+
+Resources:
+  PresignFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: presign.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          PHOTO_BUCKET: !Sub "scrappr-photos-${Env}-${AwsAccountId}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /photos/presign
+            Method: POST
+            ApiId: !Ref HttpApi
+
+  CreateListingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: create-listing.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /listings
+            Method: POST
+            ApiId: !Ref HttpApi
+
+  GetListingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-listings.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /listings
+            Method: GET
+            ApiId: !Ref HttpApi
+
+  ReportErrorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: report-error.handler
+      CodeUri: packages/infra/src/lambdas/
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /errors
+            Method: POST
+            ApiId: !Ref HttpApi
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - "http://localhost:5173"
+          - "http://localhost:4173"
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        MaxAge: 3600

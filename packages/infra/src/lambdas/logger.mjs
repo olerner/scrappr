@@ -1,8 +1,15 @@
+import { getUserId } from "./auth.mjs";
+
 export function createLogger(event) {
   const requestId = event.requestContext?.requestId || "unknown";
   const path = event.rawPath || event.requestContext?.http?.path || "unknown";
   const method = event.requestContext?.http?.method || "unknown";
-  const userId = event.requestContext?.authorizer?.jwt?.claims?.sub || "anonymous";
+  let userId = "unknown";
+  try {
+    userId = getUserId(event) || "unknown";
+  } catch {
+    userId = "unknown";
+  }
   const functionName = process.env.AWS_LAMBDA_FUNCTION_NAME || "unknown";
 
   const base = { functionName, requestId, path, method, userId };

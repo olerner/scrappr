@@ -36,8 +36,42 @@ test.describe("Listing Creation Flow", () => {
     // 8. Fill description
     await page.getByTestId("description-input").fill("Test copper pipe, about 10 lbs");
 
-    // 9. Fill address
-    await page.getByTestId("address-input").fill("123 Test St, Minneapolis, MN");
+    // 9. Fill address via autocomplete
+    // Mock Google Places Autocomplete API
+    await page.route("**/places.googleapis.com/v1/places:autocomplete**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          suggestions: [
+            {
+              placePrediction: {
+                text: { text: "123 Test St, Minneapolis, MN, USA" },
+                placeId: "ChIJTestPlace123",
+              },
+            },
+          ],
+        }),
+      });
+    });
+
+    // Mock Google Places Details API
+    await page.route("**/places.googleapis.com/v1/places/ChIJTestPlace123**", (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          location: {
+            latitude: 44.9778,
+            longitude: -93.265,
+          },
+          formattedAddress: "123 Test St, Minneapolis, MN 55401, USA",
+        }),
+      });
+    });
+
+    await page.getByTestId("address-input").fill("Minneapolis");
+    await page.getByTestId("address-suggestion").first().click({ timeout: 10_000 });
 
     // 9b. Fill zip code (must be in service area)
     await page.getByTestId("zip-input").fill("55426");
