@@ -44,6 +44,7 @@ export interface CreateListingPayload {
   lat: number;
   lng: number;
   address: string;
+  zipCode: string;
   estimatedValue: string;
 }
 
