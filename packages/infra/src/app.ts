@@ -14,8 +14,11 @@ try {
       process.env[match[1]] = match[2];
     }
   }
-} catch {
-  // .env not found — env vars must be set externally (CI)
+} catch (err: unknown) {
+  const e = err as NodeJS.ErrnoException;
+  if (e?.code !== "ENOENT") {
+    console.warn(`Warning: Failed to read .env file: ${e?.message}`);
+  }
 }
 
 const app = new cdk.App();
@@ -48,6 +51,11 @@ const storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
 });
 
 // API stack — deploy for all environments (previews and localdev use dev Cognito)
+if (sharesDevAuth && (!process.env.VITE_USER_POOL_ID || !process.env.VITE_USER_POOL_CLIENT_ID)) {
+  throw new Error(
+    "VITE_USER_POOL_ID and VITE_USER_POOL_CLIENT_ID must be set when deploying preview/localdev stacks. See CLAUDE.md for setup instructions.",
+  );
+}
 const userPoolId = sharesDevAuth ? process.env.VITE_USER_POOL_ID! : authStack!.userPool.userPoolId;
 const userPoolClientId = sharesDevAuth
   ? process.env.VITE_USER_POOL_CLIENT_ID!

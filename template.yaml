@@ -5,8 +5,12 @@ Description: Scrappr local dev API (SAM)
 Parameters:
   Env:
     Type: String
+    AllowedPattern: "^localdev-.+$|^dev$|^pr-.+$"
+    ConstraintDescription: "Must be 'dev', 'pr-{number}', or 'localdev-{yourname}'. See CLAUDE.md for setup."
   AwsAccountId:
     Type: String
+    AllowedPattern: "^[0-9]{12}$"
+    ConstraintDescription: "Must be a 12-digit AWS account ID."
 
 Globals:
   Function:
