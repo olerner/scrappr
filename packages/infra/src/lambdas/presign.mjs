@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
+import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
 
 const s3 = new S3Client({});
@@ -10,6 +11,14 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 export const handler = async (event) => {
   const log = createLogger(event);
   try {
+    const userId = getUserId(event);
+    if (!userId) {
+      return {
+        statusCode: 401,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "Unauthorized" }),
+      };
+    }
     const body = JSON.parse(event.body || "{}");
     const contentType = body.contentType;
 

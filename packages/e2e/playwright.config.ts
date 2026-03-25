@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+const isLocal = !process.env.BASE_URL;
+
 export default defineConfig({
   testDir: "./tests",
   timeout: 60_000,
@@ -11,15 +13,24 @@ export default defineConfig({
     headless: true,
     screenshot: "only-on-failure",
   },
-  webServer: process.env.BASE_URL
-    ? undefined
-    : {
-        command: "yarn workspace @scrappr/ui dev",
-        port: 5173,
-        cwd: "../..",
-        reuseExistingServer: true,
-        timeout: 30_000,
-      },
+  webServer: isLocal
+    ? [
+        {
+          command: "yarn api",
+          port: 3000,
+          cwd: "../..",
+          reuseExistingServer: true,
+          timeout: 30_000,
+        },
+        {
+          command: "yarn ui",
+          port: 5173,
+          cwd: "../..",
+          reuseExistingServer: true,
+          timeout: 30_000,
+        },
+      ]
+    : undefined,
   projects: [
     {
       name: "chromium",

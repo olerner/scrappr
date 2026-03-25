@@ -3,6 +3,7 @@ dist
 .env
 .env.*
 !.env.example
+samconfig.toml
 *.local
 
 # CDK

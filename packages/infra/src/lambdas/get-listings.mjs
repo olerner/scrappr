@@ -1,5 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
 
 const client = new DynamoDBClient({});
@@ -9,8 +10,7 @@ const TABLE = process.env.LISTINGS_TABLE;
 export const handler = async (event) => {
   const log = createLogger(event);
   try {
-    const claims = event.requestContext?.authorizer?.jwt?.claims;
-    const userId = claims?.sub;
+    const userId = getUserId(event);
     if (!userId) {
       return {
         statusCode: 401,
