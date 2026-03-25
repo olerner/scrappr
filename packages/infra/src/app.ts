@@ -22,7 +22,9 @@ const app = new cdk.App();
 const env = app.node.tryGetContext("env") || "dev";
 
 const awsEnv: cdk.Environment = {
-  account: process.env.CDK_DEFAULT_ACCOUNT,
+  // Use undefined (not empty string) so CDK falls back to the Aws.ACCOUNT_ID token
+  // when CDK_DEFAULT_ACCOUNT is unset or empty (e.g. fork PR workflows without secrets).
+  account: process.env.CDK_DEFAULT_ACCOUNT || undefined,
   region: "us-east-1",
 };
 
