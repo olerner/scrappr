@@ -34,14 +34,14 @@ test.describe("Listing Creation Flow", () => {
             latitude: 44.9298,
             longitude: -93.3477,
           },
-          formattedAddress: "123 Test St, St Louis Park, MN 55426, USA",
+          formattedAddress: "123 Test St, St. Louis Park, MN 55426, USA",
           addressComponents: [
-            { types: ["street_number"], shortText: "123" },
-            { types: ["route"], shortText: "Test St" },
-            { types: ["locality"], shortText: "St Louis Park" },
-            { types: ["administrative_area_level_1"], shortText: "MN" },
-            { types: ["postal_code"], shortText: "55426" },
-            { types: ["country"], shortText: "US" },
+            { types: ["street_number"], shortText: "123", longText: "123" },
+            { types: ["route"], shortText: "Test St", longText: "Test Street" },
+            { types: ["locality"], shortText: "St. Louis Park", longText: "St. Louis Park" },
+            { types: ["administrative_area_level_1"], shortText: "MN", longText: "Minnesota" },
+            { types: ["postal_code"], shortText: "55426", longText: "55426" },
+            { types: ["country"], shortText: "US", longText: "United States" },
           ],
         }),
       });
@@ -76,52 +76,59 @@ test.describe("Listing Creation Flow", () => {
       }
     });
 
-    // Mock listings API — return empty list, accept creates
+    // Mock listings API — stateful: starts empty, returns created listings after POST
+    const createdListings: Record<string, unknown>[] = [];
     await page.route("**/listings**", (route) => {
       if (route.request().method() === "GET") {
         route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify({ listings: [] }),
+          body: JSON.stringify({ listings: createdListings }),
         });
       } else if (route.request().method() === "POST") {
         const body = route.request().postDataJSON();
+        const listing = {
+          listingId: `test-listing-${createdListings.length + 1}`,
+          category: body?.category || "Copper",
+          description: body?.description || "Test copper pipe, about 10 lbs",
+          photoKey: "test-photo.jpg",
+          photoUrl: "https://example.com/test-photo.jpg",
+          address: "123 Test St, St. Louis Park, MN 55426, USA",
+          lat: 44.9298,
+          lng: -93.3477,
+          zipCode: "55426",
+          status: "available",
+          createdAt: new Date().toISOString(),
+        };
+        createdListings.push(listing);
         route.fulfill({
           status: 201,
           contentType: "application/json",
-          body: JSON.stringify({
-            listingId: "test-listing-1",
-            category: body?.category || "Copper",
-            description: body?.description || "Test copper pipe, about 10 lbs",
-            photoKey: "test-photo.jpg",
-            photoUrl: "https://example.com/test-photo.jpg",
-            address: "123 Test St, St Louis Park, MN 55426, USA",
-            lat: 44.9298,
-            lng: -93.3477,
-            zipCode: "55426",
-            status: "available",
-            createdAt: new Date().toISOString(),
-          }),
+          body: JSON.stringify(listing),
         });
       } else {
         route.continue();
       }
     });
 
-    // Mock S3 pre-signed URL for photo upload
-    await page.route("**/listings/upload-url**", (route) => {
+    // Mock presigned URL for photo upload
+    await page.route("**/photos/presign**", (route) => {
       route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           uploadUrl: "https://example-bucket.s3.amazonaws.com/test-upload",
+          photoUrl: "https://example-cdn.cloudfront.net/photos/test-photo.jpg",
           key: "photos/test-photo.jpg",
         }),
       });
     });
 
-    // Mock S3 upload
+    // Mock S3 upload (PUT to pre-signed URL)
     await page.route("**/s3.amazonaws.com/**", (route) => {
+      route.fulfill({ status: 200 });
+    });
+    await page.route("**/example-bucket.s3.amazonaws.com/**", (route) => {
       route.fulfill({ status: 200 });
     });
 
@@ -156,17 +163,23 @@ test.describe("Listing Creation Flow", () => {
     await page.getByRole("button", { name: "Add a pickup address" }).click();
     await expect(page.getByText("Saved Addresses")).toBeVisible();
 
-    // Type address in autocomplete
+    // Type address in autocomplete and wait for suggestions to appear
     await page.getByTestId("address-input").fill("123 Test St");
-    await page.getByTestId("address-suggestion").first().click({ timeout: 10_000 });
+    await expect(page.getByTestId("address-suggestion").first()).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("address-suggestion").first().click();
 
-    // Save the address
+    // Wait for place details to resolve and Save button to become enabled
+    await expect(page.getByRole("button", { name: "Save" })).toBeEnabled({ timeout: 10_000 });
     await page.getByRole("button", { name: "Save" }).click();
+
+    // Wait for address to be saved (address appears in the list)
+    await expect(page.getByText("123 Test St")).toBeVisible({ timeout: 10_000 });
 
     // Close the address book
     await page.getByRole("button", { name: "Done" }).click();
 
-    // 6. Submit
+    // 6. Submit — wait for button to become enabled (address auto-selected)
+    await expect(page.getByTestId("submit-listing-btn")).toBeEnabled({ timeout: 10_000 });
     await page.getByTestId("submit-listing-btn").click();
 
     // 7. Wait for navigation back to listings
