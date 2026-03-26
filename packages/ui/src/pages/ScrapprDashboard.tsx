@@ -9,7 +9,7 @@ import {
   MapPin,
   Truck,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   browseListings,
@@ -100,7 +100,10 @@ export function ScrapprDashboard() {
   // Available listings
   const [availableRaw, setAvailableRaw] = useState<Listing[]>([]);
   const [loadingAvailable, setLoadingAvailable] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [availableError, setAvailableError] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Claimed listings
   const [claimedListings, setClaimedListings] = useState<Listing[]>([]);
@@ -115,19 +118,33 @@ export function ScrapprDashboard() {
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [unclaimingId, setUnclaimingId] = useState<string | null>(null);
 
-  const fetchAvailable = useCallback(async () => {
-    if (!accessToken) return;
-    setLoadingAvailable(true);
-    setAvailableError(null);
-    try {
-      const data = await browseListings(accessToken);
-      setAvailableRaw((data.listings || []).map(mapApiListing));
-    } catch {
-      setAvailableError("Failed to load listings");
-    } finally {
-      setLoadingAvailable(false);
-    }
-  }, [accessToken]);
+  const fetchAvailable = useCallback(
+    async (cursor?: string) => {
+      if (!accessToken) return;
+      if (cursor) {
+        setLoadingMore(true);
+      } else {
+        setLoadingAvailable(true);
+        setAvailableError(null);
+      }
+      try {
+        const data = await browseListings(accessToken, undefined, cursor);
+        const newListings = (data.listings || []).map(mapApiListing);
+        if (cursor) {
+          setAvailableRaw((prev) => [...prev, ...newListings]);
+        } else {
+          setAvailableRaw(newListings);
+        }
+        setNextCursor(data.nextCursor);
+      } catch {
+        if (!cursor) setAvailableError("Failed to load listings");
+      } finally {
+        setLoadingAvailable(false);
+        setLoadingMore(false);
+      }
+    },
+    [accessToken],
+  );
 
   const fetchClaimed = useCallback(async () => {
     if (!accessToken) return;
@@ -149,6 +166,24 @@ export function ScrapprDashboard() {
   useEffect(() => {
     if (isAuthenticated && accessToken) fetchClaimed();
   }, [isAuthenticated, accessToken, fetchClaimed]);
+
+  // Infinite scroll — load more when sentinel is visible
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || !nextCursor) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && nextCursor && !loadingMore) {
+          fetchAvailable(nextCursor);
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [nextCursor, loadingMore, fetchAvailable]);
 
   const availableListings = useMemo(() => {
     let filtered = availableRaw;
@@ -414,6 +449,14 @@ export function ScrapprDashboard() {
                           error={claimError?.id === listing.id ? claimError.message : null}
                         />
                       ))}
+                    </div>
+                  )}
+                  {/* Infinite scroll sentinel */}
+                  {nextCursor && (
+                    <div ref={loadMoreRef} className="flex justify-center py-8">
+                      {loadingMore && (
+                        <Loader2 className="animate-spin text-emerald-600" size={24} />
+                      )}
                     </div>
                   )}
                 </div>

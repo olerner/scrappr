@@ -156,9 +156,13 @@ export async function deleteAddress(accessToken: string, addressId: string): Pro
 export async function browseListings(
   accessToken: string,
   category?: string,
-): Promise<{ listings: Record<string, unknown>[] }> {
-  const params = category ? `?category=${encodeURIComponent(category)}` : "";
-  const res = await apiRequest(`/listings/available${params}`, accessToken);
+  cursor?: string,
+): Promise<{ listings: Record<string, unknown>[]; nextCursor: string | null }> {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  if (cursor) params.set("cursor", cursor);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const res = await apiRequest(`/listings/available${qs}`, accessToken);
   if (!res.ok) throw new Error("Failed to browse listings");
   return res.json();
 }

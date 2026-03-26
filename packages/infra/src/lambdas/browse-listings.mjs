@@ -21,6 +21,8 @@ export const handler = async (event) => {
     }
 
     const category = event.queryStringParameters?.category;
+    const cursor = event.queryStringParameters?.cursor;
+    const PAGE_SIZE = 20;
 
     const queryParams = {
       TableName: TABLE,
@@ -29,11 +31,20 @@ export const handler = async (event) => {
       ExpressionAttributeNames: { "#status": "status" },
       ExpressionAttributeValues: { ":status": "available" },
       ScanIndexForward: false, // newest first
+      Limit: PAGE_SIZE,
     };
 
     if (category) {
       queryParams.FilterExpression = "category = :cat";
       queryParams.ExpressionAttributeValues[":cat"] = category;
+    }
+
+    if (cursor) {
+      try {
+        queryParams.ExclusiveStartKey = JSON.parse(Buffer.from(cursor, "base64url").toString());
+      } catch {
+        // Invalid cursor, ignore
+      }
     }
 
     const result = await ddb.send(new QueryCommand(queryParams));
@@ -46,10 +57,15 @@ export const handler = async (event) => {
         address: redactAddress(item.address),
       }));
 
+    // Encode next cursor for pagination
+    const nextCursor = result.LastEvaluatedKey
+      ? Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString("base64url")
+      : null;
+
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listings }),
+      body: JSON.stringify({ listings, nextCursor }),
     };
   } catch (err) {
     log.error("browse-listings failed", err);
