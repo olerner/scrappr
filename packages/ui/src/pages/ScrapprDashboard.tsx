@@ -21,9 +21,9 @@ import {
 } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
+import { useAuth } from "../context/AuthContext";
 import { CATEGORIES, getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
-import { useAuth } from "../context/AuthContext";
 import { formatRelativeDate } from "../utils/formatDate";
 
 type SortBy = "value" | "type";

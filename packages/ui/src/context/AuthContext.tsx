@@ -13,12 +13,12 @@
 import { AuthenticationDetails, CognitoUser, CognitoUserPool } from "amazon-cognito-identity-js";
 import {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
 
 const userPool =

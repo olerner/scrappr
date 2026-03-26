@@ -4,9 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { deleteListing, getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
+import { useAuth } from "../context/AuthContext";
 import { getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
-import { useAuth } from "../context/AuthContext";
 import { formatRelativeDate } from "../utils/formatDate";
 
 export function ScrappeeDashboard() {
