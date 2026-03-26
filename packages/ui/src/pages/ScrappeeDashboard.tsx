@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Loader2, LogOut, Plus, Trash2 } from "lucide-react";
+import { Image as ImageIcon, Loader2, LogOut, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteListing, getMyListings } from "../api/client";
@@ -6,7 +6,7 @@ import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
 import { getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthContext } from "../contexts/AuthContext";
 import { formatRelativeDate } from "../utils/formatDate";
 
 export function ScrappeeDashboard() {
@@ -18,7 +18,7 @@ export function ScrappeeDashboard() {
     signIn,
     initiateGoogleSignIn,
     error: authError,
-  } = useAuth();
+  } = useAuthContext();
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);
@@ -359,20 +359,35 @@ function ListingCard({
             <div className="flex items-center gap-2">
               <StatusBadge status={listing.status} />
               {isEditable && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  onBlur={() => setConfirmDelete(false)}
-                  disabled={deleting}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    confirmDelete
-                      ? "bg-red-100 text-red-600 hover:bg-red-200"
-                      : "text-gray-400 hover:text-red-500 hover:bg-red-50"
-                  }`}
-                  title={confirmDelete ? "Click again to confirm" : "Delete listing"}
-                >
-                  {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/list/edit/${listing.id}`);
+                    }}
+                    className="p-1.5 rounded-lg transition-colors text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
+                    aria-label="Edit listing"
+                    title="Edit listing"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    onBlur={() => setConfirmDelete(false)}
+                    disabled={deleting}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      confirmDelete
+                        ? "bg-red-100 text-red-600 hover:bg-red-200"
+                        : "text-gray-400 hover:text-red-500 hover:bg-red-50"
+                    }`}
+                    aria-label={confirmDelete ? "Click again to confirm deletion" : "Delete listing"}
+                    title={confirmDelete ? "Click again to confirm" : "Delete listing"}
+                  >
+                    {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                  </button>
+                </>
               )}
             </div>
           </div>

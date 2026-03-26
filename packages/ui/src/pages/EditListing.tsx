@@ -21,13 +21,13 @@ import {
   type Listing,
 } from "../data/types";
 
-import { useAuth } from "../hooks/useAuth";
+import { useAuthContext } from "../contexts/AuthContext";
 import { useStore } from "../store/useStore";
 
 export function EditListing() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { accessToken, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { accessToken, isAuthenticated, isLoading: authLoading } = useAuthContext();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
 

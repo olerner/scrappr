@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
 import { Header } from "./components/Header";
 import { AuthCallback } from "./pages/AuthCallback";
 import { CreateListing } from "./pages/CreateListing";
@@ -11,20 +12,22 @@ import { SignedOut } from "./pages/SignedOut";
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Header />
-        <main className="flex-1 flex flex-col">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/list" element={<ScrappeeDashboard />} />
-            <Route path="/list/new" element={<CreateListing />} />
-            <Route path="/list/edit/:id" element={<EditListing />} />
-            <Route path="/haul" element={<ScrapprDashboard />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/signed-out" element={<SignedOut />} />
-          </Routes>
-        </main>
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <Header />
+          <main className="flex-1 flex flex-col">
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/list" element={<ScrappeeDashboard />} />
+              <Route path="/list/new" element={<CreateListing />} />
+              <Route path="/list/edit/:id" element={<EditListing />} />
+              <Route path="/haul" element={<ScrapprDashboard />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/signed-out" element={<SignedOut />} />
+            </Routes>
+          </main>
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
