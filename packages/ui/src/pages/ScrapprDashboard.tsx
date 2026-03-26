@@ -448,6 +448,36 @@ export function ScrapprDashboard() {
           </div>
         </div>
       )}
+
+      {/* Sign Out Confirmation */}
+      {showSignOutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowSignOutConfirm(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign out?</h3>
+            <p className="text-sm text-gray-500 mb-5">You're signed in as {email}</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSignOutConfirm(false)}
+                className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={signOut}
+                className="flex-1 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
