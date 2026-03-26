@@ -29,7 +29,7 @@ export function AuthCallback() {
 
     handleAuthCallback(code)
       .then(() => {
-        navigate("/scrappee", { replace: true });
+        navigate("/list", { replace: true });
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Authentication failed");
@@ -43,7 +43,7 @@ export function AuthCallback() {
           <p className="text-red-600 font-medium mb-4">Sign-in failed</p>
           <p className="text-gray-500 text-sm mb-6">{error}</p>
           <Link
-            to="/scrappee"
+            to="/list"
             replace
             className="inline-block px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-all"
           >

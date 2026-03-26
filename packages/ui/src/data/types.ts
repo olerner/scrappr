@@ -1,10 +1,12 @@
 // ── User roles ──────────────────────────────────────────────────────────
 
-export enum UserRole {
-  Scrappee = "scrappee",
-  Scrappr = "scrappr",
-  Admin = "admin",
-}
+export const UserRole = {
+  User: "user",
+  Scrapyard: "scrapyard",
+  Admin: "admin",
+} as const;
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 // ── Categories ──────────────────────────────────────────────────────────
 

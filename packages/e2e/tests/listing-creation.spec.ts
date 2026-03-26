@@ -48,7 +48,7 @@ test.describe("Listing Creation Flow", () => {
     });
 
     // Sign in
-    await page.goto("/scrappee");
+    await page.goto("/list");
     await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
     await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
     await page.getByPlaceholder("••••••••").fill(TEST_PASSWORD);

@@ -1,5 +1,5 @@
 import { ArrowUpDown, DollarSign, Filter, List, Map as MapIcon, MapPin, Truck } from "lucide-react";
-import { useMemo, useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
@@ -213,7 +213,11 @@ export function ScrapprDashboard() {
           <div className={`${mobileView === "map" ? "block" : "hidden"} flex-1`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
               <div className="rounded-2xl overflow-hidden border border-gray-200">
-                <MapView listings={listings} className="min-h-[500px] w-full" visible={mobileView === "map"} />
+                <MapView
+                  listings={listings}
+                  className="min-h-[500px] w-full"
+                  visible={mobileView === "map"}
+                />
               </div>
             </div>
           </div>
