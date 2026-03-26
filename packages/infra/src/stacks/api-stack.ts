@@ -104,6 +104,21 @@ export class ApiStack extends cdk.Stack {
       removalPolicy: stageName === "prod" ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
 
+    const addressesTable = new dynamodb.Table(this, "AddressesTable", {
+      tableName: `scrappr-addresses-${stageName}`,
+      partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "addressId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: stageName === "prod" ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
+    listingsTable.addGlobalSecondaryIndex({
+      indexName: "status-index",
+      partitionKey: { name: "status", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "createdAt", type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // ── Lambda Functions ────────────────────────────────────────────
 
     const presignFn = this.createLambda("Presign", {
@@ -124,11 +139,44 @@ export class ApiStack extends cdk.Stack {
     });
     listingsTable.grantReadData(getListingsFn);
 
+    const browseListingsFn = this.createLambda("BrowseListings", {
+      handler: "browse-listings.handler",
+      environment: {
+        LISTINGS_TABLE: listingsTable.tableName,
+        STATUS_INDEX: "status-index",
+      },
+    });
+    listingsTable.grantReadData(browseListingsFn);
+
     const updateListingFn = this.createLambda("UpdateListing", {
       handler: "update-listing.handler",
       environment: { LISTINGS_TABLE: listingsTable.tableName },
     });
     listingsTable.grantWriteData(updateListingFn);
+
+    const getAddressesFn = this.createLambda("GetAddresses", {
+      handler: "get-addresses.handler",
+      environment: { ADDRESSES_TABLE: addressesTable.tableName },
+    });
+    addressesTable.grantReadData(getAddressesFn);
+
+    const createAddressFn = this.createLambda("CreateAddress", {
+      handler: "create-address.handler",
+      environment: { ADDRESSES_TABLE: addressesTable.tableName },
+    });
+    addressesTable.grantReadWriteData(createAddressFn);
+
+    const updateAddressFn = this.createLambda("UpdateAddress", {
+      handler: "update-address.handler",
+      environment: { ADDRESSES_TABLE: addressesTable.tableName },
+    });
+    addressesTable.grantReadWriteData(updateAddressFn);
+
+    const deleteAddressFn = this.createLambda("DeleteAddress", {
+      handler: "delete-address.handler",
+      environment: { ADDRESSES_TABLE: addressesTable.tableName },
+    });
+    addressesTable.grantReadWriteData(deleteAddressFn);
 
     const reportErrorFn = this.createLambda("ReportError", {
       handler: "report-error.handler",
@@ -150,6 +198,7 @@ export class ApiStack extends cdk.Stack {
           apigatewayv2.CorsHttpMethod.GET,
           apigatewayv2.CorsHttpMethod.POST,
           apigatewayv2.CorsHttpMethod.PATCH,
+          apigatewayv2.CorsHttpMethod.DELETE,
           apigatewayv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ["Content-Type", "Authorization"],
@@ -179,9 +228,44 @@ export class ApiStack extends cdk.Stack {
     });
 
     httpApi.addRoutes({
+      path: "/listings/available",
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration("BrowseListingsInt", browseListingsFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
       path: "/listings/{listingId}",
       methods: [apigatewayv2.HttpMethod.PATCH],
       integration: new integrations.HttpLambdaIntegration("UpdateListingInt", updateListingFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/addresses",
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration("GetAddressesInt", getAddressesFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/addresses",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration("CreateAddressInt", createAddressFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/addresses/{addressId}",
+      methods: [apigatewayv2.HttpMethod.PATCH],
+      integration: new integrations.HttpLambdaIntegration("UpdateAddressInt", updateAddressFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/addresses/{addressId}",
+      methods: [apigatewayv2.HttpMethod.DELETE],
+      integration: new integrations.HttpLambdaIntegration("DeleteAddressInt", deleteAddressFn),
       authorizer: jwtAuthorizer,
     });
 

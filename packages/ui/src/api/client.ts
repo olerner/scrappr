@@ -93,3 +93,13 @@ export async function getMyListings(
   if (!res.ok) throw new Error("Failed to fetch listings");
   return res.json();
 }
+
+export async function browseListings(
+  accessToken: string,
+  category?: string,
+): Promise<{ listings: Record<string, unknown>[] }> {
+  const params = category ? `?category=${encodeURIComponent(category)}` : "";
+  const res = await apiRequest(`/listings/available${params}`, accessToken);
+  if (!res.ok) throw new Error("Failed to browse listings");
+  return res.json();
+}
