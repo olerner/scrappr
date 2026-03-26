@@ -2,11 +2,9 @@ import { Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 export function PhotoUpload({
-  file,
   onFileChange,
   error,
 }: {
-  file: File | null;
   onFileChange: (file: File | null) => void;
   error: boolean;
 }) {
@@ -113,14 +111,13 @@ export function PhotoUpload({
             <span
               className={`text-sm ${dragError ? "text-red-500 font-medium" : isDragOver ? "text-emerald-600" : "text-gray-500"}`}
             >
-              {dragError || (isDragOver ? "Drop your photo here" : "Click or drag to upload a photo")}
+              {dragError ||
+                (isDragOver ? "Drop your photo here" : "Click or drag to upload a photo")}
             </span>
           </button>
         )}
       </div>
-      {error && (
-        <p className="text-red-600 text-sm mt-2">A photo is required to post a listing.</p>
-      )}
+      {error && <p className="text-red-600 text-sm mt-2">A photo is required to post a listing.</p>}
     </div>
   );
 }

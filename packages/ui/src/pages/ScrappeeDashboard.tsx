@@ -11,8 +11,8 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { createListing, getMyListings, getPresignedUrl, uploadPhoto } from "../api/client";
 import { AddressAutocomplete } from "../components/AddressAutocomplete";
-import { PhotoUpload } from "../components/PhotoUpload";
 import { CategoryIcon } from "../components/CategoryIcon";
+import { PhotoUpload } from "../components/PhotoUpload";
 import { StatusBadge } from "../components/StatusBadge";
 import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
 import type { BlockedCategory, Category, Listing } from "../data/types";
@@ -454,7 +454,6 @@ function NewListingModal({
         <div className="px-6 py-5 space-y-6">
           {/* Photo Upload */}
           <PhotoUpload
-            file={photoFile}
             onFileChange={(file) => {
               setPhotoFile(file);
               if (file) setPhotoError(false);
