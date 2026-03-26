@@ -92,6 +92,7 @@ export function ScrapprDashboard() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [confirmClaimId, setConfirmClaimId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [fadingOutId, setFadingOutId] = useState<string | null>(null);
 
   // Complete state
   const [completingId, setCompletingId] = useState<string | null>(null);
@@ -159,11 +160,20 @@ export function ScrapprDashboard() {
     try {
       await claimListing(accessToken, listingId);
       setConfirmClaimId(null);
-      fetchAvailable();
-      fetchClaimed();
+      setClaimingId(null);
+
+      // Fade out the card, then move it to claimed
+      setFadingOutId(listingId);
+      setTimeout(() => {
+        const claimed = availableRaw.find((l) => l.id === listingId);
+        setAvailableRaw((prev) => prev.filter((l) => l.id !== listingId));
+        if (claimed) {
+          setClaimedListings((prev) => [{ ...claimed, status: "claimed" as const }, ...prev]);
+        }
+        setFadingOutId(null);
+      }, 400);
     } catch (err) {
       setClaimError(err instanceof Error ? err.message : "Failed to claim listing");
-    } finally {
       setClaimingId(null);
     }
   };
@@ -173,7 +183,9 @@ export function ScrapprDashboard() {
     setCompletingId(listingId);
     try {
       await completeListing(accessToken, listingId);
-      fetchClaimed();
+      setClaimedListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: "completed" as const } : l)),
+      );
     } catch {
       // silently fail
     } finally {
@@ -369,6 +381,7 @@ export function ScrapprDashboard() {
                           listing={listing}
                           onClaim={() => setConfirmClaimId(listing.id)}
                           claiming={claimingId === listing.id}
+                          fadingOut={fadingOutId === listing.id}
                         />
                       ))}
                     </div>
@@ -589,15 +602,21 @@ function AvailableCard({
   listing,
   onClaim,
   claiming,
+  fadingOut,
 }: {
   listing: Listing;
   onClaim: () => void;
   claiming: boolean;
+  fadingOut: boolean;
 }) {
   const catInfo = CATEGORIES.find((c) => c.name === listing.category);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+    <div
+      className={`bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-400 ${
+        fadingOut ? "opacity-0 scale-95" : "opacity-100 scale-100"
+      }`}
+    >
       <div className="relative w-full h-48 bg-gray-100">
         {listing.photoUrl ? (
           <img
