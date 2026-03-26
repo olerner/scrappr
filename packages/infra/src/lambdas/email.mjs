@@ -1,3 +1,6 @@
+// Note: user-controlled listing fields (category, description, address, etc.)
+// are HTML-escaped via sanitizeListing() in sanitize.mjs before being written
+// to the database, so they are safe to interpolate into HTML email templates.
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import {
   CognitoIdentityProviderClient,
@@ -89,7 +92,7 @@ export async function notifyScrappee({ ownerUserId, subject, heading, message, l
           <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; margin-bottom: 16px;">
             ${listing.photoUrl ? `<img src="${listing.photoUrl}" alt="${listing.category}" width="100%" style="display: block; max-height: 200px; object-fit: cover;" />` : ""}
             <div style="padding: 16px;">
-              <p style="margin: 0 0 4px; font-weight: 600; color: #111827;">${listing.category}</p>
+<p style="margin: 0 0 4px; font-weight: 600; color: #111827;">${listing.category}</p>
               <p style="margin: 0; color: #6b7280; font-size: 13px;">${listing.description || ""}</p>
             </div>
           </div>
