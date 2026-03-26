@@ -1,5 +1,6 @@
 import { ArrowUpDown, DollarSign, Filter, List, Map as MapIcon, MapPin, Truck } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
 import { CATEGORIES } from "../data/mockData";
@@ -33,8 +34,23 @@ const VALUE_ORDER: Record<string, number> = {
 
 export function ScrapprDashboard() {
   const { listings, updateListingStatus } = useStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("available");
-  const [mobileView, setMobileView] = useState<"map" | "list">("list");
+  const mobileView = (searchParams.get("view") === "map" ? "map" : "list") as "map" | "list";
+  const setMobileView = useCallback(
+    (view: "map" | "list") => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (view === "list") {
+          next.delete("view");
+        } else {
+          next.set("view", view);
+        }
+        return next;
+      });
+    },
+    [setSearchParams],
+  );
   const [filterCategory, setFilterCategory] = useState<Category | "All">("All");
   const [sortBy, setSortBy] = useState<SortBy>("distance");
 
@@ -197,7 +213,7 @@ export function ScrapprDashboard() {
           <div className={`${mobileView === "map" ? "block" : "hidden"} flex-1`}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
               <div className="rounded-2xl overflow-hidden border border-gray-200">
-                <MapView listings={listings} className="min-h-[500px] w-full" />
+                <MapView listings={listings} className="min-h-[500px] w-full" visible={mobileView === "map"} />
               </div>
             </div>
           </div>

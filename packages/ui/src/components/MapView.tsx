@@ -9,6 +9,7 @@ interface MapViewProps {
   onListingClick?: (listing: Listing) => void;
   className?: string;
   interactive?: boolean;
+  visible?: boolean;
 }
 
 export function MapView({
@@ -16,6 +17,7 @@ export function MapView({
   onListingClick,
   className = "",
   interactive = true,
+  visible = true,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -42,6 +44,12 @@ export function MapView({
       map.current = null;
     };
   }, [interactive]);
+
+  useEffect(() => {
+    if (visible && map.current) {
+      map.current.invalidateSize();
+    }
+  }, [visible]);
 
   useEffect(() => {
     if (!map.current) return;
