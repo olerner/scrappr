@@ -38,11 +38,13 @@ export const handler = async (event) => {
 
     const result = await ddb.send(new QueryCommand(queryParams));
 
-    // Strip sensitive fields for privacy
-    const listings = (result.Items || []).map(({ userId, ...item }) => ({
-      ...item,
-      address: redactAddress(item.address),
-    }));
+    // Exclude user's own listings and strip sensitive fields
+    const listings = (result.Items || [])
+      .filter((item) => item.userId !== userId)
+      .map(({ userId: _ownerId, ...item }) => ({
+        ...item,
+        address: redactAddress(item.address),
+      }));
 
     return {
       statusCode: 200,
