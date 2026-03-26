@@ -7,6 +7,7 @@ import * as integrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 import * as cw_actions from "aws-cdk-lib/aws-cloudwatch-actions";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type * as s3 from "aws-cdk-lib/aws-s3";
@@ -21,6 +22,8 @@ interface ApiStackProps extends cdk.StackProps {
   userPoolId: string;
   userPoolClientId: string;
   photoBucket: s3.IBucket;
+  senderEmail?: string;
+  sendEmailPolicy?: iam.PolicyStatement;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -79,7 +82,8 @@ export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
-    const { stageName, userPoolId, userPoolClientId, photoBucket } = props;
+    const { stageName, userPoolId, userPoolClientId, photoBucket, senderEmail, sendEmailPolicy } =
+      props;
     this.stageName = stageName;
     this.lambdasDir = path.join(__dirname, "../lambdas");
     const isPreview = stageName.startsWith("pr-");
@@ -170,11 +174,17 @@ export class ApiStack extends cdk.Stack {
     });
     listingsTable.grantReadData(getClaimedListingsFn);
 
+    // Email-enabled environment variables (only when SES is configured)
+    const emailEnv: Record<string, string> = senderEmail
+      ? { SENDER_EMAIL: senderEmail, USER_POOL_ID: userPoolId }
+      : {};
+
     const completeListingFn = this.createLambda("CompleteListing", {
       handler: "complete-listing.handler",
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
         LISTING_ID_INDEX: "listingId-index",
+        ...emailEnv,
       },
     });
     listingsTable.grantReadWriteData(completeListingFn);
@@ -184,6 +194,7 @@ export class ApiStack extends cdk.Stack {
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
         LISTING_ID_INDEX: "listingId-index",
+        ...emailEnv,
       },
     });
     listingsTable.grantReadWriteData(unclaimListingFn);
@@ -193,9 +204,22 @@ export class ApiStack extends cdk.Stack {
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
         LISTING_ID_INDEX: "listingId-index",
+        ...emailEnv,
       },
     });
     listingsTable.grantReadWriteData(claimListingFn);
+
+    // Grant SES send permissions to notification Lambdas
+    if (sendEmailPolicy) {
+      const cognitoLookupPolicy = new iam.PolicyStatement({
+        actions: ["cognito-idp:AdminGetUser"],
+        resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPoolId}`],
+      });
+      for (const fn of [claimListingFn, completeListingFn, unclaimListingFn]) {
+        fn.addToRolePolicy(sendEmailPolicy);
+        fn.addToRolePolicy(cognitoLookupPolicy);
+      }
+    }
 
     const updateListingFn = this.createLambda("UpdateListing", {
       handler: "update-listing.handler",

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import * as cdk from "aws-cdk-lib";
 import { ApiStack } from "./stacks/api-stack.js";
 import { AuthStack } from "./stacks/auth-stack.js";
+import { EmailStack } from "./stacks/email-stack.js";
 import { StorageStack } from "./stacks/storage-stack.js";
 import { UiStack } from "./stacks/ui-stack.js";
 
@@ -63,12 +64,24 @@ const userPoolClientId = sharesDevAuth
   ? process.env.VITE_USER_POOL_CLIENT_ID!
   : authStack!.userPoolClient.userPoolClientId;
 
+// Email stack — deploy for dev/prod (not localdev or preview)
+let emailStack: EmailStack | undefined;
+if (!isLocalDev && !isPreview) {
+  emailStack = new EmailStack(app, `scrappr-email-${env}`, {
+    env: awsEnv,
+    stageName: env,
+    domainName: "scrappr.trevor.fail",
+  });
+}
+
 new ApiStack(app, `scrappr-api-${env}`, {
   env: awsEnv,
   stageName: env,
   userPoolId,
   userPoolClientId,
   photoBucket: storageStack.photoBucket,
+  senderEmail: emailStack?.senderEmail,
+  sendEmailPolicy: emailStack?.sendEmailPolicyStatement,
 });
 
 // UI stack — skip for localdev (runs locally), deploy for everything else
