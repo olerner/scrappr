@@ -45,6 +45,7 @@ export function CreateListing() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState(false);
+  const [attempted, setAttempted] = useState(false);
 
   // Load saved addresses
   useEffect(() => {
@@ -102,17 +103,17 @@ export function CreateListing() {
 
   const handleSubmit = async () => {
     if (!accessToken) return;
-    if (!photoFile) {
-      setPhotoError(true);
-      return;
-    }
-    if (!category || !description) return;
+    setAttempted(true);
+    if (!photoFile) setPhotoError(true);
     if (!zipCode || !isAllowedZip(zipCode)) {
-      setZipError(
-        `Scrappr is currently only available in ${ALLOWED_AREA_LABEL}. We're starting small to make sure everything works great before expanding!`,
-      );
-      return;
+      if (zipCode) {
+        setZipError(
+          `Scrappr is currently only available in ${ALLOWED_AREA_LABEL}. We're starting small to make sure everything works great before expanding!`,
+        );
+      }
     }
+    if (!photoFile || !category || !description || !address || !zipCode || !isAllowedZip(zipCode))
+      return;
     setSubmitting(true);
     setSubmitError(null);
 
@@ -193,7 +194,12 @@ export function CreateListing() {
 
           {/* Category Selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+              {attempted && !category && (
+                <span className="text-red-500 ml-2 font-normal">Required</span>
+              )}
+            </label>
             <div className="grid grid-cols-3 gap-2">
               {CATEGORIES.filter((c) => c.name !== "Electronics").map((cat) => (
                 <button
@@ -264,20 +270,32 @@ export function CreateListing() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description
+              {attempted && !description && (
+                <span className="text-red-500 ml-2 font-normal">Required</span>
+              )}
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Describe the metal type, approximate weight, and condition..."
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+              className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none ${
+                attempted && !description ? "border-red-300" : "border-gray-300"
+              }`}
               data-testid="description-input"
             />
           </div>
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Location
+              {attempted && !address && (
+                <span className="text-red-500 ml-2 font-normal">Required</span>
+              )}
+            </label>
             <AddressPicker
               addresses={addresses}
               selectedAddressId={selectedAddressId}

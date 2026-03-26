@@ -46,6 +46,9 @@ export function LandingPage() {
                 Start Hauling <ArrowRight size={18} />
               </Link>
             </div>
+            <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
+              <MapPin size={12} /> Currently serving St. Louis Park, MN
+            </p>
           </div>
         </div>
       </section>

@@ -6,7 +6,7 @@ import type { Listing } from "../data/types";
 
 interface MapViewProps {
   listings: Listing[];
-  onClaimClick?: (listingId: string) => void;
+  onClaimClick?: (listingId: string) => Promise<void>;
   className?: string;
   interactive?: boolean;
   visible?: boolean;
@@ -103,11 +103,26 @@ export function MapView({
 
       if (onClaimClick) {
         marker.on("popupopen", () => {
-          const btn = document.querySelector(`[data-claim-id="${listing.id}"]`);
+          const btn = document.querySelector(
+            `[data-claim-id="${listing.id}"]`,
+          ) as HTMLButtonElement | null;
           if (btn) {
-            btn.addEventListener("click", () => {
-              onClaimClickRef.current?.(listing.id);
-              marker.closePopup();
+            btn.addEventListener("click", async () => {
+              btn.disabled = true;
+              btn.textContent = "Claiming...";
+              btn.style.opacity = "0.7";
+              try {
+                await onClaimClickRef.current?.(listing.id);
+                btn.textContent = "Claimed!";
+                btn.style.background = "#059669";
+                btn.style.opacity = "1";
+                setTimeout(() => marker.closePopup(), 800);
+              } catch {
+                btn.textContent = "Failed — try again";
+                btn.style.background = "#dc2626";
+                btn.style.opacity = "1";
+                btn.disabled = false;
+              }
             });
           }
         });

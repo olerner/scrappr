@@ -179,6 +179,7 @@ export function ScrapprDashboard() {
         message: err instanceof Error ? err.message : "Failed to claim listing",
       });
       setClaimingId(null);
+      throw err;
     }
   };
 
