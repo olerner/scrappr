@@ -1,12 +1,12 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useAuthContext } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 export function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { handleAuthCallback } = useAuthContext();
+  const { handleAuthCallback } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const processedRef = useRef(false);
 

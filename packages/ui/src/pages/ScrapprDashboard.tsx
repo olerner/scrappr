@@ -23,7 +23,7 @@ import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
 import { CATEGORIES, getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
-import { useAuthContext } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 import { formatRelativeDate } from "../utils/formatDate";
 
 type SortBy = "value" | "type";
@@ -66,7 +66,7 @@ export function ScrapprDashboard() {
     initiateGoogleSignIn,
     email,
     error: authError,
-  } = useAuthContext();
+  } = useAuth();
 
   const navigate = useNavigate();
 

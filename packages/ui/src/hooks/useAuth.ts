@@ -67,7 +67,7 @@ export interface AuthState {
   error: string | null;
 }
 
-export function useAuth(): AuthState {
+export function useCognito(): AuthState {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
@@ -277,8 +277,8 @@ export function useAuth(): AuthState {
 
 export const AuthContext = createContext<AuthState | null>(null);
 
-export function useAuthContext(): AuthState {
+export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuthContext must be used within AuthProvider");
+  if (!ctx) throw new Error("useAuth must be used within an AuthContext.Provider");
   return ctx;
 }

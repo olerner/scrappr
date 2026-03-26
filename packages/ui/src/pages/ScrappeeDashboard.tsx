@@ -6,7 +6,7 @@ import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
 import { getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
-import { useAuthContext } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 import { formatRelativeDate } from "../utils/formatDate";
 
 export function ScrappeeDashboard() {
@@ -18,7 +18,7 @@ export function ScrappeeDashboard() {
     signIn,
     initiateGoogleSignIn,
     error: authError,
-  } = useAuthContext();
+  } = useAuth();
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);

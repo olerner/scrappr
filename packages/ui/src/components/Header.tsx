@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { useAuthContext } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 export function Header() {
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">

@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useAuthContext } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 export function SignedOut() {
-  const { signOut } = useAuthContext();
+  const { signOut } = useAuth();
 
   useEffect(() => {
     signOut();

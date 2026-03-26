@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Header } from "./components/Header";
-import { AuthContext, useAuth } from "./hooks/useAuth";
+import { AuthContext, useCognito } from "./hooks/useAuth";
 import { AuthCallback } from "./pages/AuthCallback";
 import { CreateListing } from "./pages/CreateListing";
 import { EditListing } from "./pages/EditListing";
@@ -10,7 +10,7 @@ import { ScrapprDashboard } from "./pages/ScrapprDashboard";
 import { SignedOut } from "./pages/SignedOut";
 
 function App() {
-  const auth = useAuth();
+  const auth = useCognito();
 
   return (
     <AuthContext.Provider value={auth}>
