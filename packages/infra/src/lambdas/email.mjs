@@ -5,6 +5,17 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 
 const ses = new SESClient({});
+
+/** Escape HTML special characters to prevent XSS in email templates. */
+export function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 const cognito = new CognitoIdentityProviderClient({});
 const SENDER = process.env.SENDER_EMAIL || "noreply@scrappr.trevor.fail";
 const USER_POOL_ID = process.env.USER_POOL_ID;
@@ -86,10 +97,10 @@ export async function notifyScrappee({ ownerUserId, subject, heading, message, l
           <h2 style="color: #111827; font-size: 18px; margin: 0 0 8px;">${heading}</h2>
           <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px;">${message}</p>
           <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; margin-bottom: 16px;">
-            ${listing.photoUrl ? `<img src="${listing.photoUrl}" alt="${listing.category}" width="100%" style="display: block; max-height: 200px; object-fit: cover;" />` : ""}
+            ${listing.photoUrl ? `<img src="${escapeHtml(listing.photoUrl)}" alt="${escapeHtml(listing.category)}" width="100%" style="display: block; max-height: 200px; object-fit: cover;" />` : ""}
             <div style="padding: 16px;">
-              <p style="margin: 0 0 4px; font-weight: 600; color: #111827;">${listing.category}</p>
-              <p style="margin: 0; color: #6b7280; font-size: 13px;">${listing.description || ""}</p>
+              <p style="margin: 0 0 4px; font-weight: 600; color: #111827;">${escapeHtml(listing.category)}</p>
+              <p style="margin: 0; color: #6b7280; font-size: 13px;">${escapeHtml(listing.description)}</p>
             </div>
           </div>
           <a href="${link}" style="display: inline-block; background: #059669; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">

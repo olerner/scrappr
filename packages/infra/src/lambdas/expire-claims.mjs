@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { notifyScrappee, getUserEmail, sendEmail } from "./email.mjs";
+import { notifyScrappee, getUserEmail, sendEmail, escapeHtml } from "./email.mjs";
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
@@ -79,7 +79,7 @@ export const handler = async () => {
                     <div style="background: #f9fafb; border-radius: 12px; padding: 24px;">
                       <h2 style="color: #111827; font-size: 18px; margin: 0 0 8px;">Claim expired</h2>
                       <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px;">
-                        Your claim on a <strong>${listing.category}</strong> listing has expired because it wasn't picked up within ${EXPIRY_HOURS} hours.
+                        Your claim on a <strong>${escapeHtml(listing.category)}</strong> listing has expired because it wasn't picked up within ${EXPIRY_HOURS} hours.
                         The listing is now available for other haulers. You can reclaim it if it's still available.
                       </p>
                       <a href="${APP_URL}/haul" style="display: inline-block; background: #059669; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
@@ -119,7 +119,7 @@ export const handler = async () => {
                   <div style="background: #fef3c7; border-radius: 12px; padding: 24px;">
                     <h2 style="color: #92400e; font-size: 18px; margin: 0 0 8px;">Heads up — claim expiring soon</h2>
                     <p style="color: #78350f; font-size: 14px; margin: 0 0 16px;">
-                      Your claim on a <strong>${listing.category}</strong> listing expires in about ${hoursLeft} hour${hoursLeft === 1 ? "" : "s"}.
+                      Your claim on a <strong>${escapeHtml(listing.category)}</strong> listing expires in about ${hoursLeft} hour${hoursLeft === 1 ? "" : "s"}.
                       If you can't make the pickup, no worries — it'll be released for other haulers. But if you're still planning to grab it, head over now!
                     </p>
                     <a href="${APP_URL}/haul" style="display: inline-block; background: #d97706; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
