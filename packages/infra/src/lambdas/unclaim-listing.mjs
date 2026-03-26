@@ -1,6 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { getUserId } from "./auth.mjs";
+import { notifyScrappee } from "./email.mjs";
 import { createLogger } from "./logger.mjs";
 
 const client = new DynamoDBClient({});
@@ -83,6 +84,14 @@ export const handler = async (event) => {
       }
       throw err;
     }
+
+    notifyScrappee({
+      ownerUserId: listing.userId,
+      subject: "Your listing is available again",
+      heading: "Listing back on the market",
+      message: "The hauler who claimed your listing has released it. It's now available for other haulers to pick up.",
+      listing,
+    });
 
     return {
       statusCode: 200,

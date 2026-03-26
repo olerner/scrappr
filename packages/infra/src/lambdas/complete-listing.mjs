@@ -1,6 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { getUserId } from "./auth.mjs";
+import { notifyScrappee } from "./email.mjs";
 import { createLogger } from "./logger.mjs";
 
 const client = new DynamoDBClient({});
@@ -84,6 +85,14 @@ export const handler = async (event) => {
       }
       throw err;
     }
+
+    notifyScrappee({
+      ownerUserId: listing.userId,
+      subject: "Your scrap has been picked up!",
+      heading: "Pickup complete!",
+      message: "The hauler has picked up your scrap metal. Thanks for keeping it out of the landfill!",
+      listing,
+    });
 
     return {
       statusCode: 200,

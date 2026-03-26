@@ -1,6 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { getUserId } from "./auth.mjs";
+import { notifyScrappee } from "./email.mjs";
 import { createLogger } from "./logger.mjs";
 
 const client = new DynamoDBClient({});
@@ -85,6 +86,15 @@ export const handler = async (event) => {
       }
       throw err;
     }
+
+    // Notify the scrappee (non-blocking)
+    notifyScrappee({
+      ownerUserId: listing.userId,
+      subject: "Your listing has been claimed!",
+      heading: "A hauler is on the way!",
+      message: "A local Scrappr hauler has claimed your listing and will pick it up soon.",
+      listing,
+    });
 
     return {
       statusCode: 200,
