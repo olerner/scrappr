@@ -9,7 +9,7 @@ import {
 import type { Address } from "../data/types";
 import { ALLOWED_AREA_LABEL, ALLOWED_CITY } from "../data/types";
 import type { AddressSuggestion } from "../hooks/useAddressAutocomplete";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthContext } from "../hooks/useAuth";
 import { useStore } from "../store/useStore";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 
@@ -18,7 +18,7 @@ interface AddressBookProps {
 }
 
 export function AddressBook({ initialShowAdd = false }: AddressBookProps) {
-  const { accessToken: token } = useAuth();
+  const { accessToken: token } = useAuthContext();
   const accessToken = token!;
   const { addresses, addressesLoaded, setAddresses, addAddress, updateAddress, removeAddress } =
     useStore();

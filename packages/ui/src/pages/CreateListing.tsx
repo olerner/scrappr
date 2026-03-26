@@ -21,12 +21,12 @@ import {
   isAllowedZip,
 } from "../data/types";
 
-import { useAuth } from "../hooks/useAuth";
+import { useAuthContext } from "../hooks/useAuth";
 import { useStore } from "../store/useStore";
 
 export function CreateListing() {
   const navigate = useNavigate();
-  const { accessToken, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { accessToken, isAuthenticated, isLoading: authLoading } = useAuthContext();
 
   const { addresses, addressesLoaded, setAddresses } = useStore();
   const [addressesLoading, setAddressesLoading] = useState(false);
