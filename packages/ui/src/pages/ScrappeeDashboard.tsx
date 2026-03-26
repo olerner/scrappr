@@ -1,30 +1,12 @@
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ClipboardCheck,
-  Image as ImageIcon,
-  Loader2,
-  LogOut,
-  MapPin,
-  Plus,
-  X,
-} from "lucide-react";
+import { Image as ImageIcon, Loader2, LogOut, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import {
-  createListing,
-  getMyListings,
-  getPresignedUrl,
-  updateListing,
-  uploadPhoto,
-} from "../api/client";
-import { AddressAutocomplete } from "../components/AddressAutocomplete";
+import { Link, useNavigate } from "react-router-dom";
+import { getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
-import { PhotoUpload } from "../components/PhotoUpload";
 import { StatusBadge } from "../components/StatusBadge";
-import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
-import type { BlockedCategory, Category, Listing } from "../data/types";
-import type { AddressSuggestion } from "../hooks/useAddressAutocomplete";
+import type { Category, Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
+import { formatRelativeDate } from "../utils/formatDate";
 
 export function ScrappeeDashboard() {
   const {
@@ -38,8 +20,6 @@ export function ScrappeeDashboard() {
     error: authError,
   } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [loadingListings, setLoadingListings] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
@@ -104,14 +84,13 @@ export function ScrappeeDashboard() {
               </button>
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
+          <Link
+            to="/list/new"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg"
           >
             <Plus size={18} />
             New Listing
-          </button>
+          </Link>
         </div>
 
         {/* Listings */}
@@ -120,44 +99,15 @@ export function ScrappeeDashboard() {
             <Loader2 className="animate-spin text-emerald-600 mx-auto" size={32} />
           </div>
         ) : listings.length === 0 ? (
-          <EmptyState onNewListing={() => setShowModal(true)} />
+          <EmptyState />
         ) : (
           <div className="grid gap-4">
             {listings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                onEdit={() => setEditingListing(listing)}
-              />
+              <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
         )}
       </div>
-
-      {/* New Listing Modal */}
-      {showModal && accessToken && (
-        <NewListingModal
-          accessToken={accessToken}
-          onClose={() => setShowModal(false)}
-          onCreated={() => {
-            setShowModal(false);
-            fetchListings();
-          }}
-        />
-      )}
-
-      {/* Edit Listing Modal */}
-      {editingListing && accessToken && (
-        <EditListingModal
-          accessToken={accessToken}
-          listing={editingListing}
-          onClose={() => setEditingListing(null)}
-          onUpdated={() => {
-            setEditingListing(null);
-            fetchListings();
-          }}
-        />
-      )}
 
       {/* Sign Out Confirmation */}
       {showSignOutConfirm && (
@@ -303,7 +253,7 @@ function SignInForm({
   );
 }
 
-function EmptyState({ onNewListing }: { onNewListing: () => void }) {
+function EmptyState() {
   return (
     <div className="text-center py-20">
       <img
@@ -315,19 +265,19 @@ function EmptyState({ onNewListing }: { onNewListing: () => void }) {
       <p className="text-gray-500 mb-6 max-w-sm mx-auto">
         You haven't created any scrap metal listings yet. Create your first listing to get started!
       </p>
-      <button
-        type="button"
-        onClick={onNewListing}
+      <Link
+        to="/list/new"
         className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-all"
       >
         <Plus size={18} />
         Create Your First Listing
-      </button>
+      </Link>
     </div>
   );
 }
 
-function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: () => void }) {
+function ListingCard({ listing }: { listing: Listing }) {
+  const navigate = useNavigate();
   const isEditable = listing.status === "available";
 
   return (
@@ -335,13 +285,13 @@ function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: () => void
       className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-shadow ${
         isEditable ? "hover:shadow-md hover:border-emerald-200 cursor-pointer" : ""
       }`}
-      onClick={isEditable ? onEdit : undefined}
+      onClick={isEditable ? () => navigate(`/list/edit/${listing.id}`) : undefined}
       role={isEditable ? "button" : undefined}
       tabIndex={isEditable ? 0 : undefined}
       onKeyDown={
         isEditable
           ? (e) => {
-              if (e.key === "Enter") onEdit();
+              if (e.key === "Enter") navigate(`/list/edit/${listing.id}`);
             }
           : undefined
       }
@@ -370,560 +320,11 @@ function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: () => void
           </div>
           <p className="text-gray-600 text-sm mt-1 line-clamp-2">{listing.description}</p>
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-            <span>Posted {listing.datePosted}</span>
+            <span>Posted {formatRelativeDate(listing.datePosted)}</span>
             {listing.claimedBy && (
               <span className="text-yellow-600 font-medium">Hauler: {listing.claimedBy}</span>
             )}
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function NewListingModal({
-  accessToken,
-  onClose,
-  onCreated,
-}: {
-  accessToken: string;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const [category, setCategory] = useState<Category | "">("");
-  const [description, setDescription] = useState("");
-  const [address, setAddress] = useState("");
-  const [zipCode, setZipCode] = useState("");
-  const [zipError, setZipError] = useState<string | null>(null);
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [addressSelected, setAddressSelected] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [showBlocked, setShowBlocked] = useState<string | null>(null);
-  const [showChecklist, setShowChecklist] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [photoError, setPhotoError] = useState(false);
-
-  const handleCategorySelect = (cat: string) => {
-    if (BLOCKED_CATEGORIES.includes(cat as BlockedCategory)) {
-      setShowBlocked(cat);
-      setCategory("");
-      return;
-    }
-    setShowBlocked(null);
-    setCategory(cat as Category);
-    if (PREP_CHECKLIST_CATEGORIES.includes(cat as Category)) {
-      setShowChecklist(true);
-    } else {
-      setShowChecklist(false);
-    }
-  };
-
-  const ALLOWED_ZIP = "55426";
-
-  const validateZip = (zip: string) => {
-    if (zip && zip !== ALLOWED_ZIP) {
-      setZipError(
-        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
-      );
-    } else {
-      setZipError(null);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!photoFile) {
-      setPhotoError(true);
-      return;
-    }
-    if (!category || !description) return;
-    if (!zipCode || zipCode.trim() !== ALLOWED_ZIP) {
-      setZipError(
-        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
-      );
-      return;
-    }
-    setSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      let photoUrl = "";
-
-      // Upload photo if selected
-      if (photoFile) {
-        const presign = await getPresignedUrl(accessToken, photoFile.type);
-        await uploadPhoto(presign.uploadUrl, photoFile);
-        photoUrl = presign.photoUrl;
-      }
-
-      const catInfo = CATEGORIES.find((c) => c.name === category);
-
-      await createListing(accessToken, {
-        category: category as string,
-        description,
-        photoUrl,
-        lat: lat as number,
-        lng: lng as number,
-        address,
-        zipCode: zipCode.trim(),
-        estimatedValue: catInfo?.payoutLabel || "Varies",
-      });
-
-      onCreated();
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to create listing");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in">
-        {/* Modal Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-gray-900">New Listing</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X size={20} className="text-gray-500" />
-          </button>
-        </div>
-
-        <div className="px-6 py-5 space-y-6">
-          {/* Zip Code Notice */}
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
-            <MapPin size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-700">Limited availability</p>
-              <p className="text-xs text-amber-600 mt-0.5">
-                Scrappr is currently only available in zip code 55426 (St. Louis Park, MN). We're
-                starting small to make sure everything works great before expanding!
-              </p>
-            </div>
-          </div>
-
-          {/* Photo Upload */}
-          <PhotoUpload
-            onFileChange={(file) => {
-              setPhotoFile(file);
-              if (file) setPhotoError(false);
-            }}
-            error={photoError}
-          />
-
-          {/* Category Selector */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <div className="grid grid-cols-3 gap-2">
-              {CATEGORIES.filter((c) => c.name !== "Electronics").map((cat) => (
-                <button
-                  type="button"
-                  key={cat.name}
-                  onClick={() => handleCategorySelect(cat.name)}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-xs font-medium ${
-                    category === cat.name
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                      : "border-gray-200 text-gray-600 hover:border-emerald-200 hover:bg-emerald-50/50"
-                  }`}
-                  data-testid={`category-${cat.name.toLowerCase()}`}
-                >
-                  <CategoryIcon
-                    category={cat.name}
-                    size={20}
-                    className={category === cat.name ? "text-emerald-600" : "text-gray-400"}
-                  />
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-
-            {/* Blocked categories section */}
-            <div className="mt-3">
-              <p className="text-xs text-gray-400 mb-1.5">Restricted items:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {BLOCKED_CATEGORIES.map((bc) => (
-                  <button
-                    type="button"
-                    key={bc}
-                    onClick={() => handleCategorySelect(bc)}
-                    className="px-2.5 py-1 text-xs bg-red-50 text-red-400 rounded-lg border border-red-100 hover:bg-red-100 transition-colors"
-                  >
-                    {bc}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Blocked Message */}
-            {showBlocked && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
-                <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-red-700">{showBlocked} not accepted</p>
-                  <p className="text-xs text-red-500 mt-0.5">
-                    This item requires special disposal. Please contact your local waste management
-                    service or visit your county's hazardous waste site for safe recycling options.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Prep Checklist */}
-            {showChecklist && (
-              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
-                <ClipboardCheck size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-amber-700">Prep checklist</p>
-                  <ul className="mt-1 space-y-1">
-                    <li className="flex items-center gap-1.5 text-xs text-amber-600">
-                      <CheckCircle2 size={12} /> Drain all fluids before pickup
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Describe the metal type, approximate weight, and condition..."
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-              data-testid="description-input"
-            />
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-            <p className="text-xs text-gray-400 mb-2">Currently serving zip code 55426 only</p>
-            <AddressAutocomplete
-              onSelect={(suggestion: AddressSuggestion) => {
-                setAddress(suggestion.label);
-                setLat(suggestion.lat);
-                setLng(suggestion.lng);
-                setZipCode(suggestion.zipCode);
-                validateZip(suggestion.zipCode);
-                setAddressSelected(true);
-              }}
-              warning={!addressSelected && address.length > 0}
-            />
-          </div>
-
-          {zipError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
-              <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{zipError}</p>
-            </div>
-          )}
-
-          {submitError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-              {submitError}
-            </div>
-          )}
-        </div>
-
-        {/* Submit */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 rounded-b-2xl">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={
-              !category ||
-              !description ||
-              !photoFile ||
-              !address ||
-              !zipCode ||
-              !!zipError ||
-              submitting
-            }
-            className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
-            data-testid="submit-listing-btn"
-          >
-            {submitting ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="animate-spin" size={16} /> Creating...
-              </span>
-            ) : (
-              "Post Listing"
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EditListingModal({
-  accessToken,
-  listing,
-  onClose,
-  onUpdated,
-}: {
-  accessToken: string;
-  listing: Listing;
-  onClose: () => void;
-  onUpdated: () => void;
-}) {
-  const [category, setCategory] = useState<Category | "">(listing.category);
-  const [description, setDescription] = useState(listing.description);
-  const [address, setAddress] = useState(listing.address);
-  const [zipCode, setZipCode] = useState("");
-  const [zipError, setZipError] = useState<string | null>(null);
-  const [lat, setLat] = useState<number | null>(listing.lat);
-  const [lng, setLng] = useState<number | null>(listing.lng);
-  const [addressSelected, setAddressSelected] = useState(true);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoDeleted, setPhotoDeleted] = useState(false);
-  const [showBlocked, setShowBlocked] = useState<string | null>(null);
-  const [showChecklist, setShowChecklist] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const handleCategorySelect = (cat: string) => {
-    if (BLOCKED_CATEGORIES.includes(cat as BlockedCategory)) {
-      setShowBlocked(cat);
-      setCategory("");
-      return;
-    }
-    setShowBlocked(null);
-    setCategory(cat as Category);
-    if (PREP_CHECKLIST_CATEGORIES.includes(cat as Category)) {
-      setShowChecklist(true);
-    } else {
-      setShowChecklist(false);
-    }
-  };
-
-  const ALLOWED_ZIP = "55426";
-
-  const validateZip = (zip: string) => {
-    if (zip && zip !== ALLOWED_ZIP) {
-      setZipError(
-        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
-      );
-    } else {
-      setZipError(null);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!category || !description) return;
-    if (photoDeleted && !photoFile) return;
-    if (zipCode && zipCode.trim() !== ALLOWED_ZIP) {
-      setZipError(
-        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
-      );
-      return;
-    }
-    setSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      let photoUrl: string | undefined;
-
-      if (photoFile) {
-        const presign = await getPresignedUrl(accessToken, photoFile.type);
-        await uploadPhoto(presign.uploadUrl, photoFile);
-        photoUrl = presign.photoUrl;
-      }
-
-      const catInfo = CATEGORIES.find((c) => c.name === category);
-
-      const payload: Record<string, unknown> = {
-        category: category as string,
-        description,
-        estimatedValue: catInfo?.payoutLabel || "Varies",
-      };
-
-      if (photoUrl) payload.photoUrl = photoUrl;
-      if (lat !== null) payload.lat = lat;
-      if (lng !== null) payload.lng = lng;
-      if (address) payload.address = address;
-      if (zipCode) payload.zipCode = zipCode.trim();
-
-      await updateListing(accessToken, listing.id, payload);
-      onUpdated();
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to update listing");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in">
-        {/* Modal Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-lg font-semibold text-gray-900">Edit Listing</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X size={20} className="text-gray-500" />
-          </button>
-        </div>
-
-        <div className="px-6 py-5 space-y-6">
-          {/* Photo */}
-          <div>
-            {listing.photoUrl && !photoDeleted ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
-                <div className="relative w-full h-48 rounded-xl overflow-hidden">
-                  <img
-                    src={listing.photoUrl}
-                    alt={listing.category}
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setPhotoDeleted(true)}
-                    className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <PhotoUpload
-                onFileChange={(file) => setPhotoFile(file)}
-                error={photoDeleted && !photoFile}
-              />
-            )}
-          </div>
-
-          {/* Category Selector */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-            <div className="grid grid-cols-3 gap-2">
-              {CATEGORIES.filter((c) => c.name !== "Electronics").map((cat) => (
-                <button
-                  type="button"
-                  key={cat.name}
-                  onClick={() => handleCategorySelect(cat.name)}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-xs font-medium ${
-                    category === cat.name
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                      : "border-gray-200 text-gray-600 hover:border-emerald-200 hover:bg-emerald-50/50"
-                  }`}
-                >
-                  <CategoryIcon
-                    category={cat.name}
-                    size={20}
-                    className={category === cat.name ? "text-emerald-600" : "text-gray-400"}
-                  />
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-
-            {showBlocked && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
-                <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-red-700">{showBlocked} not accepted</p>
-                  <p className="text-xs text-red-500 mt-0.5">
-                    This item requires special disposal. Please contact your local waste management
-                    service or visit your county's hazardous waste site for safe recycling options.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {showChecklist && (
-              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
-                <ClipboardCheck size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-amber-700">Prep checklist</p>
-                  <ul className="mt-1 space-y-1">
-                    <li className="flex items-center gap-1.5 text-xs text-amber-600">
-                      <CheckCircle2 size={12} /> Drain all fluids before pickup
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Describe the metal type, approximate weight, and condition..."
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-            />
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-            <p className="text-xs text-gray-400 mb-2">Currently serving zip code 55426 only</p>
-            {address && <p className="text-sm text-gray-600 mb-2">Current: {address}</p>}
-            <AddressAutocomplete
-              onSelect={(suggestion: AddressSuggestion) => {
-                setAddress(suggestion.label);
-                setLat(suggestion.lat);
-                setLng(suggestion.lng);
-                setZipCode(suggestion.zipCode);
-                validateZip(suggestion.zipCode);
-                setAddressSelected(true);
-              }}
-              warning={!addressSelected && address.length > 0}
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Search for a new address to update the location, or leave as-is.
-            </p>
-          </div>
-
-          {zipError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
-              <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{zipError}</p>
-            </div>
-          )}
-
-          {submitError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-              {submitError}
-            </div>
-          )}
-        </div>
-
-        {/* Submit */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 rounded-b-2xl">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={
-              !category || !description || (photoDeleted && !photoFile) || !!zipError || submitting
-            }
-            className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
-          >
-            {submitting ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="animate-spin" size={16} /> Saving...
-              </span>
-            ) : (
-              "Save Changes"
-            )}
-          </button>
         </div>
       </div>
     </div>
