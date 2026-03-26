@@ -153,6 +153,16 @@ export async function deleteAddress(accessToken: string, addressId: string): Pro
   if (!res.ok) throw new Error("Failed to delete address");
 }
 
+export async function deleteListing(accessToken: string, listingId: string): Promise<void> {
+  const res = await apiRequest(`/listings/${listingId}`, accessToken, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error || "Failed to delete listing");
+  }
+}
+
 export async function browseListings(
   accessToken: string,
   category?: string,

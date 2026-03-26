@@ -1,7 +1,7 @@
-import { Image as ImageIcon, Loader2, LogOut, Plus } from "lucide-react";
+import { Image as ImageIcon, Loader2, LogOut, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getMyListings } from "../api/client";
+import { deleteListing, getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
 import { getCategoryDisplayName } from "../data/mockData";
@@ -117,7 +117,12 @@ export function ScrappeeDashboard() {
                 {listings
                   .filter((l) => l.status === "available" || l.status === "claimed")
                   .map((listing) => (
-                    <ListingCard key={listing.id} listing={listing} />
+                    <ListingCard
+                      key={listing.id}
+                      listing={listing}
+                      accessToken={accessToken}
+                      onDeleted={fetchListings}
+                    />
                   ))}
               </div>
             )}
@@ -129,7 +134,12 @@ export function ScrappeeDashboard() {
                   {listings
                     .filter((l) => l.status === "completed" || l.status === "confirmed")
                     .map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} />
+                      <ListingCard
+                        key={listing.id}
+                        listing={listing}
+                        accessToken={accessToken}
+                        onDeleted={fetchListings}
+                      />
                     ))}
                 </div>
               </div>
@@ -275,10 +285,37 @@ function EmptyState() {
   );
 }
 
-function ListingCard({ listing }: { listing: Listing }) {
+function ListingCard({
+  listing,
+  accessToken,
+  onDeleted,
+}: {
+  listing: Listing;
+  accessToken: string | null;
+  onDeleted: () => void;
+}) {
   const navigate = useNavigate();
   const isEditable = listing.status === "available";
   const [imgError, setImgError] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    if (!accessToken) return;
+    setDeleting(true);
+    try {
+      await deleteListing(accessToken, listing.id);
+      onDeleted();
+    } catch {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
 
   return (
     <div
@@ -319,7 +356,25 @@ function ListingCard({ listing }: { listing: Listing }) {
                 {getCategoryDisplayName(listing.category)}
               </span>
             </div>
-            <StatusBadge status={listing.status} />
+            <div className="flex items-center gap-2">
+              <StatusBadge status={listing.status} />
+              {isEditable && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  onBlur={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    confirmDelete
+                      ? "bg-red-100 text-red-600 hover:bg-red-200"
+                      : "text-gray-400 hover:text-red-500 hover:bg-red-50"
+                  }`}
+                  title={confirmDelete ? "Click again to confirm" : "Delete listing"}
+                >
+                  {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                </button>
+              )}
+            </div>
           </div>
           <p className="text-gray-600 text-sm mt-1 line-clamp-2">{listing.description}</p>
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">

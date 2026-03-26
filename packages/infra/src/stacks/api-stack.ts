@@ -29,6 +29,8 @@ interface ApiStackProps extends cdk.StackProps {
   appUrl?: string;
 }
 
+import { CLAIM_EXPIRY_HOURS } from "@scrappr/shared/src/constants.js";
+
 export class ApiStack extends cdk.Stack {
   public readonly apiUrl: string;
 
@@ -239,6 +241,7 @@ export class ApiStack extends cdk.Stack {
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
         STATUS_INDEX: "status-index",
+        CLAIM_EXPIRY_HOURS: String(CLAIM_EXPIRY_HOURS),
         ...emailEnv,
       },
     });
@@ -263,6 +266,12 @@ export class ApiStack extends cdk.Stack {
       environment: { LISTINGS_TABLE: listingsTable.tableName },
     });
     listingsTable.grantWriteData(updateListingFn);
+
+    const deleteListingFn = this.createLambda("DeleteListing", {
+      handler: "delete-listing.handler",
+      environment: { LISTINGS_TABLE: listingsTable.tableName },
+    });
+    listingsTable.grantReadWriteData(deleteListingFn);
 
     const getAddressesFn = this.createLambda("GetAddresses", {
       handler: "get-addresses.handler",
@@ -364,6 +373,13 @@ export class ApiStack extends cdk.Stack {
         "GetClaimedListingsInt",
         getClaimedListingsFn,
       ),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/listings/{listingId}",
+      methods: [apigatewayv2.HttpMethod.DELETE],
+      integration: new integrations.HttpLambdaIntegration("DeleteListingInt", deleteListingFn),
       authorizer: jwtAuthorizer,
     });
 

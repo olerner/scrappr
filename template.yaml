@@ -169,6 +169,22 @@ Resources:
             Method: PATCH
             ApiId: !Ref HttpApi
 
+  DeleteListingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: delete-listing.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /listings/{listingId}
+            Method: DELETE
+            ApiId: !Ref HttpApi
+
   GetAddressesFunction:
     Type: AWS::Serverless::Function
     Properties:
