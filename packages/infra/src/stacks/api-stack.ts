@@ -124,6 +124,12 @@ export class ApiStack extends cdk.Stack {
     });
     listingsTable.grantReadData(getListingsFn);
 
+    const updateListingFn = this.createLambda("UpdateListing", {
+      handler: "update-listing.handler",
+      environment: { LISTINGS_TABLE: listingsTable.tableName },
+    });
+    listingsTable.grantWriteData(updateListingFn);
+
     const reportErrorFn = this.createLambda("ReportError", {
       handler: "report-error.handler",
     });
@@ -143,6 +149,7 @@ export class ApiStack extends cdk.Stack {
         allowMethods: [
           apigatewayv2.CorsHttpMethod.GET,
           apigatewayv2.CorsHttpMethod.POST,
+          apigatewayv2.CorsHttpMethod.PATCH,
           apigatewayv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ["Content-Type", "Authorization"],
@@ -168,6 +175,13 @@ export class ApiStack extends cdk.Stack {
       path: "/listings",
       methods: [apigatewayv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration("GetListingsInt", getListingsFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/listings/{listingId}",
+      methods: [apigatewayv2.HttpMethod.PATCH],
+      integration: new integrations.HttpLambdaIntegration("UpdateListingInt", updateListingFn),
       authorizer: jwtAuthorizer,
     });
 

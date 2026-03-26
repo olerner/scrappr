@@ -60,6 +60,32 @@ export async function createListing(
   return res.json();
 }
 
+export interface UpdateListingPayload {
+  category?: string;
+  description?: string;
+  photoUrl?: string;
+  lat?: number;
+  lng?: number;
+  address?: string;
+  zipCode?: string;
+  estimatedValue?: string;
+}
+
+export async function updateListing(
+  accessToken: string,
+  listingId: string,
+  payload: UpdateListingPayload,
+): Promise<void> {
+  const res = await apiRequest(`/listings/${listingId}`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error || "Failed to update listing");
+  }
+}
+
 export async function getMyListings(
   accessToken: string,
 ): Promise<{ listings: Record<string, unknown>[] }> {

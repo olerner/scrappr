@@ -1,3 +1,11 @@
+// ── User roles ──────────────────────────────────────────────────────────
+
+export enum UserRole {
+  Scrappee = "scrappee",
+  Scrappr = "scrappr",
+  Admin = "admin",
+}
+
 // ── Categories ──────────────────────────────────────────────────────────
 
 export type Category =

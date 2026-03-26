@@ -68,6 +68,22 @@ Resources:
             Method: GET
             ApiId: !Ref HttpApi
 
+  UpdateListingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: update-listing.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /listings/{listingId}
+            Method: PATCH
+            ApiId: !Ref HttpApi
+
   ReportErrorFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -91,6 +107,7 @@ Resources:
         AllowMethods:
           - GET
           - POST
+          - PATCH
           - OPTIONS
         AllowHeaders:
           - Content-Type

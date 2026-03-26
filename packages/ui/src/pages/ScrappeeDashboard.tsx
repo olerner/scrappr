@@ -6,11 +6,18 @@ import {
   Loader2,
   LogOut,
   MapPin,
+  Pencil,
   Plus,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { createListing, getMyListings, getPresignedUrl, uploadPhoto } from "../api/client";
+import {
+  createListing,
+  getMyListings,
+  getPresignedUrl,
+  updateListing,
+  uploadPhoto,
+} from "../api/client";
 import { AddressAutocomplete } from "../components/AddressAutocomplete";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { PhotoUpload } from "../components/PhotoUpload";
@@ -33,6 +40,7 @@ export function ScrappeeDashboard() {
   } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [loadingListings, setLoadingListings] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
@@ -117,7 +125,11 @@ export function ScrappeeDashboard() {
         ) : (
           <div className="grid gap-4">
             {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                onEdit={() => setEditingListing(listing)}
+              />
             ))}
           </div>
         )}
@@ -130,6 +142,19 @@ export function ScrappeeDashboard() {
           onClose={() => setShowModal(false)}
           onCreated={() => {
             setShowModal(false);
+            fetchListings();
+          }}
+        />
+      )}
+
+      {/* Edit Listing Modal */}
+      {editingListing && accessToken && (
+        <EditListingModal
+          accessToken={accessToken}
+          listing={editingListing}
+          onClose={() => setEditingListing(null)}
+          onUpdated={() => {
+            setEditingListing(null);
             fetchListings();
           }}
         />
@@ -303,7 +328,7 @@ function EmptyState({ onNewListing }: { onNewListing: () => void }) {
   );
 }
 
-function ListingCard({ listing }: { listing: Listing }) {
+function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: () => void }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
       <div className="flex gap-4">
@@ -326,7 +351,19 @@ function ListingCard({ listing }: { listing: Listing }) {
               <CategoryIcon category={listing.category} size={16} className="text-emerald-600" />
               <span className="font-semibold text-gray-900 text-sm">{listing.category}</span>
             </div>
-            <StatusBadge status={listing.status} />
+            <div className="flex items-center gap-2">
+              {listing.status === "available" && (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                  title="Edit listing"
+                >
+                  <Pencil size={14} />
+                </button>
+              )}
+              <StatusBadge status={listing.status} />
+            </div>
           </div>
           <p className="text-gray-600 text-sm mt-1 line-clamp-2">{listing.description}</p>
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
@@ -616,6 +653,260 @@ function NewListingModal({
               </span>
             ) : (
               "Post Listing"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditListingModal({
+  accessToken,
+  listing,
+  onClose,
+  onUpdated,
+}: {
+  accessToken: string;
+  listing: Listing;
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
+  const [category, setCategory] = useState<Category | "">(listing.category);
+  const [description, setDescription] = useState(listing.description);
+  const [address, setAddress] = useState(listing.address);
+  const [zipCode, setZipCode] = useState("");
+  const [zipError, setZipError] = useState<string | null>(null);
+  const [lat, setLat] = useState<number | null>(listing.lat);
+  const [lng, setLng] = useState<number | null>(listing.lng);
+  const [addressSelected, setAddressSelected] = useState(true);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [showBlocked, setShowBlocked] = useState<string | null>(null);
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleCategorySelect = (cat: string) => {
+    if (BLOCKED_CATEGORIES.includes(cat as BlockedCategory)) {
+      setShowBlocked(cat);
+      setCategory("");
+      return;
+    }
+    setShowBlocked(null);
+    setCategory(cat as Category);
+    if (PREP_CHECKLIST_CATEGORIES.includes(cat as Category)) {
+      setShowChecklist(true);
+    } else {
+      setShowChecklist(false);
+    }
+  };
+
+  const ALLOWED_ZIP = "55426";
+
+  const validateZip = (zip: string) => {
+    if (zip && zip !== ALLOWED_ZIP) {
+      setZipError(
+        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
+      );
+    } else {
+      setZipError(null);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!category || !description) return;
+    if (zipCode && zipCode.trim() !== ALLOWED_ZIP) {
+      setZipError(
+        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
+      );
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      let photoUrl: string | undefined;
+
+      if (photoFile) {
+        const presign = await getPresignedUrl(accessToken, photoFile.type);
+        await uploadPhoto(presign.uploadUrl, photoFile);
+        photoUrl = presign.photoUrl;
+      }
+
+      const catInfo = CATEGORIES.find((c) => c.name === category);
+
+      const payload: Record<string, unknown> = {
+        category: category as string,
+        description,
+        estimatedValue: catInfo?.payoutLabel || "Varies",
+      };
+
+      if (photoUrl) payload.photoUrl = photoUrl;
+      if (lat !== null) payload.lat = lat;
+      if (lng !== null) payload.lng = lng;
+      if (address) payload.address = address;
+      if (zipCode) payload.zipCode = zipCode.trim();
+
+      await updateListing(accessToken, listing.id, payload);
+      onUpdated();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to update listing");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in">
+        {/* Modal Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-lg font-semibold text-gray-900">Edit Listing</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X size={20} className="text-gray-500" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-6">
+          {/* Current / New Photo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
+            {listing.photoUrl && !photoFile && (
+              <div className="relative w-full h-48 rounded-xl overflow-hidden mb-2">
+                <img
+                  src={listing.photoUrl}
+                  alt={listing.category}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <PhotoUpload onFileChange={(file) => setPhotoFile(file)} error={false} />
+            {!photoFile && listing.photoUrl && (
+              <p className="text-xs text-gray-400 mt-1">
+                Upload a new photo to replace the current one, or leave as-is.
+              </p>
+            )}
+          </div>
+
+          {/* Category Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <div className="grid grid-cols-3 gap-2">
+              {CATEGORIES.filter((c) => c.name !== "Electronics").map((cat) => (
+                <button
+                  type="button"
+                  key={cat.name}
+                  onClick={() => handleCategorySelect(cat.name)}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-xs font-medium ${
+                    category === cat.name
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 text-gray-600 hover:border-emerald-200 hover:bg-emerald-50/50"
+                  }`}
+                >
+                  <CategoryIcon
+                    category={cat.name}
+                    size={20}
+                    className={category === cat.name ? "text-emerald-600" : "text-gray-400"}
+                  />
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+
+            {showBlocked && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+                <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-700">{showBlocked} not accepted</p>
+                  <p className="text-xs text-red-500 mt-0.5">
+                    This item requires special disposal. Please contact your local waste management
+                    service or visit your county's hazardous waste site for safe recycling options.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {showChecklist && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+                <ClipboardCheck size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-700">Prep checklist</p>
+                  <ul className="mt-1 space-y-1">
+                    <li className="flex items-center gap-1.5 text-xs text-amber-600">
+                      <CheckCircle2 size={12} /> Drain all fluids before pickup
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="Describe the metal type, approximate weight, and condition..."
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+            <p className="text-xs text-gray-400 mb-2">Currently serving zip code 55426 only</p>
+            {address && <p className="text-sm text-gray-600 mb-2">Current: {address}</p>}
+            <AddressAutocomplete
+              onSelect={(suggestion: AddressSuggestion) => {
+                setAddress(suggestion.label);
+                setLat(suggestion.lat);
+                setLng(suggestion.lng);
+                setZipCode(suggestion.zipCode);
+                validateZip(suggestion.zipCode);
+                setAddressSelected(true);
+              }}
+              warning={!addressSelected && address.length > 0}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Search for a new address to update the location, or leave as-is.
+            </p>
+          </div>
+
+          {zipError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+              <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700">{zipError}</p>
+            </div>
+          )}
+
+          {submitError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              {submitError}
+            </div>
+          )}
+        </div>
+
+        {/* Submit */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 rounded-b-2xl">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!category || !description || !!zipError || submitting}
+            className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+          >
+            {submitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="animate-spin" size={16} /> Saving...
+              </span>
+            ) : (
+              "Save Changes"
             )}
           </button>
         </div>
