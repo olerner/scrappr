@@ -71,6 +71,7 @@ if (!isLocalDev && !isPreview) {
     env: awsEnv,
     stageName: env,
     domainName: "scrappr.trevor.fail",
+    hostedZoneDomain: "trevor.fail",
   });
 }
 
