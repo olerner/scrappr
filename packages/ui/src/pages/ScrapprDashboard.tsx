@@ -2,7 +2,6 @@ import {
   AlertTriangle,
   ArrowUpDown,
   Clock,
-  DollarSign,
   Filter,
   List,
   Loader2,
@@ -21,7 +20,7 @@ import {
 } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
-import { CATEGORIES } from "../data/mockData";
+import { CATEGORIES, getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { formatRelativeDate } from "../utils/formatDate";
@@ -68,6 +67,7 @@ export function ScrapprDashboard() {
     email,
     error: authError,
   } = useAuth();
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("available");
@@ -152,15 +152,6 @@ export function ScrapprDashboard() {
       return a.category.localeCompare(b.category);
     });
   }, [availableRaw, filterCategory, sortBy]);
-
-  const routeValue = useMemo(() => {
-    const active = claimedListings.filter((l) => l.status === "claimed");
-    const values = active.map((l) => {
-      const match = l.estimatedValue.match(/\$([0-9.]+)/);
-      return match ? parseFloat(match[1]) : 0;
-    });
-    return values.reduce((a, b) => a + b, 0).toFixed(2);
-  }, [claimedListings]);
 
   const activeClaimedListings = claimedListings.filter((l) => l.status === "claimed");
 
@@ -257,21 +248,13 @@ export function ScrapprDashboard() {
                 {email}{" "}
                 <button
                   type="button"
-                  onClick={signOut}
+                  onClick={() => setShowSignOutConfirm(true)}
                   className="text-emerald-600 hover:underline ml-1"
                 >
                   Sign out
                 </button>
               </p>
             </div>
-            {activeClaimedListings.length > 0 && (
-              <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl">
-                <DollarSign size={16} className="text-emerald-600" />
-                <span className="text-sm font-semibold text-emerald-700">
-                  Route value: ${routeValue}+
-                </span>
-              </div>
-            )}
           </div>
           <div className="flex items-center justify-between">
             <div className="flex gap-1">
@@ -439,46 +422,28 @@ export function ScrapprDashboard() {
               <div className="text-center py-16">
                 <Loader2 className="animate-spin text-emerald-600 mx-auto" size={32} />
               </div>
+            ) : activeClaimedListings.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Truck size={24} className="text-gray-400" />
+                </div>
+                <p className="text-gray-500 text-sm">
+                  No active pickups. Browse available listings to claim some.
+                </p>
+              </div>
             ) : (
-              <>
-                {activeClaimedListings.length > 0 && (
-                  <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
-                    <DollarSign size={20} className="text-emerald-600" />
-                    <div>
-                      <p className="text-sm font-semibold text-emerald-800">
-                        Estimated route value: ${routeValue}+
-                      </p>
-                      <p className="text-xs text-emerald-600">
-                        {activeClaimedListings.length} pickup
-                        {activeClaimedListings.length > 1 ? "s" : ""} claimed
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {activeClaimedListings.length === 0 ? (
-                  <div className="text-center py-16">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Truck size={24} className="text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 text-sm">
-                      No active pickups. Browse available listings to claim some.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {activeClaimedListings.map((listing) => (
-                      <ClaimedCard
-                        key={listing.id}
-                        listing={listing}
-                        onComplete={() => handleComplete(listing.id)}
-                        completing={completingId === listing.id}
-                        onUnclaim={() => handleUnclaim(listing.id)}
-                        unclaiming={unclaimingId === listing.id}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeClaimedListings.map((listing) => (
+                  <ClaimedCard
+                    key={listing.id}
+                    listing={listing}
+                    onComplete={() => handleComplete(listing.id)}
+                    completing={completingId === listing.id}
+                    onUnclaim={() => handleUnclaim(listing.id)}
+                    unclaiming={unclaimingId === listing.id}
+                  />
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -635,6 +600,7 @@ function AvailableCard({
               <img
                 src={listing.photoUrl}
                 alt={listing.category}
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -645,7 +611,9 @@ function AvailableCard({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-semibold text-gray-900">{listing.category}</h3>
+              <h3 className="font-semibold text-gray-900">
+                {getCategoryDisplayName(listing.category)}
+              </h3>
               <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
                 Available
               </span>
@@ -773,7 +741,9 @@ function ClaimedCard({
         </span>
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-1">{listing.category}</h3>
+        <h3 className="font-semibold text-gray-900 mb-1">
+          {getCategoryDisplayName(listing.category)}
+        </h3>
         <p className="text-gray-500 text-sm mb-2 line-clamp-2">{listing.description}</p>
         <div className="flex items-center gap-4 text-xs text-gray-400 mb-1">
           <div className="flex items-center gap-1">
