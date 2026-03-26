@@ -8,6 +8,7 @@ import {
 import { randomUUID } from "node:crypto";
 import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
+import { sanitizeAddress } from "./sanitize.mjs";
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
@@ -83,11 +84,12 @@ export const handler = async (event) => {
     }
 
     const addressId = randomUUID();
+    const sanitized = sanitizeAddress({ label: label || "", address });
     const item = {
       userId,
       addressId,
-      label: label || "",
-      address,
+      label: sanitized.label,
+      address: sanitized.address,
       lat,
       lng,
       zipCode: zipCode.trim(),

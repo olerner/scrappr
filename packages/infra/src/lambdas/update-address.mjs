@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
+import { sanitizeAddress } from "./sanitize.mjs";
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
@@ -36,12 +37,19 @@ export const handler = async (event) => {
 
     const body = JSON.parse(event.body || "{}");
 
-    const updates = {};
+    const raw = {};
     for (const field of ALLOWED_FIELDS) {
       if (body[field] !== undefined) {
-        updates[field] = body[field];
+        raw[field] = body[field];
       }
     }
+    // Sanitize text fields before storing
+    const sanitized = sanitizeAddress({ label: raw.label, address: raw.address });
+    const updates = {
+      ...raw,
+      ...(sanitized.label !== undefined && { label: sanitized.label }),
+      ...(sanitized.address !== undefined && { address: sanitized.address }),
+    };
 
     if (Object.keys(updates).length === 0) {
       return {

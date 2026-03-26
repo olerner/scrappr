@@ -3,6 +3,7 @@ import {
   CognitoIdentityProviderClient,
   AdminGetUserCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
+import { escapeHtml, sanitizePhotoUrl } from "./sanitize.mjs";
 
 const ses = new SESClient({});
 
@@ -77,6 +78,13 @@ export async function notifyScrappee({ ownerUserId, subject, heading, message, l
 
     const link = `${APP_URL}${linkPath}`;
 
+    // Sanitize all listing fields before embedding in HTML to prevent injection
+    const safePhotoUrl = sanitizePhotoUrl(listing.photoUrl);
+    const safeCategory = escapeHtml(listing.category);
+    const safeDescription = escapeHtml(listing.description || "");
+    const safeHeading = escapeHtml(heading);
+    const safeMessage = escapeHtml(message);
+
     const html = `
       <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <div style="text-align: center; margin-bottom: 24px;">
@@ -84,13 +92,13 @@ export async function notifyScrappee({ ownerUserId, subject, heading, message, l
           <h1 style="color: #059669; font-size: 24px; margin: 0;">Scrappr</h1>
         </div>
         <div style="background: #f9fafb; border-radius: 12px; padding: 24px;">
-          <h2 style="color: #111827; font-size: 18px; margin: 0 0 8px;">${heading}</h2>
-          <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px;">${message}</p>
+          <h2 style="color: #111827; font-size: 18px; margin: 0 0 8px;">${safeHeading}</h2>
+          <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px;">${safeMessage}</p>
           <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; margin-bottom: 16px;">
-            ${listing.photoUrl ? `<img src="${listing.photoUrl}" alt="${listing.category}" width="100%" style="display: block; max-height: 200px; object-fit: cover;" />` : ""}
+            ${safePhotoUrl ? `<img src="${safePhotoUrl}" alt="${safeCategory}" width="100%" style="display: block; max-height: 200px; object-fit: cover;" />` : ""}
             <div style="padding: 16px;">
-              <p style="margin: 0 0 4px; font-weight: 600; color: #111827;">${listing.category}</p>
-              <p style="margin: 0; color: #6b7280; font-size: 13px;">${listing.description || ""}</p>
+              <p style="margin: 0 0 4px; font-weight: 600; color: #111827;">${safeCategory}</p>
+              <p style="margin: 0; color: #6b7280; font-size: 13px;">${safeDescription}</p>
             </div>
           </div>
           <a href="${link}" style="display: inline-block; background: #059669; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
