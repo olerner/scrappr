@@ -688,6 +688,40 @@ function ClaimedCard({
   unclaiming: boolean;
 }) {
   const catInfo = CATEGORIES.find((c) => c.name === listing.category);
+  const [confirmingUnclaim, setConfirmingUnclaim] = useState(false);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
+
+  useEffect(() => {
+    if (!confirmingUnclaim) return;
+    const timer = setTimeout(() => setConfirmingUnclaim(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmingUnclaim]);
+
+  useEffect(() => {
+    if (!confirmingComplete) return;
+    const timer = setTimeout(() => setConfirmingComplete(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmingComplete]);
+
+  const handleUnclaimClick = () => {
+    if (confirmingUnclaim) {
+      onUnclaim();
+      setConfirmingUnclaim(false);
+    } else {
+      setConfirmingUnclaim(true);
+      setConfirmingComplete(false);
+    }
+  };
+
+  const handleCompleteClick = () => {
+    if (confirmingComplete) {
+      onComplete();
+      setConfirmingComplete(false);
+    } else {
+      setConfirmingComplete(true);
+      setConfirmingUnclaim(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
@@ -724,19 +758,39 @@ function ClaimedCard({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={onUnclaim}
+            onClick={handleUnclaimClick}
             disabled={unclaiming || completing}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all disabled:opacity-40"
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-all disabled:opacity-40 ${
+              confirmingUnclaim
+                ? "bg-red-500 text-white hover:bg-red-600"
+                : "border border-gray-300 text-gray-600 hover:bg-gray-50"
+            }`}
           >
-            {unclaiming ? <Loader2 className="animate-spin mx-auto" size={16} /> : "Unclaim"}
+            {unclaiming ? (
+              <Loader2 className="animate-spin mx-auto" size={16} />
+            ) : confirmingUnclaim ? (
+              "Confirm unclaim?"
+            ) : (
+              "Unclaim"
+            )}
           </button>
           <button
             type="button"
-            onClick={onComplete}
+            onClick={handleCompleteClick}
             disabled={completing || unclaiming}
-            className="flex-1 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all disabled:opacity-40"
+            className={`flex-1 px-4 py-2 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-40 ${
+              confirmingComplete
+                ? "bg-amber-500 hover:bg-amber-600"
+                : "bg-emerald-600 hover:bg-emerald-700"
+            }`}
           >
-            {completing ? <Loader2 className="animate-spin mx-auto" size={16} /> : "Mark Picked Up"}
+            {completing ? (
+              <Loader2 className="animate-spin mx-auto" size={16} />
+            ) : confirmingComplete ? (
+              "Confirm pickup?"
+            ) : (
+              "Mark Picked Up"
+            )}
           </button>
         </div>
       </div>
