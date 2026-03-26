@@ -19,8 +19,19 @@ export function ScrappeeDashboard() {
     initiateGoogleSignIn,
     error: authError,
   } = useAuth();
+  const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);
+
+  // Redirect to saved return path after sign-in (e.g. user was on /haul)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const returnPath = sessionStorage.getItem("scrappr_return_path");
+    if (returnPath && returnPath !== "/list") {
+      sessionStorage.removeItem("scrappr_return_path");
+      navigate(returnPath, { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const fetchListings = useCallback(async () => {
     if (!accessToken) return;

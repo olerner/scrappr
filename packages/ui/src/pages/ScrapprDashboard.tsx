@@ -10,7 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   browseListings,
   claimListing,
@@ -66,6 +66,18 @@ export function ScrapprDashboard() {
     email,
     error: authError,
   } = useAuth();
+
+  const navigate = useNavigate();
+
+  // Redirect to saved return path after sign-in (e.g. user was on /list/new)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const returnPath = sessionStorage.getItem("scrappr_return_path");
+    if (returnPath && returnPath !== "/haul") {
+      sessionStorage.removeItem("scrappr_return_path");
+      navigate(returnPath, { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("available");

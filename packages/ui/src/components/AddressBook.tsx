@@ -13,12 +13,16 @@ import { useAuth } from "../hooks/useAuth";
 import { useStore } from "../store/useStore";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 
-export function AddressBook() {
+interface AddressBookProps {
+  initialShowAdd?: boolean;
+}
+
+export function AddressBook({ initialShowAdd = false }: AddressBookProps) {
   const { accessToken: token } = useAuth();
   const accessToken = token!;
   const { addresses, addressesLoaded, setAddresses, addAddress, updateAddress, removeAddress } =
     useStore();
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd] = useState(initialShowAdd);
   const [pendingSuggestion, setPendingSuggestion] = useState<AddressSuggestion | null>(null);
   const [saving, setSaving] = useState(false);
   const [zipError, setZipError] = useState<string | null>(null);
@@ -141,7 +145,7 @@ export function AddressBook() {
       {showAdd ? (
         <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
           <p className="text-xs text-gray-400">Currently serving {ALLOWED_AREA_LABEL} only</p>
-          <AddressAutocomplete onSelect={handleAutocompleteSelect} />
+          <AddressAutocomplete onSelect={handleAutocompleteSelect} autoFocus={initialShowAdd} />
           {zipError && <p className="text-sm text-red-600">{zipError}</p>}
           <div className="flex items-center justify-between">
             <button

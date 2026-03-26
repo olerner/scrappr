@@ -52,7 +52,7 @@ export function AddressPicker({
               </option>
             ))}
           </select>
-        ) : (
+        ) : !showManage ? (
           <button
             type="button"
             onClick={() => setShowManage(true)}
@@ -60,7 +60,7 @@ export function AddressPicker({
           >
             <MapPin size={16} /> Add a pickup address
           </button>
-        )}
+        ) : null}
 
         <button
           type="button"
@@ -78,7 +78,7 @@ export function AddressPicker({
             onClick={() => setShowManage(false)}
           />
           <div className="relative w-full max-w-lg max-h-[80vh] overflow-y-auto">
-            <AddressBook />
+            <AddressBook initialShowAdd={addresses.length === 0} />
             <div className="flex justify-end mt-3">
               <button
                 type="button"

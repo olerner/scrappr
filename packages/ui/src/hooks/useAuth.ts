@@ -183,6 +183,10 @@ export function useAuth(): AuthState {
   }, []);
 
   const initiateGoogleSignIn = useCallback(() => {
+    sessionStorage.setItem(
+      "scrappr_return_path",
+      window.location.pathname + window.location.search,
+    );
     const redirectUri = `${window.location.origin}/auth/callback`;
     const params = new URLSearchParams({
       identity_provider: "Google",

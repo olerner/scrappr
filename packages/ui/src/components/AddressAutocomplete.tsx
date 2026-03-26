@@ -10,9 +10,10 @@ import {
 interface AddressAutocompleteProps {
   onSelect: (suggestion: AddressSuggestion) => void;
   warning?: boolean;
+  autoFocus?: boolean;
 }
 
-export function AddressAutocomplete({ onSelect, warning }: AddressAutocompleteProps) {
+export function AddressAutocomplete({ onSelect, warning, autoFocus }: AddressAutocompleteProps) {
   const { predictions, loading, clearPredictions, search } = useAddressAutocomplete();
   const [inputValue, setInputValue] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -133,6 +134,8 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
           showWarning ? "border-amber-400 ring-2 ring-amber-200" : "border-gray-300"
         } pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent`}
         data-testid="address-input"
+        // biome-ignore lint/a11y/noAutofocus: conditional autofocus for first-address UX
+        autoFocus={autoFocus}
       />
       {isLoading && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2">

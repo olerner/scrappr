@@ -29,7 +29,9 @@ export function AuthCallback() {
 
     handleAuthCallback(code)
       .then(() => {
-        navigate("/list", { replace: true });
+        const returnPath = sessionStorage.getItem("scrappr_return_path") || "/list";
+        sessionStorage.removeItem("scrappr_return_path");
+        navigate(returnPath, { replace: true });
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Authentication failed");

@@ -151,6 +151,7 @@ export function CreateListing() {
   }
 
   if (!isAuthenticated) {
+    sessionStorage.setItem("scrappr_return_path", window.location.pathname);
     navigate("/list");
     return null;
   }
