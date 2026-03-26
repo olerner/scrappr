@@ -173,7 +173,9 @@ test.describe("Listing Creation Flow", () => {
     await page.getByRole("button", { name: "Save" }).click();
 
     // Wait for address to be saved (address appears in the saved list)
-    await expect(page.locator("span").filter({ hasText: "123 Test St" })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator("span").filter({ hasText: "123 Test St" })).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Close the address book
     await page.getByRole("button", { name: "Done" }).click();
