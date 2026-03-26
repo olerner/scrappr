@@ -219,7 +219,7 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
 
       if (photoFile) {
         const presign = await getPresignedUrl(accessToken, photoFile.type);
-        await uploadPhoto(presign.uploadUrl, photoFile);
+        await uploadPhoto(presign.uploadUrl, photoFile, presign.fields);
         photoUrl = presign.photoUrl;
       }
 

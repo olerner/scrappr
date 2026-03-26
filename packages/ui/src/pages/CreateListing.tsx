@@ -119,7 +119,7 @@ export function CreateListing() {
 
     try {
       const presign = await getPresignedUrl(accessToken, photoFile.type);
-      await uploadPhoto(presign.uploadUrl, photoFile);
+      await uploadPhoto(presign.uploadUrl, photoFile, presign.fields);
 
       const catInfo = CATEGORIES.find((c) => c.name === category);
 

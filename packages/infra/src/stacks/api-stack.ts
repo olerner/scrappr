@@ -24,6 +24,7 @@ interface ApiStackProps extends cdk.StackProps {
   userPoolId: string;
   userPoolClientId: string;
   photoBucket: s3.IBucket;
+  photoBucketUrl: string;
   senderEmail?: string;
   sendEmailPolicy?: iam.PolicyStatement;
   appUrl?: string;
@@ -92,6 +93,7 @@ export class ApiStack extends cdk.Stack {
       userPoolId,
       userPoolClientId,
       photoBucket,
+      photoBucketUrl,
       senderEmail,
       sendEmailPolicy,
       appUrl,
@@ -152,7 +154,10 @@ export class ApiStack extends cdk.Stack {
 
     const presignFn = this.createLambda("Presign", {
       handler: "presign.handler",
-      environment: { PHOTO_BUCKET: photoBucket.bucketName },
+      environment: {
+        PHOTO_BUCKET: photoBucket.bucketName,
+        PHOTO_BUCKET_URL: photoBucketUrl,
+      },
     });
     photoBucket.grantPut(presignFn);
 
@@ -340,6 +345,10 @@ export class ApiStack extends cdk.Stack {
     const defaultStage = httpApi.defaultStage?.node.defaultChild as apigatewayv2.CfnStage;
     defaultStage.accessLogSettings = {
       destinationArn: accessLogGroup.logGroupArn,
+    };
+    defaultStage.defaultRouteSettings = {
+      throttlingBurstLimit: 100,
+      throttlingRateLimit: 50,
     };
 
     httpApi.addRoutes({

@@ -1,12 +1,14 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { S3Client } from "@aws-sdk/client-s3";
+import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
 import { randomUUID } from "node:crypto";
 import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
 
 const s3 = new S3Client({});
 const BUCKET = process.env.PHOTO_BUCKET;
+const BUCKET_URL = process.env.PHOTO_BUCKET_URL;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export const handler = async (event) => {
   const log = createLogger(event);
@@ -33,19 +35,23 @@ export const handler = async (event) => {
     const ext = contentType.split("/")[1].replace("jpeg", "jpg");
     const key = `photos/${randomUUID()}.${ext}`;
 
-    const command = new PutObjectCommand({
+    const { url: uploadUrl, fields } = await createPresignedPost(s3, {
       Bucket: BUCKET,
       Key: key,
-      ContentType: contentType,
+      Conditions: [
+        ["content-length-range", 1, MAX_FILE_SIZE],
+        ["eq", "$Content-Type", contentType],
+      ],
+      Fields: { "Content-Type": contentType },
+      Expires: 900,
     });
 
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 900 });
-    const photoUrl = `https://${BUCKET}.s3.amazonaws.com/${key}`;
+    const photoUrl = `${BUCKET_URL}/${key}`;
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uploadUrl, photoUrl, key }),
+      body: JSON.stringify({ uploadUrl, fields, photoUrl, key }),
     };
   } catch (err) {
     log.error("presign failed", err);

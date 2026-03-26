@@ -89,6 +89,7 @@ new ApiStack(app, `scrappr-api-${env}`, {
   userPoolId,
   userPoolClientId,
   photoBucket: storageStack.photoBucket,
+  photoBucketUrl: storageStack.photoBucketUrl,
   senderEmail: emailStack?.senderEmail,
   sendEmailPolicy: emailStack?.sendEmailPolicyStatement,
   appUrl,

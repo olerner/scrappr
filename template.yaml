@@ -28,6 +28,8 @@ Resources:
       Environment:
         Variables:
           PHOTO_BUCKET: !Sub "scrappr-photos-${Env}-${AwsAccountId}"
+          PHOTO_BUCKET_URL: !ImportValue
+            "Fn::Sub": "scrappr-photo-bucket-url-${Env}"
       Events:
         Api:
           Type: HttpApi

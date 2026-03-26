@@ -19,7 +19,7 @@ async function apiRequest(
 export async function getPresignedUrl(
   accessToken: string,
   contentType: string,
-): Promise<{ uploadUrl: string; photoUrl: string; key: string }> {
+): Promise<{ uploadUrl: string; fields: Record<string, string>; photoUrl: string; key: string }> {
   const res = await apiRequest("/photos/presign", accessToken, {
     method: "POST",
     body: JSON.stringify({ contentType }),
@@ -28,12 +28,17 @@ export async function getPresignedUrl(
   return res.json();
 }
 
-export async function uploadPhoto(uploadUrl: string, file: File): Promise<void> {
-  const res = await fetch(uploadUrl, {
-    method: "PUT",
-    body: file,
-    headers: { "Content-Type": file.type },
-  });
+export async function uploadPhoto(
+  uploadUrl: string,
+  file: File,
+  fields: Record<string, string>,
+): Promise<void> {
+  const formData = new FormData();
+  for (const [k, v] of Object.entries(fields)) {
+    formData.append(k, v);
+  }
+  formData.append("file", file); // must be last per S3 presigned POST spec
+  const res = await fetch(uploadUrl, { method: "POST", body: formData });
   if (!res.ok) throw new Error("Failed to upload photo");
 }
 
