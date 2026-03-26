@@ -6,10 +6,10 @@ import {
   getAddresses,
   updateAddress as updateAddressApi,
 } from "../api/client";
+import { useAuthContext } from "../contexts/AuthContext";
 import type { Address } from "../data/types";
 import { ALLOWED_AREA_LABEL, ALLOWED_CITY } from "../data/types";
 import type { AddressSuggestion } from "../hooks/useAddressAutocomplete";
-import { useAuthContext } from "../contexts/AuthContext";
 import { useStore } from "../store/useStore";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 

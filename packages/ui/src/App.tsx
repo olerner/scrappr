@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
 import { Header } from "./components/Header";
+import { AuthProvider } from "./contexts/AuthContext";
 import { AuthCallback } from "./pages/AuthCallback";
 import { CreateListing } from "./pages/CreateListing";
 import { EditListing } from "./pages/EditListing";

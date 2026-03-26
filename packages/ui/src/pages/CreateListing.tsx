@@ -12,6 +12,7 @@ import { createListing, getAddresses, getPresignedUrl, uploadPhoto } from "../ap
 import { AddressPicker } from "../components/AddressPicker";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { PhotoUpload } from "../components/PhotoUpload";
+import { useAuthContext } from "../contexts/AuthContext";
 import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
 import {
   type Address,
@@ -20,8 +21,6 @@ import {
   type Category,
   isAllowedZip,
 } from "../data/types";
-
-import { useAuthContext } from "../contexts/AuthContext";
 import { useStore } from "../store/useStore";
 
 export function CreateListing() {

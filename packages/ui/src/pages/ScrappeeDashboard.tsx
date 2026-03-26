@@ -4,9 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { deleteListing, getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
+import { useAuthContext } from "../contexts/AuthContext";
 import { getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
-import { useAuthContext } from "../contexts/AuthContext";
 import { formatRelativeDate } from "../utils/formatDate";
 
 export function ScrappeeDashboard() {
@@ -382,10 +382,16 @@ function ListingCard({
                         ? "bg-red-100 text-red-600 hover:bg-red-200"
                         : "text-gray-400 hover:text-red-500 hover:bg-red-50"
                     }`}
-                    aria-label={confirmDelete ? "Click again to confirm deletion" : "Delete listing"}
+                    aria-label={
+                      confirmDelete ? "Click again to confirm deletion" : "Delete listing"
+                    }
                     title={confirmDelete ? "Click again to confirm" : "Delete listing"}
                   >
-                    {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    {deleting ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
                   </button>
                 </>
               )}
