@@ -21,11 +21,11 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
-      - name: Deploy auth + API + storage stacks
+      - name: Deploy auth + storage + email + API stacks
         id: api
         run: |
           cd packages/infra
-          npx cdk deploy scrappr-auth-dev scrappr-storage-dev scrappr-api-dev \
+          npx cdk deploy scrappr-auth-dev scrappr-storage-dev scrappr-email-dev scrappr-api-dev \
             --require-approval never \
             --outputs-file /tmp/cdk-api-outputs.json 2>&1 | tail -50
           API_URL=$(node -e "const o=require('/tmp/cdk-api-outputs.json'); console.log(o['scrappr-api-dev'].ApiEndpoint)")

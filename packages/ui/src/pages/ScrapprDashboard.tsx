@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   ArrowUpDown,
+  Clock,
   DollarSign,
   Filter,
   List,
@@ -51,6 +52,7 @@ function mapApiListing(item: Record<string, unknown>): Listing {
     status: (item.status as Listing["status"]) || "available",
     datePosted: (item.datePosted as string) || (item.createdAt as string) || "",
     claimedBy: item.claimedBy as string | undefined,
+    claimedAt: item.claimedAt as string | undefined,
     estimatedValue: (item.estimatedValue as string) || "Varies",
   };
 }
@@ -690,6 +692,25 @@ function ClaimedCard({
   const catInfo = CATEGORIES.find((c) => c.name === listing.category);
   const [confirmingUnclaim, setConfirmingUnclaim] = useState(false);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [, setTick] = useState(0);
+
+  // Countdown timer — re-render every minute
+  useEffect(() => {
+    if (!listing.claimedAt) return;
+    const interval = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, [listing.claimedAt]);
+
+  const expiryLabel = useMemo(() => {
+    if (!listing.claimedAt) return null;
+    const expiresAt = new Date(listing.claimedAt).getTime() + 24 * 60 * 60 * 1000;
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) return "Expired";
+    const hours = Math.floor(remaining / (60 * 60 * 1000));
+    const mins = Math.floor((remaining % (60 * 60 * 1000)) / 60000);
+    if (hours > 0) return `${hours}h ${mins}m left`;
+    return `${mins}m left`;
+  }, [listing.claimedAt]);
 
   useEffect(() => {
     if (!confirmingUnclaim) return;
@@ -749,7 +770,16 @@ function ClaimedCard({
             <CategoryIcon category={listing.category} size={14} className="text-emerald-600" />
             <span>{catInfo?.payoutLabel}</span>
           </div>
-          {listing.datePosted && <span>{formatRelativeDate(listing.datePosted)}</span>}
+          {expiryLabel && (
+            <div
+              className={`flex items-center gap-1 ${
+                expiryLabel === "Expired" ? "text-red-500" : "text-amber-500"
+              }`}
+            >
+              <Clock size={12} />
+              <span className="font-medium">{expiryLabel}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
           <MapPin size={12} />

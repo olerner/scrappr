@@ -77,5 +77,6 @@ export interface Listing {
   status: ListingStatus;
   datePosted: string;
   claimedBy?: string;
+  claimedAt?: string;
   estimatedValue: string;
 }
