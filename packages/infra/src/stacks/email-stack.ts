@@ -1,7 +1,9 @@
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as route53 from "aws-cdk-lib/aws-route53";
+import * as s3 from "aws-cdk-lib/aws-s3";
 import * as ses from "aws-cdk-lib/aws-ses";
+import * as ses_actions from "aws-cdk-lib/aws-ses-actions";
 import type { Construct } from "constructs";
 
 interface EmailStackProps extends cdk.StackProps {
@@ -19,7 +21,7 @@ export class EmailStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EmailStackProps) {
     super(scope, id, props);
 
-    const { domainName, hostedZoneDomain } = props;
+    const { stageName, domainName, hostedZoneDomain } = props;
     this.senderEmail = `noreply@${domainName}`;
 
     // ── Route 53 Hosted Zone ──────────────────────────────────────────
@@ -29,8 +31,6 @@ export class EmailStack extends cdk.Stack {
     });
 
     // ── SES Domain Identity ───────────────────────────────────────────
-    // Verify the subdomain for sending. DNS records (DKIM, SPF) are
-    // created in the parent hosted zone automatically.
 
     const identity = new ses.EmailIdentity(this, "DomainIdentity", {
       identity: ses.Identity.domain(domainName),
@@ -44,6 +44,56 @@ export class EmailStack extends cdk.Stack {
         domainName: identity.dkimRecords[i - 1].value,
       });
     }
+
+    // ── MX Record for receiving ───────────────────────────────────────
+
+    new route53.MxRecord(this, "MxRecord", {
+      zone: hostedZone,
+      recordName: domainName,
+      values: [
+        {
+          priority: 10,
+          hostName: `inbound-smtp.${this.region}.amazonaws.com`,
+        },
+      ],
+    });
+
+    // ── S3 Bucket for incoming emails ─────────────────────────────────
+
+    const inboxBucket = new s3.Bucket(this, "InboxBucket", {
+      bucketName: `scrappr-inbox-${stageName}`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      lifecycleRules: [{ expiration: cdk.Duration.days(30) }],
+    });
+
+    // SES needs permission to put objects in the bucket
+    inboxBucket.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:PutObject"],
+        resources: [inboxBucket.arnForObjects("*")],
+        principals: [new iam.ServicePrincipal("ses.amazonaws.com")],
+        conditions: {
+          StringEquals: { "AWS:SourceAccount": this.account },
+        },
+      }),
+    );
+
+    // ── SES Receipt Rule Set ──────────────────────────────────────────
+
+    const ruleSet = new ses.ReceiptRuleSet(this, "InboxRuleSet", {
+      receiptRuleSetName: `scrappr-inbox-${stageName}`,
+    });
+
+    ruleSet.addRule("CatchAll", {
+      recipients: [domainName],
+      actions: [
+        new ses_actions.S3({
+          bucket: inboxBucket,
+          objectKeyPrefix: "incoming/",
+        }),
+      ],
+    });
 
     // ── IAM Policy for sending ────────────────────────────────────────
 
@@ -60,6 +110,10 @@ export class EmailStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, "IdentityArn", {
       value: identity.emailIdentityArn,
+    });
+
+    new cdk.CfnOutput(this, "InboxBucket", {
+      value: inboxBucket.bucketName,
     });
   }
 }
