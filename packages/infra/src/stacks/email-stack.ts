@@ -36,14 +36,9 @@ export class EmailStack extends cdk.Stack {
       identity: ses.Identity.domain(domainName),
     });
 
-    // Add DKIM CNAME records to the parent hosted zone
-    for (let i = 1; i <= 3; i++) {
-      new route53.CnameRecord(this, `DkimRecord${i}`, {
-        zone: hostedZone,
-        recordName: identity.dkimRecords[i - 1].name,
-        domainName: identity.dkimRecords[i - 1].value,
-      });
-    }
+    // DKIM CNAME records are created manually via CLI since CDK tokens
+    // can't be string-manipulated to get the correct relative record name
+    // for a subdomain identity in a parent hosted zone.
 
     // ── MX Record for receiving ───────────────────────────────────────
 
