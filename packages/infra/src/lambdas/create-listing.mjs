@@ -3,6 +3,7 @@ import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "node:crypto";
 import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
+import { sanitizeListing } from "./sanitize.mjs";
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
@@ -43,7 +44,7 @@ export const handler = async (event) => {
     }
 
     const listingId = randomUUID();
-    const item = {
+    const item = sanitizeListing({
       userId,
       listingId,
       category,
@@ -57,7 +58,7 @@ export const handler = async (event) => {
       datePosted: new Date().toISOString().split("T")[0],
       estimatedValue: estimatedValue || "Varies",
       createdAt: new Date().toISOString(),
-    };
+    });
 
     await ddb.send(new PutCommand({ TableName: TABLE, Item: item }));
 
