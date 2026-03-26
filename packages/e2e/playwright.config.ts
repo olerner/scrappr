@@ -12,6 +12,8 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || "http://localhost:5173",
     headless: true,
     screenshot: "only-on-failure",
+    trace: "retain-on-failure",
+    video: "retain-on-failure",
   },
   webServer: isLocal
     ? [
@@ -20,14 +22,14 @@ export default defineConfig({
           port: 3000,
           cwd: "../..",
           reuseExistingServer: true,
-          timeout: 30_000,
+          timeout: 120_000,
         },
         {
           command: "yarn ui",
           port: 5173,
           cwd: "../..",
           reuseExistingServer: true,
-          timeout: 30_000,
+          timeout: 60_000,
         },
       ]
     : undefined,

@@ -6,7 +6,7 @@ const TEST_PASSWORD = "TestPass123!";
 
 test.describe("Listing Creation Flow", () => {
   test.beforeEach(async ({ page }) => {
-    // Mock Google Places APIs before navigating
+    // Mock Google Places Autocomplete API
     await page.route("**/places.googleapis.com/v1/places:autocomplete**", (route) => {
       route.fulfill({
         status: 200,
@@ -15,7 +15,7 @@ test.describe("Listing Creation Flow", () => {
           suggestions: [
             {
               placePrediction: {
-                text: { text: "123 Test St, Minneapolis, MN, USA" },
+                text: { text: "123 Test St, St Louis Park, MN 55426, USA" },
                 placeId: "ChIJTestPlace123",
               },
             },
@@ -24,16 +24,25 @@ test.describe("Listing Creation Flow", () => {
       });
     });
 
+    // Mock Google Places Details API — must return zip 55426 (only accepted zip)
     await page.route("**/places.googleapis.com/v1/places/ChIJTestPlace123**", (route) => {
       route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           location: {
-            latitude: 44.9778,
-            longitude: -93.265,
+            latitude: 44.9298,
+            longitude: -93.3477,
           },
-          formattedAddress: "123 Test St, Minneapolis, MN 55401, USA",
+          formattedAddress: "123 Test St, St Louis Park, MN 55426, USA",
+          addressComponents: [
+            { types: ["street_number"], shortText: "123" },
+            { types: ["route"], shortText: "Test St" },
+            { types: ["locality"], shortText: "St Louis Park" },
+            { types: ["administrative_area_level_1"], shortText: "MN" },
+            { types: ["postal_code"], shortText: "55426" },
+            { types: ["country"], shortText: "US" },
+          ],
         }),
       });
     });
@@ -53,31 +62,28 @@ test.describe("Listing Creation Flow", () => {
     await page.getByRole("button", { name: "New Listing" }).click();
     await expect(page.getByText("New Listing").nth(1)).toBeVisible();
 
-    // 2. Select category "Copper"
-    await page.getByTestId("category-copper").click();
-
-    // 3. Upload test photo
+    // 2. Upload test photo
     const fileInput = page.getByTestId("photo-input");
     const testPhotoPath = path.join(import.meta.dirname, "../fixtures/test-photo.jpg");
     await fileInput.setInputFiles(testPhotoPath);
 
+    // 3. Select category "Copper"
+    await page.getByTestId("category-copper").click();
+
     // 4. Fill description
     await page.getByTestId("description-input").fill("Test copper pipe, about 10 lbs");
 
-    // 5. Fill address via autocomplete
-    await page.getByTestId("address-input").fill("Minneapolis");
+    // 5. Fill address via autocomplete (zip 55426 auto-fills from Places details)
+    await page.getByTestId("address-input").fill("123 Test St");
     await page.getByTestId("address-suggestion").first().click({ timeout: 10_000 });
 
-    // 6. Fill zip code (must be in service area)
-    await page.getByTestId("zip-input").fill("55426");
-
-    // 7. Submit
+    // 6. Submit
     await page.getByTestId("submit-listing-btn").click();
 
-    // 8. Wait for modal to close and listing to appear
+    // 7. Wait for modal to close and listing to appear
     await expect(page.getByTestId("submit-listing-btn")).not.toBeVisible({ timeout: 15_000 });
 
-    // 9. Assert listing appears in My Listings
+    // 8. Assert listing appears in My Listings
     await expect(page.getByText("Test copper pipe, about 10 lbs").first()).toBeVisible({
       timeout: 10_000,
     });
@@ -97,13 +103,12 @@ test.describe("Listing Creation Flow", () => {
     await expect(uploadBtn).toBeVisible();
     await expect(uploadBtn).toContainText("Click or drag to upload a photo");
 
-    // 4. Simulate drag-and-drop a photo via the file input (Playwright doesn't natively
-    //    support DataTransfer drag events, so we use setInputFiles as the equivalent)
+    // 4. Upload a photo via file input
     const fileInput = page.getByTestId("photo-input");
     const testPhotoPath = path.join(import.meta.dirname, "../fixtures/test-photo.jpg");
     await fileInput.setInputFiles(testPhotoPath);
 
-    // 5. Verify photo preview appears (upload button is replaced by preview image)
+    // 5. Verify photo preview appears
     await expect(page.getByAltText("Preview")).toBeVisible({ timeout: 5_000 });
     await expect(uploadBtn).not.toBeVisible();
 
