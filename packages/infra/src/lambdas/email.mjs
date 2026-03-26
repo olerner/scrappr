@@ -85,12 +85,9 @@ export async function notifyScrappee({ ownerUserId, subject, heading, message, l
         <div style="background: #f9fafb; border-radius: 12px; padding: 24px;">
           <h2 style="color: #111827; font-size: 18px; margin: 0 0 8px;">${heading}</h2>
           <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px;">${message}</p>
-          <div style="background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; margin-bottom: 16px;">
-            ${listing.photoUrl ? `<img src="${listing.photoUrl}" alt="${listing.category}" width="100%" style="display: block; max-height: 200px; object-fit: cover;" />` : ""}
-            <div style="padding: 16px;">
-              <p style="margin: 0 0 4px; font-weight: 600; color: #111827;">${listing.category}</p>
-              <p style="margin: 0; color: #6b7280; font-size: 13px;">${listing.description || ""}</p>
-            </div>
+          <div style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #e5e7eb; margin-bottom: 16px;">
+            <p style="margin: 0 0 4px; font-weight: 600; color: #111827;">${listing.category}</p>
+            <p style="margin: 0; color: #6b7280; font-size: 13px;">${listing.description || ""}</p>
           </div>
           <a href="${link}" style="display: inline-block; background: #059669; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
             View in Scrappr
