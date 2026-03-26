@@ -3,7 +3,7 @@ dist
 .env
 .env.*
 !.env.example
-!.env.production
+
 samconfig.toml
 *.local
 
