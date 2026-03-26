@@ -75,6 +75,13 @@ if (!isLocalDev && !isPreview) {
   });
 }
 
+// Determine app URL by environment
+const appUrl = isLocalDev
+  ? "http://localhost:5173"
+  : env === "dev"
+    ? "https://scrappr.trevor.fail"
+    : `https://scrappr-${env}.trevor.fail`;
+
 new ApiStack(app, `scrappr-api-${env}`, {
   env: awsEnv,
   stageName: env,
@@ -83,6 +90,7 @@ new ApiStack(app, `scrappr-api-${env}`, {
   photoBucket: storageStack.photoBucket,
   senderEmail: emailStack?.senderEmail,
   sendEmailPolicy: emailStack?.sendEmailPolicyStatement,
+  appUrl,
 });
 
 // UI stack — skip for localdev (runs locally), deploy for everything else

@@ -89,7 +89,7 @@ export const handler = async (event) => {
       ownerUserId: listing.userId,
       subject: "Your listing is available again",
       heading: "Listing back on the market",
-      message: "The hauler who claimed your listing has released it. It's now available for other haulers to pick up.",
+      message: "The hauler who claimed your listing wasn't able to make the pickup, so your listing is back on the market. No action needed from you — other haulers in the area can now see and claim it.",
       listing,
     });
 

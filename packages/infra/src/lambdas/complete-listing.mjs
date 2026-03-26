@@ -90,7 +90,7 @@ export const handler = async (event) => {
       ownerUserId: listing.userId,
       subject: "Your scrap has been picked up!",
       heading: "Pickup complete!",
-      message: "The hauler has picked up your scrap metal. Thanks for keeping it out of the landfill!",
+      message: "The hauler has picked up your scrap and is taking it to a local scrap yard. Thanks for keeping valuable metal out of the landfill — you just helped power the circular economy!",
       listing,
     });
 

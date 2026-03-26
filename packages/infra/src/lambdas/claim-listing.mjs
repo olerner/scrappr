@@ -90,9 +90,9 @@ export const handler = async (event) => {
     // Notify the scrappee (non-blocking)
     notifyScrappee({
       ownerUserId: listing.userId,
-      subject: "Your listing has been claimed!",
+      subject: "A hauler is coming to pick up your scrap!",
       heading: "A hauler is on the way!",
-      message: "A local Scrappr hauler has claimed your listing and will pick it up soon.",
+      message: "A local hauler has claimed your listing and plans to pick it up within 24 hours. Make sure your scrap is accessible and easy to find — near the curb, by the garage, or wherever you noted in your listing.",
       listing,
     });
 

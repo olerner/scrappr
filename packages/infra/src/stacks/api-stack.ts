@@ -26,6 +26,7 @@ interface ApiStackProps extends cdk.StackProps {
   photoBucket: s3.IBucket;
   senderEmail?: string;
   sendEmailPolicy?: iam.PolicyStatement;
+  appUrl?: string;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -84,8 +85,15 @@ export class ApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
-    const { stageName, userPoolId, userPoolClientId, photoBucket, senderEmail, sendEmailPolicy } =
-      props;
+    const {
+      stageName,
+      userPoolId,
+      userPoolClientId,
+      photoBucket,
+      senderEmail,
+      sendEmailPolicy,
+      appUrl,
+    } = props;
     this.stageName = stageName;
     this.lambdasDir = path.join(__dirname, "../lambdas");
     const isPreview = stageName.startsWith("pr-");
@@ -178,7 +186,7 @@ export class ApiStack extends cdk.Stack {
 
     // Email-enabled environment variables (only when SES is configured)
     const emailEnv: Record<string, string> = senderEmail
-      ? { SENDER_EMAIL: senderEmail, USER_POOL_ID: userPoolId }
+      ? { SENDER_EMAIL: senderEmail, USER_POOL_ID: userPoolId, APP_URL: appUrl || "" }
       : {};
 
     const completeListingFn = this.createLambda("CompleteListing", {
