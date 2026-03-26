@@ -48,6 +48,10 @@ yarn dev
 
 All work must be browser-tested and accepted before shipping. See [`packages/e2e/README.md`](packages/e2e/README.md) for the full testing philosophy and PR workflow.
 
+## Commits
+
+Include the GitHub issue number in commit messages when the commit addresses an issue, e.g. `fix: validate photoUrl on write (#52, #53)`.
+
 ## PRs
 
 Use `/pr` to open pull requests. See [`.claude/skills/pr/SKILL.md`](.claude/skills/pr/SKILL.md).
