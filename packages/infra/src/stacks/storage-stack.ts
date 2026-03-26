@@ -25,8 +25,8 @@ export class StorageStack extends cdk.Stack {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       cors: [
         {
-          // PUT only — uploads go directly to S3 via presigned URL; reads go through CloudFront
-          allowedMethods: [s3.HttpMethods.PUT],
+          // POST only — uploads use createPresignedPost (multipart form); reads go through CloudFront
+          allowedMethods: [s3.HttpMethods.POST],
           allowedOrigins: isPreview
             ? ["https://*"]
             : ["http://localhost:5173", "http://localhost:4173", "https://scrappr.trevor.fail"],
