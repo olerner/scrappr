@@ -2,6 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
+import { sanitizeListing } from "./sanitize.mjs";
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
@@ -32,13 +33,14 @@ export const handler = async (event) => {
 
     const body = JSON.parse(event.body || "{}");
 
-    // Only allow updating specific fields
-    const updates = {};
+    // Only allow updating specific fields, sanitize user input
+    const raw = {};
     for (const field of ALLOWED_FIELDS) {
       if (body[field] !== undefined) {
-        updates[field] = body[field];
+        raw[field] = body[field];
       }
     }
+    const updates = sanitizeListing(raw);
 
     if (Object.keys(updates).length === 0) {
       return {

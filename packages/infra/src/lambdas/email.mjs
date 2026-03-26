@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 
 const ses = new SESClient({});
+
 const cognito = new CognitoIdentityProviderClient({});
 const SENDER = process.env.SENDER_EMAIL || "noreply@scrappr.trevor.fail";
 const USER_POOL_ID = process.env.USER_POOL_ID;

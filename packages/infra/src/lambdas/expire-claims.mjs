@@ -8,13 +8,13 @@ const TABLE = process.env.LISTINGS_TABLE;
 const STATUS_INDEX = process.env.STATUS_INDEX;
 const APP_URL = process.env.APP_URL || "https://scrappr.trevor.fail";
 
-const EXPIRY_HOURS = 24;
-const WARNING_HOURS = 20;
+const EXPIRY_HOURS = 2;
+const WARNING_MINUTES = 30;
 
 export const handler = async () => {
   const now = new Date();
   const expiryThreshold = new Date(now.getTime() - EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
-  const warningThreshold = new Date(now.getTime() - WARNING_HOURS * 60 * 60 * 1000).toISOString();
+  const warningThreshold = new Date(now.getTime() - (EXPIRY_HOURS * 60 - WARNING_MINUTES) * 60 * 1000).toISOString();
 
   try {
     // Query all claimed listings
@@ -104,10 +104,6 @@ export const handler = async () => {
         if (listing.claimedBy) {
           const haulerEmail = await getUserEmail(listing.claimedBy);
           if (haulerEmail) {
-            const hoursLeft = Math.round(
-              (new Date(listing.claimedAt).getTime() + EXPIRY_HOURS * 60 * 60 * 1000 - now.getTime()) / (60 * 60 * 1000)
-            );
-
             sendEmail({
               to: haulerEmail,
               subject: "Your claim expires soon — pick it up!",
@@ -119,7 +115,7 @@ export const handler = async () => {
                   <div style="background: #fef3c7; border-radius: 12px; padding: 24px;">
                     <h2 style="color: #92400e; font-size: 18px; margin: 0 0 8px;">Heads up — claim expiring soon</h2>
                     <p style="color: #78350f; font-size: 14px; margin: 0 0 16px;">
-                      Your claim on a <strong>${listing.category}</strong> listing expires in about ${hoursLeft} hour${hoursLeft === 1 ? "" : "s"}.
+                      Your claim on a <strong>${listing.category}</strong> listing expires in about ${WARNING_MINUTES} minutes.
                       If you can't make the pickup, no worries — it'll be released for other haulers. But if you're still planning to grab it, head over now!
                     </p>
                     <a href="${APP_URL}/haul" style="display: inline-block; background: #d97706; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
