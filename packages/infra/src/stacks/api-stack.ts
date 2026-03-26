@@ -125,6 +125,13 @@ export class ApiStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    listingsTable.addGlobalSecondaryIndex({
+      indexName: "claimedBy-index",
+      partitionKey: { name: "claimedBy", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "claimedAt", type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // ── Lambda Functions ────────────────────────────────────────────
 
     const presignFn = this.createLambda("Presign", {
@@ -153,6 +160,24 @@ export class ApiStack extends cdk.Stack {
       },
     });
     listingsTable.grantReadData(browseListingsFn);
+
+    const getClaimedListingsFn = this.createLambda("GetClaimedListings", {
+      handler: "get-claimed-listings.handler",
+      environment: {
+        LISTINGS_TABLE: listingsTable.tableName,
+        CLAIMED_BY_INDEX: "claimedBy-index",
+      },
+    });
+    listingsTable.grantReadData(getClaimedListingsFn);
+
+    const completeListingFn = this.createLambda("CompleteListing", {
+      handler: "complete-listing.handler",
+      environment: {
+        LISTINGS_TABLE: listingsTable.tableName,
+        LISTING_ID_INDEX: "listingId-index",
+      },
+    });
+    listingsTable.grantReadWriteData(completeListingFn);
 
     const claimListingFn = this.createLambda("ClaimListing", {
       handler: "claim-listing.handler",
@@ -257,9 +282,26 @@ export class ApiStack extends cdk.Stack {
     });
 
     httpApi.addRoutes({
+      path: "/listings/claimed",
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        "GetClaimedListingsInt",
+        getClaimedListingsFn,
+      ),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
       path: "/listings/{listingId}/claim",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration("ClaimListingInt", claimListingFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/listings/{listingId}/complete",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration("CompleteListingInt", completeListingFn),
       authorizer: jwtAuthorizer,
     });
 

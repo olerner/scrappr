@@ -85,6 +85,40 @@ Resources:
             Method: GET
             ApiId: !Ref HttpApi
 
+  GetClaimedListingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-claimed-listings.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+          CLAIMED_BY_INDEX: claimedBy-index
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /listings/claimed
+            Method: GET
+            ApiId: !Ref HttpApi
+
+  CompleteListingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: complete-listing.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+          LISTING_ID_INDEX: listingId-index
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /listings/{listingId}/complete
+            Method: POST
+            ApiId: !Ref HttpApi
+
   ClaimListingFunction:
     Type: AWS::Serverless::Function
     Properties:

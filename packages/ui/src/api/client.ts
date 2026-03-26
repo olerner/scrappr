@@ -172,3 +172,21 @@ export async function claimListing(accessToken: string, listingId: string): Prom
     throw new Error((data as { error?: string }).error || "Failed to claim listing");
   }
 }
+
+export async function getClaimedListings(
+  accessToken: string,
+): Promise<{ listings: Record<string, unknown>[] }> {
+  const res = await apiRequest("/listings/claimed", accessToken);
+  if (!res.ok) throw new Error("Failed to fetch claimed listings");
+  return res.json();
+}
+
+export async function completeListing(accessToken: string, listingId: string): Promise<void> {
+  const res = await apiRequest(`/listings/${listingId}/complete`, accessToken, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error || "Failed to complete listing");
+  }
+}
