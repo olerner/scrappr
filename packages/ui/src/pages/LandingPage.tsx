@@ -1,17 +1,14 @@
 import {
   ArrowRight,
   Camera,
-  CheckCircle2,
-  ClipboardList,
-  DollarSign,
+  CheckCircle,
+  ImageIcon,
   MapPin,
-  Recycle,
-  Search,
-  Truck,
+  MessageSquare,
+  Phone,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MapView } from "../components/MapView";
-import { ScrappyDog } from "../components/ScrappyDog";
 import { useStore } from "../store/useStore";
 
 export function LandingPage() {
@@ -19,228 +16,194 @@ export function LandingPage() {
   const listings = useStore((s) => s.listings);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-emerald-400 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-300 rounded-full blur-3xl" />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-8">
-              <ScrappyDog size={28} />
-              <span className="text-emerald-100 text-sm font-medium">
-                Meet Scrappy, your recycling sidekick
-              </span>
-            </div>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-tight">
-              Your scrap.
-              <br />
-              Their hustle.
-              <br />
-              <span className="text-emerald-300">Zero waste.</span>
-            </h1>
-            <p className="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto mb-10 leading-relaxed">
-              Scrappees list it. Scrapprs pick it up. Scrap yards pay for it.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={() => navigate("/scrappee")}
-                className="w-full sm:w-auto px-8 py-4 bg-white text-emerald-700 font-semibold rounded-xl hover:bg-emerald-50 transition-all shadow-lg hover:shadow-xl text-lg flex items-center justify-center gap-2"
-              >
-                <Camera size={20} />
-                List Scrap for Free
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/scrappr")}
-                className="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-400 transition-all shadow-lg hover:shadow-xl border border-emerald-400 text-lg flex items-center justify-center gap-2"
-              >
-                <Truck size={20} />
-                Start Hauling
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Bar */}
-      <section className="bg-emerald-900 border-t border-emerald-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            <div className="flex items-center justify-center gap-3 text-center md:text-left">
-              <div className="w-10 h-10 bg-emerald-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Recycle size={20} className="text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-emerald-300 font-semibold text-sm">
-                  76% of recyclables never leave the home
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center justify-center gap-3 text-center md:text-left">
-              <div className="w-10 h-10 bg-emerald-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                <DollarSign size={20} className="text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-emerald-300 font-semibold text-sm">Copper: $4.80/lb</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-center gap-3 text-center md:text-left">
-              <div className="w-10 h-10 bg-emerald-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                <DollarSign size={20} className="text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-emerald-300 font-semibold text-sm">Aluminum cans: $0.65/lb</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Map Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">Scrap near you</h2>
-          <p className="text-gray-500">Real-time listings from the Twin Cities area</p>
-        </div>
-        <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
-          <MapView listings={listings} className="h-[400px] md:h-[500px] w-full" />
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="bg-gray-50 py-20">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-16">How it works</h2>
-
-          <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
-            {/* Scrappee Side */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold mb-8">
-                <Camera size={16} />
-                For Scrappees (Listers)
-              </div>
-              <div className="space-y-8">
-                <Step
-                  num={1}
-                  icon={<Camera size={24} className="text-emerald-600" />}
-                  title="Snap a photo"
-                  desc="Take a picture of your scrap metal and post a free listing in seconds."
-                />
-                <Step
-                  num={2}
-                  icon={<MapPin size={24} className="text-emerald-600" />}
-                  title="Set your location"
-                  desc="Drop a pin or use your address so haulers can find your listing nearby."
-                />
-                <Step
-                  num={3}
-                  icon={<CheckCircle2 size={24} className="text-emerald-600" />}
-                  title="Get it picked up"
-                  desc="A local Scrappr claims your listing and hauls it away for free."
-                />
-              </div>
-            </div>
-
-            {/* Scrappr Side */}
-            <div>
-              <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold mb-8">
-                <Truck size={16} />
-                For Scrapprs (Haulers)
-              </div>
-              <div className="space-y-8">
-                <Step
-                  num={1}
-                  icon={<Search size={24} className="text-emerald-600" />}
-                  title="Browse the map"
-                  desc="Find nearby scrap listings and sort by value, distance, or metal type."
-                />
-                <Step
-                  num={2}
-                  icon={<ClipboardList size={24} className="text-emerald-600" />}
-                  title="Claim a pickup"
-                  desc="Lock in your haul so nobody else grabs it. Plan your route."
-                />
-                <Step
-                  num={3}
-                  icon={<DollarSign size={24} className="text-emerald-600" />}
-                  title="Get paid at the yard"
-                  desc="Deliver to your local scrap yard and earn commodity income on every load."
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="bg-emerald-600 py-16">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to turn scrap into cash?</h2>
-          <p className="text-emerald-100 mb-8 text-lg">
-            Join the circular economy. Whether you have scrap to give or a truck to fill, Scrappr
-            connects the dots.
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-10">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            Scrap Metal Pickups Near You
+          </h1>
+          <p className="text-gray-500 mb-6">
+            See what's being recycled in your neighborhood and list your own items for pickup.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+
+          {/* Map */}
+          <div className="rounded-xl overflow-hidden border border-gray-200 mb-8">
+            <MapView listings={listings} className="h-[250px] md:h-[350px] w-full" />
+          </div>
+
+          <div className="text-center">
             <button
               type="button"
               onClick={() => navigate("/scrappee")}
-              className="px-8 py-3 bg-white text-emerald-700 font-semibold rounded-xl hover:bg-emerald-50 transition-all flex items-center gap-2"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-700 transition-all shadow-md"
             >
-              List Scrap for Free <ArrowRight size={18} />
+              List Your Scrap <ArrowRight size={18} />
             </button>
-            <button
-              type="button"
-              onClick={() => navigate("/scrappr")}
-              className="px-8 py-3 bg-emerald-800 text-white font-semibold rounded-xl hover:bg-emerald-900 transition-all flex items-center gap-2"
-            >
-              Start Hauling <ArrowRight size={18} />
-            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* New Photo-Based Listings */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-10 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-10">
+            New Photo-Based Listings
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Feature
+              icon={<ImageIcon size={28} className="text-emerald-600" />}
+              title="Photo Uploads"
+              desc="Upload photos of your scrap metal to help haulers identify items"
+            />
+            <Feature
+              icon={<MessageSquare size={28} className="text-emerald-600" />}
+              title="Hauler Claims"
+              desc="Get notified when a hauler claims your listing and is on the way"
+            />
+            <Feature
+              icon={<CheckCircle size={28} className="text-emerald-600" />}
+              title="Pickup Confirmation"
+              desc="Haulers confirm pickups for a seamless recycling experience"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Meet Scrappy */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 text-center">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+          Turn Your Scrap Metal into Cash
+        </h2>
+        <p className="text-gray-500 mb-8 max-w-lg mx-auto">
+          Scrappr connects neighborhood residents with local scrap metal haulers. List your items,
+          get them picked up, and help the environment!
+        </p>
+
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden max-w-md mx-auto">
+          <div className="bg-emerald-100 p-6 flex items-center justify-center">
+            <img
+              src="/scrappy-mascot.png"
+              alt="Scrappy the dog mascot"
+              className="w-48 h-48 object-cover rounded-xl"
+            />
+          </div>
+          <div className="p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Meet Scrappy!</h3>
+            <p className="text-gray-500 text-sm">
+              Our friendly mascot who helps turn your unwanted metal items into recycling gold!
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
+            <Feature
+              icon={<Phone size={28} className="text-emerald-600" />}
+              title="Simple Verification"
+              desc="Quick phone number verification to get you started in seconds"
+            />
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
+            <Feature
+              icon={<MapPin size={28} className="text-emerald-600" />}
+              title="Location Services"
+              desc="Automatic geolocation with the ability to edit your address"
+            />
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
+            <Feature
+              icon={<Camera size={28} className="text-emerald-600" />}
+              title="Photo Uploads"
+              desc="Take photos of your items to help haulers identify your scrap"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* What Can Be Picked Up */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center mb-8">
+          What Can Be Picked Up?
+        </h2>
+
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-10">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Accepted */}
+            <div>
+              <h3 className="text-emerald-600 font-semibold mb-4">Accepted Items</h3>
+              <ul className="space-y-2">
+                {[
+                  "Copper (pipes, wiring, tubing)",
+                  "Aluminum (cans, siding, gutters)",
+                  "Brass (fixtures, valves, keys)",
+                  "Steel (appliances, car parts)",
+                  "Iron (cast iron, wrought iron)",
+                  "Electronic Scrap (computers, wiring)",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
+                    <span className="text-emerald-500 mt-0.5">●</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Not Accepted */}
+            <div>
+              <h3 className="text-red-500 font-semibold mb-4">Not Accepted</h3>
+              <ul className="space-y-2">
+                {[
+                  "Hazardous Materials",
+                  "Refrigerants (unless properly removed)",
+                  "Contaminated Items",
+                  "Radioactive Materials",
+                  "Combustible Materials",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
+                    <span className="text-red-400 mt-0.5">●</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-emerald-900 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-4">
+      <footer className="bg-gray-900 py-8">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ScrappyDog size={32} />
+            <img
+              src="/scrappy-mascot.png"
+              alt="Scrappy"
+              className="w-8 h-8 rounded-full object-cover"
+            />
             <span className="text-lg font-bold text-white">Scrappr</span>
           </div>
-          <p className="text-emerald-400 text-sm">Your scrap. Their hustle. Zero waste.</p>
-          <p className="text-emerald-600 text-xs">2026 Scrappr. Built for the Twin Cities.</p>
+          <div className="text-right">
+            <p className="text-gray-400 text-xs">&copy; 2023 Scrappr. All rights reserved.</p>
+            <p className="text-gray-500 text-xs">Connecting neighborhoods with scrap haulers</p>
+          </div>
         </div>
       </footer>
     </div>
   );
 }
 
-function Step({
-  num,
-  icon,
-  title,
-  desc,
-}: {
-  num: number;
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}) {
+function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="flex gap-4">
-      <div className="flex-shrink-0 w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center">
         {icon}
       </div>
-      <div>
-        <div className="text-xs font-semibold text-emerald-500 uppercase tracking-wide mb-1">
-          Step {num}
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
-        <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-      </div>
+      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <p className="text-gray-500 text-sm max-w-xs">{desc}</p>
     </div>
   );
 }

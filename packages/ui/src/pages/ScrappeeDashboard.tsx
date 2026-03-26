@@ -84,7 +84,7 @@ export function ScrappeeDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Listings</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Your Listings</h1>
             <p className="text-gray-500 text-sm mt-1">
               Signed in as {email}{" "}
               <button
@@ -281,12 +281,14 @@ function SignInForm({
 function EmptyState({ onNewListing }: { onNewListing: () => void }) {
   return (
     <div className="text-center py-20">
-      <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-        <ImageIcon size={32} className="text-emerald-500" />
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">No listings yet</h3>
+      <img
+        src="/scrappy-mascot.png"
+        alt="Scrappy the dog mascot"
+        className="w-32 h-32 rounded-2xl object-cover mx-auto mb-6"
+      />
+      <h3 className="text-xl font-bold text-gray-900 mb-2">No Listings Yet</h3>
       <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-        Got scrap metal lying around? List it for free and a local hauler will pick it up.
+        You haven't created any scrap metal listings yet. Create your first listing to get started!
       </p>
       <button
         type="button"

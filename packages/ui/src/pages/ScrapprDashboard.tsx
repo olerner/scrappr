@@ -1,17 +1,7 @@
-import {
-  ArrowUpDown,
-  CheckCircle2,
-  DollarSign,
-  Filter,
-  List,
-  Map as MapIcon,
-  MapPin,
-  Truck,
-} from "lucide-react";
+import { ArrowUpDown, DollarSign, Filter, List, Map as MapIcon, MapPin, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
-import { StatusBadge } from "../components/StatusBadge";
 import { CATEGORIES } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
 import { useStore } from "../store/useStore";
@@ -95,34 +85,11 @@ export function ScrapprDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Tab Bar */}
+      {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1 py-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab("available")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === "available"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                Available ({availableListings.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("claimed")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === "claimed"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                My Pickups ({claimedListings.length})
-              </button>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-2xl font-bold text-gray-900">Hauler Dashboard</h1>
             {/* Route Value */}
             {claimedListings.length > 0 && (
               <div className="hidden sm:flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl">
@@ -132,21 +99,57 @@ export function ScrapprDashboard() {
                 </span>
               </div>
             )}
-            {/* Mobile Toggle */}
-            <div className="flex sm:hidden gap-1">
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
               <button
                 type="button"
-                onClick={() => setMobileView("list")}
-                className={`p-2 rounded-lg ${mobileView === "list" ? "bg-emerald-100 text-emerald-600" : "text-gray-400"}`}
+                onClick={() => setActiveTab("claimed")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === "claimed"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
               >
-                <List size={18} />
+                My Claims
               </button>
               <button
                 type="button"
-                onClick={() => setMobileView("map")}
-                className={`p-2 rounded-lg ${mobileView === "map" ? "bg-emerald-100 text-emerald-600" : "text-gray-400"}`}
+                onClick={() => setActiveTab("available")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === "available"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
               >
-                <MapIcon size={18} />
+                Available
+              </button>
+            </div>
+            {/* View Toggle */}
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={() => setMobileView("map")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  mobileView === "map"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <MapIcon size={14} />
+                Map View
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileView("list")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  mobileView === "list"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <List size={14} />
+                List View
               </button>
             </div>
           </div>
@@ -190,38 +193,37 @@ export function ScrapprDashboard() {
             </div>
           </div>
 
-          {/* Split View */}
-          <div className="flex-1 flex">
-            {/* Map - Desktop always, Mobile conditional */}
-            <div
-              className={`${mobileView === "map" ? "flex" : "hidden"} sm:flex w-full sm:w-[60%] flex-col`}
-            >
-              <MapView listings={listings} className="flex-1 min-h-[400px]" />
+          {/* Map View */}
+          <div className={`${mobileView === "map" ? "block" : "hidden"} flex-1`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="rounded-2xl overflow-hidden border border-gray-200">
+                <MapView listings={listings} className="min-h-[500px] w-full" />
+              </div>
             </div>
+          </div>
 
-            {/* List */}
-            <div
-              className={`${mobileView === "list" ? "flex" : "hidden"} sm:flex w-full sm:w-[40%] flex-col bg-white sm:border-l border-gray-200 overflow-y-auto overflow-x-hidden`}
-            >
-              <div className="p-4 space-y-3">
-                {availableListings.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Truck size={24} className="text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 text-sm">No listings match your filters</p>
+          {/* List View */}
+          <div className={`${mobileView === "list" ? "block" : "hidden"} flex-1`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              {availableListings.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Truck size={24} className="text-gray-400" />
                   </div>
-                ) : (
-                  availableListings.map((listing) => (
+                  <p className="text-gray-500 text-sm">No listings match your filters</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {availableListings.map((listing) => (
                     <AvailableCard
                       key={listing.id}
                       listing={listing}
                       distance={MOCK_DISTANCES[listing.id] || "2.0 mi"}
                       onClaim={() => handleClaim(listing.id)}
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -281,37 +283,42 @@ function AvailableCard({
   const catInfo = CATEGORIES.find((c) => c.name === listing.category);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex gap-3">
-        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-          <img
-            src={listing.photoUrl}
-            alt={listing.category}
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+      {/* Large photo */}
+      <div className="relative w-full h-48 bg-gray-100">
+        <img src={listing.photoUrl} alt={listing.category} className="w-full h-full object-cover" />
+        <span className="absolute top-3 right-3 px-3 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full">
+          Available
+        </span>
+      </div>
+      {/* Content */}
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 mb-1">{listing.category}</h3>
+        <p className="text-gray-500 text-sm mb-2 line-clamp-2">{listing.description}</p>
+        <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
+          <div className="flex items-center gap-1">
             <CategoryIcon category={listing.category} size={14} className="text-emerald-600" />
-            <span className="font-semibold text-gray-900 text-sm">{listing.category}</span>
-            <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">
-              {catInfo?.payoutLabel}
-            </span>
+            <span>{catInfo?.payoutLabel}</span>
           </div>
-          <p className="text-gray-600 text-xs line-clamp-2 mb-2">{listing.description}</p>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 text-xs text-gray-400">
-              <MapPin size={12} className="flex-shrink-0" />
-              <span>{distance} away</span>
-            </div>
-            <button
-              type="button"
-              onClick={onClaim}
-              className="flex-shrink-0 px-4 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-all"
-            >
-              Claim Pickup
-            </button>
+          <div className="flex items-center gap-1">
+            <MapPin size={12} />
+            <span>{distance} away</span>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all"
+          >
+            View Details
+          </button>
+          <button
+            type="button"
+            onClick={onClaim}
+            className="flex-1 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all"
+          >
+            Claim Pickup
+          </button>
         </div>
       </div>
     </div>
@@ -320,34 +327,39 @@ function AvailableCard({
 
 function ClaimedCard({ listing, onComplete }: { listing: Listing; onComplete: () => void }) {
   return (
-    <div className="bg-white rounded-xl border border-yellow-200 p-4">
-      <div className="flex gap-3">
-        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-          <img
-            src={listing.photoUrl}
-            alt={listing.category}
-            className="w-full h-full object-cover"
-          />
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+      {/* Large photo */}
+      <div className="relative w-full h-48 bg-gray-100">
+        <img src={listing.photoUrl} alt={listing.category} className="w-full h-full object-cover" />
+        <span className="absolute top-3 right-3 px-3 py-1 bg-yellow-500 text-white text-xs font-semibold rounded-full">
+          Claimed by you
+        </span>
+      </div>
+      {/* Content */}
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 mb-1">{listing.category}</h3>
+        <p className="text-gray-500 text-sm mb-1 line-clamp-2">{listing.description}</p>
+        <div className="flex items-center gap-4 text-xs text-gray-400 mb-1">
+          <span>{listing.estimatedValue}</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <CategoryIcon category={listing.category} size={14} className="text-yellow-600" />
-            <span className="font-semibold text-gray-900 text-sm">{listing.category}</span>
-            <StatusBadge status="claimed" />
-          </div>
-          <p className="text-gray-600 text-xs line-clamp-1 mb-1">{listing.description}</p>
-          <p className="text-xs text-gray-400 mb-2">{listing.address}</p>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-600">{listing.estimatedValue}</span>
-            <button
-              type="button"
-              onClick={onComplete}
-              className="inline-flex items-center gap-1 px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-lg hover:bg-emerald-200 transition-all"
-            >
-              <CheckCircle2 size={12} />
-              Mark Complete
-            </button>
-          </div>
+        <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
+          <MapPin size={12} />
+          <span>{listing.address}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all"
+          >
+            View Details
+          </button>
+          <button
+            type="button"
+            onClick={onComplete}
+            className="flex-1 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all"
+          >
+            Mark Picked Up
+          </button>
         </div>
       </div>
     </div>
