@@ -119,6 +119,12 @@ export class ApiStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    listingsTable.addGlobalSecondaryIndex({
+      indexName: "listingId-index",
+      partitionKey: { name: "listingId", type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // ── Lambda Functions ────────────────────────────────────────────
 
     const presignFn = this.createLambda("Presign", {
@@ -147,6 +153,15 @@ export class ApiStack extends cdk.Stack {
       },
     });
     listingsTable.grantReadData(browseListingsFn);
+
+    const claimListingFn = this.createLambda("ClaimListing", {
+      handler: "claim-listing.handler",
+      environment: {
+        LISTINGS_TABLE: listingsTable.tableName,
+        LISTING_ID_INDEX: "listingId-index",
+      },
+    });
+    listingsTable.grantReadWriteData(claimListingFn);
 
     const updateListingFn = this.createLambda("UpdateListing", {
       handler: "update-listing.handler",
@@ -238,6 +253,13 @@ export class ApiStack extends cdk.Stack {
       path: "/listings/{listingId}",
       methods: [apigatewayv2.HttpMethod.PATCH],
       integration: new integrations.HttpLambdaIntegration("UpdateListingInt", updateListingFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/listings/{listingId}/claim",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration("ClaimListingInt", claimListingFn),
       authorizer: jwtAuthorizer,
     });
 

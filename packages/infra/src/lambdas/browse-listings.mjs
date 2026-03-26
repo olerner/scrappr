@@ -38,8 +38,8 @@ export const handler = async (event) => {
 
     const result = await ddb.send(new QueryCommand(queryParams));
 
-    // Strip full address for privacy — haulers see approximate location only
-    const listings = (result.Items || []).map((item) => ({
+    // Strip sensitive fields for privacy
+    const listings = (result.Items || []).map(({ userId, ...item }) => ({
       ...item,
       address: redactAddress(item.address),
     }));

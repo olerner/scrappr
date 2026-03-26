@@ -94,6 +94,65 @@ export async function getMyListings(
   return res.json();
 }
 
+// ── Addresses ────────────────────────────────────────────────────────────
+
+export interface CreateAddressPayload {
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+  zipCode: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateAddressPayload {
+  label?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+  zipCode?: string;
+  isDefault?: boolean;
+}
+
+export async function getAddresses(
+  accessToken: string,
+): Promise<{ addresses: Record<string, unknown>[] }> {
+  const res = await apiRequest("/addresses", accessToken);
+  if (!res.ok) throw new Error("Failed to fetch addresses");
+  return res.json();
+}
+
+export async function createAddress(
+  accessToken: string,
+  payload: CreateAddressPayload,
+): Promise<Record<string, unknown>> {
+  const res = await apiRequest("/addresses", accessToken, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to create address");
+  return res.json();
+}
+
+export async function updateAddress(
+  accessToken: string,
+  addressId: string,
+  payload: UpdateAddressPayload,
+): Promise<void> {
+  const res = await apiRequest(`/addresses/${addressId}`, accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to update address");
+}
+
+export async function deleteAddress(accessToken: string, addressId: string): Promise<void> {
+  const res = await apiRequest(`/addresses/${addressId}`, accessToken, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete address");
+}
+
 export async function browseListings(
   accessToken: string,
   category?: string,
@@ -102,4 +161,14 @@ export async function browseListings(
   const res = await apiRequest(`/listings/available${params}`, accessToken);
   if (!res.ok) throw new Error("Failed to browse listings");
   return res.json();
+}
+
+export async function claimListing(accessToken: string, listingId: string): Promise<void> {
+  const res = await apiRequest(`/listings/${listingId}/claim`, accessToken, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error || "Failed to claim listing");
+  }
 }

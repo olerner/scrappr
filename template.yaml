@@ -85,6 +85,23 @@ Resources:
             Method: GET
             ApiId: !Ref HttpApi
 
+  ClaimListingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: claim-listing.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+          LISTING_ID_INDEX: listingId-index
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /listings/{listingId}/claim
+            Method: POST
+            ApiId: !Ref HttpApi
+
   UpdateListingFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -99,6 +116,70 @@ Resources:
           Properties:
             Path: /listings/{listingId}
             Method: PATCH
+            ApiId: !Ref HttpApi
+
+  GetAddressesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-addresses.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          ADDRESSES_TABLE: !Sub "scrappr-addresses-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /addresses
+            Method: GET
+            ApiId: !Ref HttpApi
+
+  CreateAddressFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: create-address.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          ADDRESSES_TABLE: !Sub "scrappr-addresses-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /addresses
+            Method: POST
+            ApiId: !Ref HttpApi
+
+  UpdateAddressFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: update-address.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          ADDRESSES_TABLE: !Sub "scrappr-addresses-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /addresses/{addressId}
+            Method: PATCH
+            ApiId: !Ref HttpApi
+
+  DeleteAddressFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: delete-address.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          ADDRESSES_TABLE: !Sub "scrappr-addresses-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /addresses/{addressId}
+            Method: DELETE
             ApiId: !Ref HttpApi
 
   ReportErrorFunction:
@@ -125,6 +206,7 @@ Resources:
           - GET
           - POST
           - PATCH
+          - DELETE
           - OPTIONS
         AllowHeaders:
           - Content-Type
