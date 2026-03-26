@@ -14,7 +14,10 @@
     "lint:fix": "biome check --fix packages/",
     "format": "prettier --write '**/*.{json,yaml,yml,md}'",
     "format:check": "prettier --check '**/*.{json,yaml,yml,md}'",
-    "check": "biome check packages/ && prettier --check '**/*.{json,yaml,yml,md}'"
+    "check": "biome check packages/ && prettier --check '**/*.{json,yaml,yml,md}'",
+    "test": "node --test packages/infra/src/lambdas/*.test.mjs",
+    "e2e": "yarn workspace @scrappr/e2e test",
+    "e2e:headed": "yarn workspace @scrappr/e2e test:headed"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.8",

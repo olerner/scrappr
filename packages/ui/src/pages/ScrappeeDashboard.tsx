@@ -6,13 +6,13 @@ import {
   Loader2,
   LogOut,
   Plus,
-  Upload,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createListing, getMyListings, getPresignedUrl, uploadPhoto } from "../api/client";
 import { AddressAutocomplete } from "../components/AddressAutocomplete";
 import { CategoryIcon } from "../components/CategoryIcon";
+import { PhotoUpload } from "../components/PhotoUpload";
 import { StatusBadge } from "../components/StatusBadge";
 import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
 import type { BlockedCategory, Category, Listing } from "../data/types";
@@ -356,13 +356,11 @@ function NewListingModal({
   const [lng, setLng] = useState<number | null>(null);
   const [addressSelected, setAddressSelected] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showBlocked, setShowBlocked] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const handleCategorySelect = (cat: string) => {
     if (BLOCKED_CATEGORIES.includes(cat as BlockedCategory)) {
@@ -376,17 +374,6 @@ function NewListingModal({
       setShowChecklist(true);
     } else {
       setShowChecklist(false);
-    }
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      setPhotoError(false);
-      const reader = new FileReader();
-      reader.onloadend = () => setPhotoPreview(reader.result as string);
-      reader.readAsDataURL(file);
     }
   };
 
@@ -466,46 +453,13 @@ function NewListingModal({
 
         <div className="px-6 py-5 space-y-6">
           {/* Photo Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-              data-testid="photo-input"
-            />
-            {photoPreview ? (
-              <div className="relative w-full h-48 rounded-xl overflow-hidden">
-                <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPhotoPreview(null);
-                    setPhotoFile(null);
-                    if (fileRef.current) fileRef.current.value = "";
-                  }}
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-emerald-400 hover:bg-emerald-50/50 transition-all"
-                data-testid="photo-upload-btn"
-              >
-                <Upload size={24} className="text-gray-400" />
-                <span className="text-sm text-gray-500">Click to upload a photo</span>
-              </button>
-            )}
-            {photoError && (
-              <p className="text-red-600 text-sm mt-2">A photo is required to post a listing.</p>
-            )}
-          </div>
+          <PhotoUpload
+            onFileChange={(file) => {
+              setPhotoFile(file);
+              if (file) setPhotoError(false);
+            }}
+            error={photoError}
+          />
 
           {/* Category Selector */}
           <div>

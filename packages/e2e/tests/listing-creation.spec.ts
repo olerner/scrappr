@@ -5,38 +5,7 @@ const TEST_EMAIL = "test@scrappr.dev";
 const TEST_PASSWORD = "TestPass123!";
 
 test.describe("Listing Creation Flow", () => {
-  test("sign in, create listing with photo, see it in My Listings", async ({ page }) => {
-    // 1. Navigate to scrappee dashboard
-    await page.goto("/scrappee");
-
-    // 2. Should see sign-in form
-    await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
-
-    // 3. Sign in
-    await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
-    await page.getByPlaceholder("••••••••").fill(TEST_PASSWORD);
-    await page.getByRole("button", { name: "Sign In", exact: true }).click();
-
-    // 4. Wait for dashboard to load
-    await expect(page.getByText("My Listings")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(`Signed in as ${TEST_EMAIL}`)).toBeVisible();
-
-    // 5. Open "New Listing" modal
-    await page.getByRole("button", { name: "New Listing" }).click();
-    await expect(page.getByText("New Listing").nth(1)).toBeVisible();
-
-    // 6. Select category "Copper"
-    await page.getByTestId("category-copper").click();
-
-    // 7. Upload test photo
-    const fileInput = page.getByTestId("photo-input");
-    const testPhotoPath = path.join(import.meta.dirname, "../fixtures/test-photo.jpg");
-    await fileInput.setInputFiles(testPhotoPath);
-
-    // 8. Fill description
-    await page.getByTestId("description-input").fill("Test copper pipe, about 10 lbs");
-
-    // 9. Fill address via autocomplete
+  test.beforeEach(async ({ page }) => {
     // Mock Google Places Autocomplete API
     await page.route("**/places.googleapis.com/v1/places:autocomplete**", (route) => {
       route.fulfill({
@@ -46,7 +15,7 @@ test.describe("Listing Creation Flow", () => {
           suggestions: [
             {
               placePrediction: {
-                text: { text: "123 Test St, Minneapolis, MN, USA" },
+                text: { text: "123 Test St, St Louis Park, MN 55426, USA" },
                 placeId: "ChIJTestPlace123",
               },
             },
@@ -55,36 +24,97 @@ test.describe("Listing Creation Flow", () => {
       });
     });
 
-    // Mock Google Places Details API
+    // Mock Google Places Details API — must return zip 55426 (only accepted zip)
     await page.route("**/places.googleapis.com/v1/places/ChIJTestPlace123**", (route) => {
       route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
           location: {
-            latitude: 44.9778,
-            longitude: -93.265,
+            latitude: 44.9298,
+            longitude: -93.3477,
           },
-          formattedAddress: "123 Test St, Minneapolis, MN 55401, USA",
+          formattedAddress: "123 Test St, St Louis Park, MN 55426, USA",
+          addressComponents: [
+            { types: ["street_number"], shortText: "123" },
+            { types: ["route"], shortText: "Test St" },
+            { types: ["locality"], shortText: "St Louis Park" },
+            { types: ["administrative_area_level_1"], shortText: "MN" },
+            { types: ["postal_code"], shortText: "55426" },
+            { types: ["country"], shortText: "US" },
+          ],
         }),
       });
     });
 
-    await page.getByTestId("address-input").fill("Minneapolis");
+    // Sign in
+    await page.goto("/scrappee");
+    await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
+    await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
+    await page.getByPlaceholder("••••••••").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Sign In", exact: true }).click();
+    await expect(page.getByText("My Listings")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(`Signed in as ${TEST_EMAIL}`)).toBeVisible();
+  });
+
+  test("create listing with photo, see it in My Listings", async ({ page }) => {
+    // 1. Open "New Listing" modal
+    await page.getByRole("button", { name: "New Listing" }).click();
+    await expect(page.getByText("New Listing").nth(1)).toBeVisible();
+
+    // 2. Upload test photo
+    const fileInput = page.getByTestId("photo-input");
+    const testPhotoPath = path.join(import.meta.dirname, "../fixtures/test-photo.jpg");
+    await fileInput.setInputFiles(testPhotoPath);
+
+    // 3. Select category "Copper"
+    await page.getByTestId("category-copper").click();
+
+    // 4. Fill description
+    await page.getByTestId("description-input").fill("Test copper pipe, about 10 lbs");
+
+    // 5. Fill address via autocomplete (zip 55426 auto-fills from Places details)
+    await page.getByTestId("address-input").fill("123 Test St");
     await page.getByTestId("address-suggestion").first().click({ timeout: 10_000 });
 
-    // 9b. Fill zip code (must be in service area)
-    await page.getByTestId("zip-input").fill("55426");
-
-    // 10. Submit
+    // 6. Submit
     await page.getByTestId("submit-listing-btn").click();
 
-    // 11. Wait for modal to close and listing to appear
+    // 7. Wait for modal to close and listing to appear
     await expect(page.getByTestId("submit-listing-btn")).not.toBeVisible({ timeout: 15_000 });
 
-    // 12. Assert listing appears in My Listings
+    // 8. Assert listing appears in My Listings
     await expect(page.getByText("Test copper pipe, about 10 lbs").first()).toBeVisible({
       timeout: 10_000,
     });
+  });
+
+  test("drag-and-drop photo upload shows preview", async ({ page }) => {
+    // 1. Open "New Listing" modal
+    await page.getByRole("button", { name: "New Listing" }).click();
+    await expect(page.getByText("New Listing").nth(1)).toBeVisible();
+
+    // 2. Verify dropzone exists
+    const dropzone = page.getByTestId("photo-dropzone");
+    await expect(dropzone).toBeVisible();
+
+    // 3. Verify click-to-upload button is present
+    const uploadBtn = page.getByTestId("photo-upload-btn");
+    await expect(uploadBtn).toBeVisible();
+    await expect(uploadBtn).toContainText("Click or drag to upload a photo");
+
+    // 4. Upload a photo via file input
+    const fileInput = page.getByTestId("photo-input");
+    const testPhotoPath = path.join(import.meta.dirname, "../fixtures/test-photo.jpg");
+    await fileInput.setInputFiles(testPhotoPath);
+
+    // 5. Verify photo preview appears
+    await expect(page.getByAltText("Preview")).toBeVisible({ timeout: 5_000 });
+    await expect(uploadBtn).not.toBeVisible();
+
+    // 6. Remove the photo and verify upload zone returns
+    await page.locator("[data-testid='photo-dropzone'] button").click();
+    await expect(uploadBtn).toBeVisible();
+    await expect(uploadBtn).toContainText("Click or drag to upload a photo");
   });
 });
