@@ -21,7 +21,7 @@ import {
   isAllowedZip,
 } from "../data/types";
 
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../context/AuthContext";
 import { useStore } from "../store/useStore";
 
 export function CreateListing() {

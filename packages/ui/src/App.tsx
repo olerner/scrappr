@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Header } from "./components/Header";
+import { AuthProvider } from "./context/AuthContext";
 import { AuthCallback } from "./pages/AuthCallback";
 import { CreateListing } from "./pages/CreateListing";
 import { EditListing } from "./pages/EditListing";
@@ -10,6 +11,7 @@ import { SignedOut } from "./pages/SignedOut";
 
 function App() {
   return (
+    <AuthProvider>
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
@@ -26,6 +28,7 @@ function App() {
         </main>
       </div>
     </BrowserRouter>
+    </AuthProvider>
   );
 }
 
