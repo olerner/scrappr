@@ -112,7 +112,7 @@ export class EmailStack extends cdk.Stack {
       value: identity.emailIdentityArn,
     });
 
-    new cdk.CfnOutput(this, "InboxBucket", {
+    new cdk.CfnOutput(this, "InboxBucketName", {
       value: inboxBucket.bucketName,
     });
   }
