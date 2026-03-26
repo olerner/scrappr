@@ -6,12 +6,12 @@ import {
   Loader2,
   LogOut,
   Plus,
-  Upload,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createListing, getMyListings, getPresignedUrl, uploadPhoto } from "../api/client";
 import { AddressAutocomplete } from "../components/AddressAutocomplete";
+import { PhotoUpload } from "../components/PhotoUpload";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
 import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
@@ -356,15 +356,11 @@ function NewListingModal({
   const [lng, setLng] = useState<number | null>(null);
   const [addressSelected, setAddressSelected] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showBlocked, setShowBlocked] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [dragError, setDragError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const handleCategorySelect = (cat: string) => {
     if (BLOCKED_CATEGORIES.includes(cat as BlockedCategory)) {
@@ -381,17 +377,6 @@ function NewListingModal({
     }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      setPhotoError(false);
-      const reader = new FileReader();
-      reader.onloadend = () => setPhotoPreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
   const ALLOWED_ZIP = "55426";
 
   const validateZip = (zip: string) => {
@@ -401,42 +386,6 @@ function NewListingModal({
       );
     } else {
       setZipError(null);
-    }
-  };
-
-  const processDroppedFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setDragError("Images only");
-      setTimeout(() => setDragError(null), 2000);
-      return;
-    }
-    setPhotoFile(file);
-    setPhotoError(false);
-    setDragError(null);
-    const reader = new FileReader();
-    reader.onloadend = () => setPhotoPreview(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processDroppedFile(file);
     }
   };
 
@@ -504,69 +453,14 @@ function NewListingModal({
 
         <div className="px-6 py-5 space-y-6">
           {/* Photo Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-              data-testid="photo-input"
-            />
-            <div
-              data-testid="photo-dropzone"
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              {photoPreview ? (
-                <div className="relative w-full h-48 rounded-xl overflow-hidden">
-                  <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPhotoPreview(null);
-                      setPhotoFile(null);
-                      if (fileRef.current) fileRef.current.value = "";
-                    }}
-                    className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className={`w-full h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-all ${
-                    dragError
-                      ? "border-red-400 bg-red-50"
-                      : isDragOver
-                        ? "border-emerald-500 bg-emerald-50"
-                        : "border-gray-300 hover:border-emerald-400 hover:bg-emerald-50/50"
-                  }`}
-                  data-testid="photo-upload-btn"
-                >
-                  <Upload
-                    size={24}
-                    className={
-                      dragError ? "text-red-400" : isDragOver ? "text-emerald-500" : "text-gray-400"
-                    }
-                  />
-                  <span
-                    className={`text-sm ${dragError ? "text-red-500 font-medium" : isDragOver ? "text-emerald-600" : "text-gray-500"}`}
-                  >
-                    {dragError ||
-                      (isDragOver ? "Drop your photo here" : "Click or drag to upload a photo")}
-                  </span>
-                </button>
-              )}
-            </div>
-            {photoError && (
-              <p className="text-red-600 text-sm mt-2">A photo is required to post a listing.</p>
-            )}
-          </div>
+          <PhotoUpload
+            file={photoFile}
+            onFileChange={(file) => {
+              setPhotoFile(file);
+              if (file) setPhotoError(false);
+            }}
+            error={photoError}
+          />
 
           {/* Category Selector */}
           <div>
