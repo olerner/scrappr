@@ -7,19 +7,18 @@ import {
   MessageSquare,
   Phone,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { MapView } from "../components/MapView";
 import { useStore } from "../store/useStore";
 
 export function LandingPage() {
-  const navigate = useNavigate();
   const listings = useStore((s) => s.listings);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-10">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 md:p-10">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Scrap Metal Pickups Near You
           </h1>
@@ -32,21 +31,28 @@ export function LandingPage() {
             <MapView listings={listings} className="h-[250px] md:h-[350px] w-full" />
           </div>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => navigate("/scrappee")}
+          <div className="text-center space-y-3">
+            <Link
+              to="/scrappee"
               className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-700 transition-all shadow-md"
             >
               List Your Scrap <ArrowRight size={18} />
-            </button>
+            </Link>
+            <div>
+              <Link
+                to="/scrappr"
+                className="inline-flex items-center gap-2 px-6 py-3 border border-emerald-600 text-emerald-700 font-semibold rounded-full hover:bg-emerald-50 transition-all"
+              >
+                Start Hauling <ArrowRight size={18} />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* New Photo-Based Listings */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-10 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 md:p-10 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-10">
             New Photo-Based Listings
           </h2>
@@ -81,7 +87,7 @@ export function LandingPage() {
           get them picked up, and help the environment!
         </p>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden max-w-md mx-auto">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden max-w-md mx-auto">
           <div className="bg-emerald-100 p-6 flex items-center justify-center">
             <img
               src="/scrappy-mascot.png"
@@ -101,21 +107,21 @@ export function LandingPage() {
       {/* Features */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="grid md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 text-center">
             <Feature
               icon={<Phone size={28} className="text-emerald-600" />}
               title="Simple Verification"
               desc="Quick phone number verification to get you started in seconds"
             />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 text-center">
             <Feature
               icon={<MapPin size={28} className="text-emerald-600" />}
               title="Location Services"
               desc="Automatic geolocation with the ability to edit your address"
             />
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 text-center">
             <Feature
               icon={<Camera size={28} className="text-emerald-600" />}
               title="Photo Uploads"
@@ -131,7 +137,7 @@ export function LandingPage() {
           What Can Be Picked Up?
         </h2>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-10">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 md:p-10">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Accepted */}
             <div>
