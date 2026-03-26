@@ -45,7 +45,7 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
         onSelect(details);
       } catch {
         // If details fetch fails, still pass what we have
-        onSelect({ label: prediction.label, lat: 0, lng: 0, zipCode: "" });
+        onSelect({ label: prediction.label, lat: 0, lng: 0, zipCode: "", city: "" });
       } finally {
         setResolving(false);
       }

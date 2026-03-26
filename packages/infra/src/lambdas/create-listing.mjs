@@ -31,13 +31,13 @@ export const handler = async (event) => {
       };
     }
 
-    const ALLOWED_ZIP = "55426";
-    if (!zipCode || zipCode.trim() !== ALLOWED_ZIP) {
+    const ALLOWED_ZIPS = ["55426", "55416"];
+    if (!zipCode || !ALLOWED_ZIPS.includes(zipCode.trim())) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. Listings outside this area cannot be created at this time.`,
+          error: "Scrappr is currently only available in St. Louis Park, MN. Listings outside this area cannot be created at this time.",
         }),
       };
     }

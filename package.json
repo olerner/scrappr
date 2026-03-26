@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "dev": "concurrently -n api,ui -c blue,green \"yarn api\" \"yarn ui\"",
-    "api": "sam local start-api",
+    "api": "nodemon --watch template.yaml --exec 'sam local start-api' --signal SIGTERM --delay 1",
     "ui": "yarn workspace @scrappr/ui dev",
     "deploy": "yarn workspace @scrappr/ui build && yarn workspace @scrappr/infra deploy",
     "infra:diff": "yarn workspace @scrappr/infra diff",
@@ -23,6 +23,7 @@
     "@biomejs/biome": "^2.4.8",
     "@playwright/test": "^1.58.2",
     "concurrently": "^9.2.1",
+    "nodemon": "^3.1.14",
     "prettier": "^3.8.1"
   }
 }

@@ -1,13 +1,17 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
-const TABLE = process.env.LISTINGS_TABLE;
+const TABLE = process.env.ADDRESSES_TABLE;
 
-const ALLOWED_FIELDS = ["category", "description", "photoUrl", "lat", "lng", "address", "zipCode", "estimatedValue"];
+const ALLOWED_FIELDS = ["label", "address", "lat", "lng", "zipCode", "isDefault"];
 
 export const handler = async (event) => {
   const log = createLogger(event);
@@ -21,18 +25,17 @@ export const handler = async (event) => {
       };
     }
 
-    const listingId = event.pathParameters?.listingId;
-    if (!listingId) {
+    const addressId = event.pathParameters?.addressId;
+    if (!addressId) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "listingId is required" }),
+        body: JSON.stringify({ error: "addressId is required" }),
       };
     }
 
     const body = JSON.parse(event.body || "{}");
 
-    // Only allow updating specific fields
     const updates = {};
     for (const field of ALLOWED_FIELDS) {
       if (body[field] !== undefined) {
@@ -55,9 +58,33 @@ export const handler = async (event) => {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: "Scrappr is currently only available in St. Louis Park, MN. Listings outside this area cannot be created at this time.",
+          error: "Scrappr is currently only available in St. Louis Park, MN. Addresses outside this area cannot be saved at this time.",
         }),
       };
+    }
+
+    // If setting as default, unset the current default first
+    if (updates.isDefault === true) {
+      const allAddresses = await ddb.send(
+        new QueryCommand({
+          TableName: TABLE,
+          KeyConditionExpression: "userId = :uid",
+          ExpressionAttributeValues: { ":uid": userId },
+        }),
+      );
+      const currentDefault = (allAddresses.Items || []).find(
+        (a) => a.isDefault && a.addressId !== addressId,
+      );
+      if (currentDefault) {
+        await ddb.send(
+          new UpdateCommand({
+            TableName: TABLE,
+            Key: { userId, addressId: currentDefault.addressId },
+            UpdateExpression: "SET isDefault = :f",
+            ExpressionAttributeValues: { ":f": false },
+          }),
+        );
+      }
     }
 
     // Build UpdateExpression dynamically
@@ -71,44 +98,36 @@ export const handler = async (event) => {
       expressionNames[`#${key}`] = key;
     }
 
-    // Add updatedAt timestamp
     expressionParts.push("#updatedAt = :updatedAt");
     expressionValues[":updatedAt"] = new Date().toISOString();
     expressionNames["#updatedAt"] = "updatedAt";
 
-    // Condition: listing must exist and belong to this user, and must still be available
     await ddb.send(
       new UpdateCommand({
         TableName: TABLE,
-        Key: { userId, listingId },
+        Key: { userId, addressId },
         UpdateExpression: `SET ${expressionParts.join(", ")}`,
-        ExpressionAttributeValues: {
-          ...expressionValues,
-          ":available": "available",
-        },
-        ExpressionAttributeNames: {
-          ...expressionNames,
-          "#status": "status",
-        },
-        ConditionExpression: "attribute_exists(listingId) AND #status = :available",
+        ExpressionAttributeValues: expressionValues,
+        ExpressionAttributeNames: expressionNames,
+        ConditionExpression: "attribute_exists(addressId)",
         ReturnValues: "ALL_NEW",
-      })
+      }),
     );
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Listing updated" }),
+      body: JSON.stringify({ message: "Address updated" }),
     };
   } catch (err) {
     if (err.name === "ConditionalCheckFailedException") {
       return {
-        statusCode: 409,
+        statusCode: 404,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Listing not found or cannot be edited (it may have been claimed)" }),
+        body: JSON.stringify({ error: "Address not found" }),
       };
     }
-    log.error("update-listing failed", err);
+    log.error("update-address failed", err);
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },

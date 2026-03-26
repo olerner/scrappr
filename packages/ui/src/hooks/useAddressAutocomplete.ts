@@ -7,6 +7,7 @@ export interface AddressSuggestion {
   lat: number;
   lng: number;
   zipCode: string;
+  city: string;
 }
 
 export interface PlacePrediction {
@@ -32,6 +33,7 @@ async function fetchAutocomplete(query: string, signal: AbortSignal): Promise<Pl
     body: JSON.stringify({
       input: query,
       includedRegionCodes: ["us"],
+      includedPrimaryTypes: ["street_address", "subpremise", "premise"],
       languageCode: "en",
     }),
     signal,
@@ -67,15 +69,19 @@ export async function fetchPlaceDetails(
 
   const data = await res.json();
 
-  const postalComponent = (
-    data.addressComponents as Array<{ types: string[]; shortText?: string }> | undefined
-  )?.find((c) => c.types?.includes("postal_code"));
+  const components = data.addressComponents as
+    | Array<{ types: string[]; shortText?: string; longText?: string }>
+    | undefined;
+
+  const postalComponent = components?.find((c) => c.types?.includes("postal_code"));
+  const cityComponent = components?.find((c) => c.types?.includes("locality"));
 
   return {
     lat: data.location?.latitude ?? 0,
     lng: data.location?.longitude ?? 0,
     label: data.formattedAddress ?? "",
     zipCode: postalComponent?.shortText ?? "",
+    city: cityComponent?.longText ?? "",
   };
 }
 

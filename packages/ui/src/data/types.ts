@@ -8,6 +8,16 @@ export const UserRole = {
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
+// ── Service area ─────────────────────────────────────────────────────────
+
+export const ALLOWED_ZIPS = ["55426", "55416"];
+export const ALLOWED_CITY = "St. Louis Park";
+export const ALLOWED_AREA_LABEL = "St. Louis Park, MN";
+
+export function isAllowedZip(zip: string): boolean {
+  return ALLOWED_ZIPS.includes(zip.trim());
+}
+
 // ── Categories ──────────────────────────────────────────────────────────
 
 export type Category =
@@ -39,6 +49,19 @@ export interface CategoryInfo {
   icon: string;
   payoutLabel: string;
   color: string;
+}
+
+// ── Address ──────────────────────────────────────────────────────────────
+
+export interface Address {
+  addressId: string;
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+  zipCode: string;
+  isDefault: boolean;
+  createdAt: string;
 }
 
 // ── Listing (UI shape) ──────────────────────────────────────────────────

@@ -6,20 +6,31 @@ import {
   Loader2,
   MapPin,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createListing, getPresignedUrl, uploadPhoto } from "../api/client";
-import { AddressAutocomplete } from "../components/AddressAutocomplete";
+import { createListing, getAddresses, getPresignedUrl, uploadPhoto } from "../api/client";
+import { AddressPicker } from "../components/AddressPicker";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { PhotoUpload } from "../components/PhotoUpload";
 import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
-import type { BlockedCategory, Category } from "../data/types";
-import type { AddressSuggestion } from "../hooks/useAddressAutocomplete";
+import {
+  type Address,
+  ALLOWED_AREA_LABEL,
+  type BlockedCategory,
+  type Category,
+  isAllowedZip,
+} from "../data/types";
+
 import { useAuth } from "../hooks/useAuth";
+import { useStore } from "../store/useStore";
 
 export function CreateListing() {
   const navigate = useNavigate();
   const { accessToken, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  const { addresses, addressesLoaded, setAddresses } = useStore();
+  const [addressesLoading, setAddressesLoading] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const [category, setCategory] = useState<Category | "">("");
   const [description, setDescription] = useState("");
@@ -28,13 +39,55 @@ export function CreateListing() {
   const [zipError, setZipError] = useState<string | null>(null);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
-  const [addressSelected, setAddressSelected] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [showBlocked, setShowBlocked] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState(false);
+
+  // Load saved addresses
+  useEffect(() => {
+    if (addressesLoaded || !accessToken) return;
+    setAddressesLoading(true);
+    getAddresses(accessToken)
+      .then((data) => {
+        const mapped: Address[] = (data.addresses || []).map((item: Record<string, unknown>) => ({
+          addressId: item.addressId as string,
+          label: item.label as string,
+          address: item.address as string,
+          lat: item.lat as number,
+          lng: item.lng as number,
+          zipCode: item.zipCode as string,
+          isDefault: item.isDefault as boolean,
+          createdAt: item.createdAt as string,
+        }));
+        setAddresses(mapped);
+      })
+      .finally(() => setAddressesLoading(false));
+  }, [accessToken, addressesLoaded, setAddresses]);
+
+  const validateZip = useCallback((zip: string) => {
+    if (zip && !isAllowedZip(zip)) {
+      setZipError(
+        `Scrappr is currently only available in ${ALLOWED_AREA_LABEL}. We're starting small to make sure everything works great before expanding!`,
+      );
+    } else {
+      setZipError(null);
+    }
+  }, []);
+
+  const handleAddressSelect = useCallback(
+    (addr: Address) => {
+      setSelectedAddressId(addr.addressId);
+      setAddress(addr.address);
+      setLat(addr.lat);
+      setLng(addr.lng);
+      setZipCode(addr.zipCode);
+      validateZip(addr.zipCode);
+    },
+    [validateZip],
+  );
 
   const handleCategorySelect = (cat: string) => {
     if (BLOCKED_CATEGORIES.includes(cat as BlockedCategory)) {
@@ -47,18 +100,6 @@ export function CreateListing() {
     setShowChecklist(PREP_CHECKLIST_CATEGORIES.includes(cat as Category));
   };
 
-  const ALLOWED_ZIP = "55426";
-
-  const validateZip = (zip: string) => {
-    if (zip && zip !== ALLOWED_ZIP) {
-      setZipError(
-        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
-      );
-    } else {
-      setZipError(null);
-    }
-  };
-
   const handleSubmit = async () => {
     if (!accessToken) return;
     if (!photoFile) {
@@ -66,9 +107,9 @@ export function CreateListing() {
       return;
     }
     if (!category || !description) return;
-    if (!zipCode || zipCode.trim() !== ALLOWED_ZIP) {
+    if (!zipCode || !isAllowedZip(zipCode)) {
       setZipError(
-        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
+        `Scrappr is currently only available in ${ALLOWED_AREA_LABEL}. We're starting small to make sure everything works great before expanding!`,
       );
       return;
     }
@@ -135,8 +176,8 @@ export function CreateListing() {
             <div>
               <p className="text-sm font-medium text-amber-700">Limited availability</p>
               <p className="text-xs text-amber-600 mt-0.5">
-                Scrappr is currently only available in zip code 55426 (St. Louis Park, MN). We're
-                starting small to make sure everything works great before expanding!
+                Scrappr is currently only available in {ALLOWED_AREA_LABEL}. We're starting small to
+                make sure everything works great before expanding!
               </p>
             </div>
           </div>
@@ -237,17 +278,11 @@ export function CreateListing() {
           {/* Location */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-            <p className="text-xs text-gray-400 mb-2">Currently serving zip code 55426 only</p>
-            <AddressAutocomplete
-              onSelect={(suggestion: AddressSuggestion) => {
-                setAddress(suggestion.label);
-                setLat(suggestion.lat);
-                setLng(suggestion.lng);
-                setZipCode(suggestion.zipCode);
-                validateZip(suggestion.zipCode);
-                setAddressSelected(true);
-              }}
-              warning={!addressSelected && address.length > 0}
+            <AddressPicker
+              addresses={addresses}
+              selectedAddressId={selectedAddressId}
+              onSelect={handleAddressSelect}
+              loading={addressesLoading}
             />
           </div>
 

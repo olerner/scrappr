@@ -1,14 +1,28 @@
 import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getMyListings, getPresignedUrl, updateListing, uploadPhoto } from "../api/client";
-import { AddressAutocomplete } from "../components/AddressAutocomplete";
+import {
+  getAddresses,
+  getMyListings,
+  getPresignedUrl,
+  updateListing,
+  uploadPhoto,
+} from "../api/client";
+import { AddressPicker } from "../components/AddressPicker";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { PhotoUpload } from "../components/PhotoUpload";
 import { BLOCKED_CATEGORIES, CATEGORIES, PREP_CHECKLIST_CATEGORIES } from "../data/mockData";
-import type { BlockedCategory, Category, Listing } from "../data/types";
-import type { AddressSuggestion } from "../hooks/useAddressAutocomplete";
+import {
+  type Address,
+  ALLOWED_AREA_LABEL,
+  type BlockedCategory,
+  type Category,
+  isAllowedZip,
+  type Listing,
+} from "../data/types";
+
 import { useAuth } from "../hooks/useAuth";
+import { useStore } from "../store/useStore";
 
 export function EditListing() {
   const { id } = useParams<{ id: string }>();
@@ -99,6 +113,16 @@ export function EditListing() {
 
 function EditListingForm({ accessToken, listing }: { accessToken: string; listing: Listing }) {
   const navigate = useNavigate();
+  const { addresses, addressesLoaded, setAddresses } = useStore();
+  const [addressesLoading, setAddressesLoading] = useState(false);
+
+  // Try to match listing's current address to a saved address
+  const matchingAddress = addresses.find(
+    (a) => a.address === listing.address && a.lat === listing.lat && a.lng === listing.lng,
+  );
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    matchingAddress?.addressId ?? null,
+  );
 
   const [category, setCategory] = useState<Category | "">(listing.category);
   const [description, setDescription] = useState(listing.description);
@@ -107,13 +131,63 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
   const [zipError, setZipError] = useState<string | null>(null);
   const [lat, setLat] = useState<number | null>(listing.lat);
   const [lng, setLng] = useState<number | null>(listing.lng);
-  const [addressSelected, setAddressSelected] = useState(true);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoDeleted, setPhotoDeleted] = useState(false);
   const [showBlocked, setShowBlocked] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [userEdited, setUserEdited] = useState(false);
+
+  // Load saved addresses
+  useEffect(() => {
+    if (addressesLoaded) return;
+    setAddressesLoading(true);
+    getAddresses(accessToken)
+      .then((data) => {
+        const mapped: Address[] = (data.addresses || []).map((item: Record<string, unknown>) => ({
+          addressId: item.addressId as string,
+          label: item.label as string,
+          address: item.address as string,
+          lat: item.lat as number,
+          lng: item.lng as number,
+          zipCode: item.zipCode as string,
+          isDefault: item.isDefault as boolean,
+          createdAt: item.createdAt as string,
+        }));
+        setAddresses(mapped);
+      })
+      .finally(() => setAddressesLoading(false));
+  }, [accessToken, addressesLoaded, setAddresses]);
+
+  const validateZip = useCallback((zip: string) => {
+    if (zip && !isAllowedZip(zip)) {
+      setZipError(
+        `Scrappr is currently only available in ${ALLOWED_AREA_LABEL}. We're starting small to make sure everything works great before expanding!`,
+      );
+    } else {
+      setZipError(null);
+    }
+  }, []);
+
+  const handleAddressSelect = useCallback(
+    (addr: Address) => {
+      setSelectedAddressId(addr.addressId);
+      setAddress(addr.address);
+      setLat(addr.lat);
+      setLng(addr.lng);
+      setZipCode(addr.zipCode);
+      validateZip(addr.zipCode);
+      if (
+        addr.address !== listing.address ||
+        addr.lat !== listing.lat ||
+        addr.lng !== listing.lng
+      ) {
+        setUserEdited(true);
+      }
+    },
+    [validateZip, listing],
+  );
 
   const handleCategorySelect = (cat: string) => {
     if (BLOCKED_CATEGORIES.includes(cat as BlockedCategory)) {
@@ -124,26 +198,15 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
     setShowBlocked(null);
     setCategory(cat as Category);
     setShowChecklist(PREP_CHECKLIST_CATEGORIES.includes(cat as Category));
-  };
-
-  const ALLOWED_ZIP = "55426";
-
-  const validateZip = (zip: string) => {
-    if (zip && zip !== ALLOWED_ZIP) {
-      setZipError(
-        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
-      );
-    } else {
-      setZipError(null);
-    }
+    setUserEdited(true);
   };
 
   const handleSubmit = async () => {
     if (!category || !description) return;
     if (photoDeleted && !photoFile) return;
-    if (zipCode && zipCode.trim() !== ALLOWED_ZIP) {
+    if (zipCode && !isAllowedZip(zipCode)) {
       setZipError(
-        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
+        `Scrappr is currently only available in ${ALLOWED_AREA_LABEL}. We're starting small to make sure everything works great before expanding!`,
       );
       return;
     }
@@ -209,7 +272,10 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
                   />
                   <button
                     type="button"
-                    onClick={() => setPhotoDeleted(true)}
+                    onClick={() => {
+                      setPhotoDeleted(true);
+                      setUserEdited(true);
+                    }}
                     className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"
                   >
                     <X size={14} />
@@ -218,7 +284,10 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
               </div>
             ) : (
               <PhotoUpload
-                onFileChange={(file) => setPhotoFile(file)}
+                onFileChange={(file) => {
+                  setPhotoFile(file);
+                  if (file) setUserEdited(true);
+                }}
                 error={photoDeleted && !photoFile}
               />
             )}
@@ -282,7 +351,10 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
             <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setUserEdited(true);
+              }}
               rows={3}
               placeholder="Describe the metal type, approximate weight, and condition..."
               className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
@@ -292,22 +364,15 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
           {/* Location */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-            <p className="text-xs text-gray-400 mb-2">Currently serving zip code 55426 only</p>
-            {address && <p className="text-sm text-gray-600 mb-2">Current: {address}</p>}
-            <AddressAutocomplete
-              onSelect={(suggestion: AddressSuggestion) => {
-                setAddress(suggestion.label);
-                setLat(suggestion.lat);
-                setLng(suggestion.lng);
-                setZipCode(suggestion.zipCode);
-                validateZip(suggestion.zipCode);
-                setAddressSelected(true);
-              }}
-              warning={!addressSelected && address.length > 0}
+            {!selectedAddressId && address && (
+              <p className="text-sm text-gray-600 mb-2">Current: {address}</p>
+            )}
+            <AddressPicker
+              addresses={addresses}
+              selectedAddressId={selectedAddressId}
+              onSelect={handleAddressSelect}
+              loading={addressesLoading}
             />
-            <p className="text-xs text-gray-400 mt-1">
-              Search for a new address to update the location, or leave as-is.
-            </p>
           </div>
 
           {zipError && (
@@ -328,7 +393,12 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
             type="button"
             onClick={handleSubmit}
             disabled={
-              !category || !description || (photoDeleted && !photoFile) || !!zipError || submitting
+              !category ||
+              !description ||
+              (photoDeleted && !photoFile) ||
+              !!zipError ||
+              !userEdited ||
+              submitting
             }
             className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
           >
