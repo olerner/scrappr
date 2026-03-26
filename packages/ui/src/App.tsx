@@ -6,6 +6,7 @@ import { EditListing } from "./pages/EditListing";
 import { LandingPage } from "./pages/LandingPage";
 import { ScrappeeDashboard } from "./pages/ScrappeeDashboard";
 import { ScrapprDashboard } from "./pages/ScrapprDashboard";
+import { SignedOut } from "./pages/SignedOut";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/list/edit/:id" element={<EditListing />} />
             <Route path="/haul" element={<ScrapprDashboard />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/signed-out" element={<SignedOut />} />
           </Routes>
         </main>
       </div>

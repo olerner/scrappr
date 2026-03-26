@@ -16,13 +16,11 @@ export function ScrappeeDashboard() {
     email,
     accessToken,
     signIn,
-    signOut,
     initiateGoogleSignIn,
     error: authError,
   } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const fetchListings = useCallback(async () => {
     if (!accessToken) return;
@@ -76,13 +74,12 @@ export function ScrappeeDashboard() {
             <h1 className="text-2xl font-bold text-gray-900">Your Listings</h1>
             <p className="text-gray-500 text-sm mt-1">
               Signed in as {email}{" "}
-              <button
-                type="button"
-                onClick={() => setShowSignOutConfirm(true)}
+              <Link
+                to="/signed-out"
                 className="text-emerald-600 hover:underline inline-flex items-center gap-1 ml-2"
               >
                 <LogOut size={12} /> Sign out
-              </button>
+              </Link>
             </p>
           </div>
           <Link
@@ -129,36 +126,6 @@ export function ScrappeeDashboard() {
           </>
         )}
       </div>
-
-      {/* Sign Out Confirmation */}
-      {showSignOutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowSignOutConfirm(false)}
-          />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign out?</h3>
-            <p className="text-sm text-gray-500 mb-5">You're signed in as {email}</p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowSignOutConfirm(false)}
-                className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={signOut}
-                className="flex-1 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

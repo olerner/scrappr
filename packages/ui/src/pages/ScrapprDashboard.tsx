@@ -10,7 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   browseListings,
   claimListing,
@@ -62,12 +62,10 @@ export function ScrapprDashboard() {
     isLoading: authLoading,
     accessToken,
     signIn,
-    signOut,
     initiateGoogleSignIn,
     email,
     error: authError,
   } = useAuth();
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("available");
@@ -247,13 +245,9 @@ export function ScrapprDashboard() {
               <h1 className="text-2xl font-bold text-gray-900">Hauler Dashboard</h1>
               <p className="text-gray-500 text-xs mt-0.5">
                 {email}{" "}
-                <button
-                  type="button"
-                  onClick={() => setShowSignOutConfirm(true)}
-                  className="text-emerald-600 hover:underline ml-1"
-                >
+                <Link to="/signed-out" className="text-emerald-600 hover:underline ml-1">
                   Sign out
-                </button>
+                </Link>
               </p>
             </div>
           </div>
@@ -451,34 +445,6 @@ export function ScrapprDashboard() {
       )}
 
       {/* Sign Out Confirmation */}
-      {showSignOutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowSignOutConfirm(false)}
-          />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign out?</h3>
-            <p className="text-sm text-gray-500 mb-5">You're signed in as {email}</p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowSignOutConfirm(false)}
-                className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={signOut}
-                className="flex-1 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
