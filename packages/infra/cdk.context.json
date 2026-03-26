@@ -2,5 +2,9 @@
   "hosted-zone:account=221237747538:domainName=scrappr.trevor.fail:region=us-east-1": {
     "Id": "/hostedzone/Z00793192TCYCJ0URD94O",
     "Name": "scrappr.trevor.fail."
+  },
+  "hosted-zone:account=404442501817:domainName=trevor.fail:region=us-east-1": {
+    "Id": "/hostedzone/Z03108863H3CPF350OEHH",
+    "Name": "trevor.fail."
   }
 }
