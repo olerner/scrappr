@@ -21,13 +21,24 @@ export const handler = async (event) => {
     }
 
     const body = JSON.parse(event.body || "{}");
-    const { category, description, photoUrl, lat, lng, address, estimatedValue } = body;
+    const { category, description, photoUrl, lat, lng, address, zipCode, estimatedValue } = body;
 
     if (!category || !description) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ error: "category and description are required" }),
+      };
+    }
+
+    const ALLOWED_ZIP = "55426";
+    if (!zipCode || zipCode.trim() !== ALLOWED_ZIP) {
+      return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          error: `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. Listings outside this area cannot be created at this time.`,
+        }),
       };
     }
 
@@ -41,6 +52,7 @@ export const handler = async (event) => {
       lat: lat || 0,
       lng: lng || 0,
       address: address || "",
+      zipCode: zipCode.trim(),
       status: "available",
       datePosted: new Date().toISOString().split("T")[0],
       estimatedValue: estimatedValue || "Varies",

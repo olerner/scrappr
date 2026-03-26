@@ -350,6 +350,8 @@ function NewListingModal({
   const [category, setCategory] = useState<Category | "">("");
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [zipError, setZipError] = useState<string | null>(null);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [addressSelected, setAddressSelected] = useState(false);
@@ -388,12 +390,30 @@ function NewListingModal({
     }
   };
 
+  const ALLOWED_ZIP = "55426";
+
+  const validateZip = (zip: string) => {
+    if (zip && zip !== ALLOWED_ZIP) {
+      setZipError(
+        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
+      );
+    } else {
+      setZipError(null);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!photoFile) {
       setPhotoError(true);
       return;
     }
     if (!category || !description) return;
+    if (!zipCode || zipCode.trim() !== ALLOWED_ZIP) {
+      setZipError(
+        `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
+      );
+      return;
+    }
     setSubmitting(true);
     setSubmitError(null);
 
@@ -416,6 +436,7 @@ function NewListingModal({
         lat: lat as number,
         lng: lng as number,
         address,
+        zipCode: zipCode.trim(),
         estimatedValue: catInfo?.payoutLabel || "Varies",
       });
 
@@ -580,11 +601,20 @@ function NewListingModal({
                 setAddress(suggestion.label);
                 setLat(suggestion.lat);
                 setLng(suggestion.lng);
+                setZipCode(suggestion.zipCode);
+                validateZip(suggestion.zipCode);
                 setAddressSelected(true);
               }}
               warning={!addressSelected && address.length > 0}
             />
           </div>
+
+          {zipError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+              <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700">{zipError}</p>
+            </div>
+          )}
 
           {submitError && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
@@ -598,7 +628,15 @@ function NewListingModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!category || !description || !photoFile || !addressSelected || submitting}
+            disabled={
+              !category ||
+              !description ||
+              !photoFile ||
+              !address ||
+              !zipCode ||
+              !!zipError ||
+              submitting
+            }
             className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
             data-testid="submit-listing-btn"
           >
