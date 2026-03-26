@@ -120,6 +120,7 @@ test.describe("Listing Creation Flow", () => {
           uploadUrl: "https://example-bucket.s3.amazonaws.com/test-upload",
           photoUrl: "https://example-cdn.cloudfront.net/photos/test-photo.jpg",
           key: "photos/test-photo.jpg",
+          fields: { "Content-Type": "image/jpeg" },
         }),
       });
     });
