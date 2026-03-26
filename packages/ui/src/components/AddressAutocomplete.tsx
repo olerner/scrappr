@@ -45,7 +45,7 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
         onSelect(details);
       } catch {
         // If details fetch fails, still pass what we have
-        onSelect({ label: prediction.label, lat: 0, lng: 0 });
+        onSelect({ label: prediction.label, lat: 0, lng: 0, zipCode: "" });
       } finally {
         setResolving(false);
       }
@@ -120,7 +120,7 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
 
   return (
     <div className="relative">
-      <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10" />
+      <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
       <input
         type="text"
         value={inputValue}

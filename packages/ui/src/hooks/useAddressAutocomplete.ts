@@ -6,6 +6,7 @@ export interface AddressSuggestion {
   label: string;
   lat: number;
   lng: number;
+  zipCode: string;
 }
 
 export interface PlacePrediction {
@@ -59,17 +60,22 @@ export async function fetchPlaceDetails(
   const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
     headers: {
       "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
-      "X-Goog-FieldMask": "location,formattedAddress",
+      "X-Goog-FieldMask": "location,formattedAddress,addressComponents",
     },
     signal,
   });
 
   const data = await res.json();
 
+  const postalComponent = (
+    data.addressComponents as Array<{ types: string[]; shortText?: string }> | undefined
+  )?.find((c) => c.types?.includes("postal_code"));
+
   return {
     lat: data.location?.latitude ?? 0,
     lng: data.location?.longitude ?? 0,
     label: data.formattedAddress ?? "",
+    zipCode: postalComponent?.shortText ?? "",
   };
 }
 

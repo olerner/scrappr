@@ -392,10 +392,8 @@ function NewListingModal({
 
   const ALLOWED_ZIP = "55426";
 
-  const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setZipCode(val);
-    if (val && val.trim() !== ALLOWED_ZIP) {
+  const validateZip = (zip: string) => {
+    if (zip && zip !== ALLOWED_ZIP) {
       setZipError(
         `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
       );
@@ -603,36 +601,20 @@ function NewListingModal({
                 setAddress(suggestion.label);
                 setLat(suggestion.lat);
                 setLng(suggestion.lng);
+                setZipCode(suggestion.zipCode);
+                validateZip(suggestion.zipCode);
                 setAddressSelected(true);
               }}
               warning={!addressSelected && address.length > 0}
             />
           </div>
 
-          {/* Zip Code */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Zip Code</label>
-            <input
-              type="text"
-              value={zipCode}
-              onChange={handleZipChange}
-              placeholder="55426"
-              maxLength={10}
-              className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                zipError ? "border-red-400 bg-red-50" : "border-gray-300"
-              }`}
-              data-testid="zip-input"
-            />
-            {zipError && (
-              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
-                <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700">{zipError}</p>
-              </div>
-            )}
-            {zipCode && !zipError && (
-              <p className="text-xs text-emerald-600 mt-1.5">✓ Zip code is in our service area</p>
-            )}
-          </div>
+          {zipError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+              <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700">{zipError}</p>
+            </div>
+          )}
 
           {submitError && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
