@@ -1,0 +1,154 @@
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { notifyScrappee, getUserEmail, sendEmail } from "./email.mjs";
+
+const client = new DynamoDBClient({});
+const ddb = DynamoDBDocumentClient.from(client);
+const TABLE = process.env.LISTINGS_TABLE;
+const STATUS_INDEX = process.env.STATUS_INDEX;
+
+const EXPIRY_HOURS = 24;
+const WARNING_HOURS = 20;
+
+export const handler = async () => {
+  const now = new Date();
+  const expiryThreshold = new Date(now.getTime() - EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
+  const warningThreshold = new Date(now.getTime() - WARNING_HOURS * 60 * 60 * 1000).toISOString();
+
+  try {
+    // Query all claimed listings
+    const result = await ddb.send(
+      new QueryCommand({
+        TableName: TABLE,
+        IndexName: STATUS_INDEX,
+        KeyConditionExpression: "#status = :claimed",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: { ":claimed": "claimed" },
+      })
+    );
+
+    const claimedListings = result.Items || [];
+    let expired = 0;
+    let warned = 0;
+
+    for (const listing of claimedListings) {
+      if (!listing.claimedAt) continue;
+
+      if (listing.claimedAt < expiryThreshold) {
+        // Expired — revert to available
+        try {
+          await ddb.send(
+            new UpdateCommand({
+              TableName: TABLE,
+              Key: { userId: listing.userId, listingId: listing.listingId },
+              UpdateExpression: "SET #status = :available REMOVE claimedBy, claimedAt",
+              ExpressionAttributeNames: { "#status": "status" },
+              ExpressionAttributeValues: {
+                ":available": "available",
+                ":claimed": "claimed",
+              },
+              ConditionExpression: "#status = :claimed",
+            })
+          );
+
+          expired++;
+
+          // Notify scrappee
+          notifyScrappee({
+            ownerUserId: listing.userId,
+            subject: "Your listing is available again",
+            heading: "Claim expired",
+            message: `The hauler who claimed your listing didn't pick it up within ${EXPIRY_HOURS} hours, so it's back on the market for other haulers.`,
+            listing,
+          });
+
+          // Notify hauler
+          if (listing.claimedBy) {
+            const haulerEmail = await getUserEmail(listing.claimedBy);
+            if (haulerEmail) {
+              sendEmail({
+                to: haulerEmail,
+                subject: "Your claim has expired",
+                html: `
+                  <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                      <h1 style="color: #059669; font-size: 24px; margin: 0;">Scrappr</h1>
+                    </div>
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 24px;">
+                      <h2 style="color: #111827; font-size: 18px; margin: 0 0 8px;">Claim expired</h2>
+                      <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px;">
+                        Your claim on a <strong>${listing.category}</strong> listing has expired because it wasn't picked up within ${EXPIRY_HOURS} hours.
+                        The listing is now available for other haulers.
+                      </p>
+                    </div>
+                    <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 24px;">
+                      Scrappr &mdash; Your scrap. Their hustle. Zero waste.
+                    </p>
+                  </div>
+                `,
+              });
+            }
+          }
+        } catch (err) {
+          if (err.name !== "ConditionalCheckFailedException") {
+            console.error(`Failed to expire listing ${listing.listingId}:`, err);
+          }
+        }
+      } else if (listing.claimedAt < warningThreshold && !listing.expiryWarned) {
+        // Warning window — notify hauler their claim is about to expire
+        if (listing.claimedBy) {
+          const haulerEmail = await getUserEmail(listing.claimedBy);
+          if (haulerEmail) {
+            const hoursLeft = Math.round(
+              (new Date(listing.claimedAt).getTime() + EXPIRY_HOURS * 60 * 60 * 1000 - now.getTime()) / (60 * 60 * 1000)
+            );
+
+            sendEmail({
+              to: haulerEmail,
+              subject: "Your claim expires soon",
+              html: `
+                <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+                  <div style="text-align: center; margin-bottom: 24px;">
+                    <h1 style="color: #059669; font-size: 24px; margin: 0;">Scrappr</h1>
+                  </div>
+                  <div style="background: #fef3c7; border-radius: 12px; padding: 24px;">
+                    <h2 style="color: #92400e; font-size: 18px; margin: 0 0 8px;">Claim expiring soon</h2>
+                    <p style="color: #78350f; font-size: 14px; margin: 0 0 16px;">
+                      Your claim on a <strong>${listing.category}</strong> listing expires in about ${hoursLeft} hour${hoursLeft === 1 ? "" : "s"}.
+                      Pick it up soon or it will be released to other haulers.
+                    </p>
+                  </div>
+                  <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 24px;">
+                    Scrappr &mdash; Your scrap. Their hustle. Zero waste.
+                  </p>
+                </div>
+              `,
+            });
+
+            // Mark as warned so we don't spam
+            try {
+              await ddb.send(
+                new UpdateCommand({
+                  TableName: TABLE,
+                  Key: { userId: listing.userId, listingId: listing.listingId },
+                  UpdateExpression: "SET expiryWarned = :true",
+                  ExpressionAttributeValues: { ":true": true },
+                })
+              );
+              warned++;
+            } catch {
+              // non-critical
+            }
+          }
+        }
+      }
+    }
+
+    console.log(`Expire claims: ${expired} expired, ${warned} warned, ${claimedListings.length} total claimed`);
+
+    return { expired, warned };
+  } catch (err) {
+    console.error("expire-claims failed:", err);
+    throw err;
+  }
+};

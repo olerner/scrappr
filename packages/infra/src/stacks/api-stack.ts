@@ -7,6 +7,8 @@ import * as integrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 import * as cw_actions from "aws-cdk-lib/aws-cloudwatch-actions";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as events from "aws-cdk-lib/aws-events";
+import * as events_targets from "aws-cdk-lib/aws-events-targets";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
@@ -220,6 +222,33 @@ export class ApiStack extends cdk.Stack {
         fn.addToRolePolicy(cognitoLookupPolicy);
       }
     }
+
+    // ── Claim Expiry Scheduler ──────────────────────────────────────
+
+    const expireClaimsFn = this.createLambda("ExpireClaims", {
+      handler: "expire-claims.handler",
+      timeout: cdk.Duration.seconds(60),
+      environment: {
+        LISTINGS_TABLE: listingsTable.tableName,
+        STATUS_INDEX: "status-index",
+        ...emailEnv,
+      },
+    });
+    listingsTable.grantReadWriteData(expireClaimsFn);
+    if (sendEmailPolicy) {
+      expireClaimsFn.addToRolePolicy(sendEmailPolicy);
+      expireClaimsFn.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ["cognito-idp:AdminGetUser"],
+          resources: [`arn:aws:cognito-idp:${this.region}:${this.account}:userpool/${userPoolId}`],
+        }),
+      );
+    }
+
+    new events.Rule(this, "ExpireClaimsSchedule", {
+      schedule: events.Schedule.rate(cdk.Duration.minutes(15)),
+      targets: [new events_targets.LambdaFunction(expireClaimsFn)],
+    });
 
     const updateListingFn = this.createLambda("UpdateListing", {
       handler: "update-listing.handler",
