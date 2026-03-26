@@ -331,6 +331,17 @@ export class ApiStack extends cdk.Stack {
       },
     });
 
+    const accessLogGroup = new logs.LogGroup(this, "HttpApiAccessLogs", {
+      logGroupName: `/aws/apigateway/scrappr-api-${stageName}`,
+      retention: logs.RetentionDays.THREE_MONTHS,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    const defaultStage = httpApi.defaultStage?.node.defaultChild as apigatewayv2.CfnStage;
+    defaultStage.accessLogSettings = {
+      destinationArn: accessLogGroup.logGroupArn,
+    };
+
     httpApi.addRoutes({
       path: "/photos/presign",
       methods: [apigatewayv2.HttpMethod.POST],
