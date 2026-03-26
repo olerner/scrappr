@@ -65,8 +65,9 @@ const userPoolClientId = sharesDevAuth
   : authStack!.userPoolClient.userPoolClientId;
 
 // Email stack — deploy for dev/prod (not localdev or preview)
+// Skip when SKIP_EMAIL_STACK=1 (e.g. CI where hosted zone lookup may fail)
 let emailStack: EmailStack | undefined;
-if (!isLocalDev && !isPreview) {
+if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1") {
   emailStack = new EmailStack(app, `scrappr-email-${env}`, {
     env: awsEnv,
     stageName: env,

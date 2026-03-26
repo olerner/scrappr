@@ -299,6 +299,19 @@ export function CreateListing() {
             </div>
           )}
 
+          {/* Validation hints */}
+          {(() => {
+            const missing = [];
+            if (!photoFile) missing.push("photo");
+            if (!category) missing.push("category");
+            if (!description) missing.push("description");
+            if (!address || !zipCode) missing.push("location");
+            if (missing.length > 0 && (photoFile || category || description || address)) {
+              return <p className="text-xs text-gray-400">Still needed: {missing.join(", ")}</p>;
+            }
+            return null;
+          })()}
+
           {/* Submit */}
           <button
             type="button"
