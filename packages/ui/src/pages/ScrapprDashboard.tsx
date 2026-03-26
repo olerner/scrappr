@@ -579,6 +579,7 @@ function AvailableCard({
   error: string | null;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const catInfo = CATEGORIES.find((c) => c.name === listing.category);
 
   useEffect(() => {
@@ -605,12 +606,13 @@ function AvailableCard({
       <div className="p-4">
         <div className="flex gap-3 mb-3">
           <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-            {listing.photoUrl ? (
+            {listing.photoUrl && !imgError ? (
               <img
                 src={listing.photoUrl}
                 alt={listing.category}
                 loading="lazy"
                 className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -679,6 +681,7 @@ function ClaimedCard({
   const catInfo = CATEGORIES.find((c) => c.name === listing.category);
   const [confirmingUnclaim, setConfirmingUnclaim] = useState(false);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [, setTick] = useState(0);
 
   // Countdown timer — re-render every minute
@@ -734,11 +737,12 @@ function ClaimedCard({
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative w-full h-48 bg-gray-100">
-        {listing.photoUrl ? (
+        {listing.photoUrl && !imgError ? (
           <img
             src={listing.photoUrl}
             alt={listing.category}
             className="w-full h-full object-cover"
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

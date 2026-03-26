@@ -278,6 +278,7 @@ function EmptyState() {
 function ListingCard({ listing }: { listing: Listing }) {
   const navigate = useNavigate();
   const isEditable = listing.status === "available";
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div
@@ -297,11 +298,12 @@ function ListingCard({ listing }: { listing: Listing }) {
     >
       <div className="flex gap-4">
         <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-          {listing.photoUrl ? (
+          {listing.photoUrl && !imgError ? (
             <img
               src={listing.photoUrl}
               alt={listing.category}
               className="w-full h-full object-cover"
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
