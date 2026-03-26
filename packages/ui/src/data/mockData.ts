@@ -10,7 +10,13 @@ export const CATEGORIES: CategoryInfo[] = [
   { name: "Brass", icon: "Settings", payoutLabel: "$0.65 - $3.70/lb", color: "#ca8a04" },
   { name: "Steel", icon: "Layers", payoutLabel: "$0.05 - $0.12/lb", color: "#475569" },
   { name: "Electronics", icon: "Zap", payoutLabel: "E-waste redirect", color: "#dc2626" },
-  { name: "Mixed", icon: "Package", payoutLabel: "Varies", color: "#7c3aed" },
+  {
+    name: "Mixed",
+    displayName: "Various / Mixed Metal",
+    icon: "Package",
+    payoutLabel: "Varies",
+    color: "#7c3aed",
+  },
   { name: "Lawnmowers", icon: "Wrench", payoutLabel: "$5 - $15 flat", color: "#059669" },
 ];
 
@@ -25,6 +31,10 @@ export const BLOCKED_CATEGORIES: BlockedCategory[] = [
 ];
 
 export const PREP_CHECKLIST_CATEGORIES: Category[] = ["Appliances", "Lawnmowers"];
+
+export function getCategoryDisplayName(category: Category): string {
+  return CATEGORIES.find((c) => c.name === category)?.displayName ?? category;
+}
 
 // ── Geography ───────────────────────────────────────────────────────────
 

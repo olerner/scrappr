@@ -64,6 +64,41 @@ export class UiStack extends cdk.Stack {
       });
     }
 
+    // ── Security Headers ──────────────────────────────────────────────
+
+    const responseHeadersPolicy = new cloudfront.ResponseHeadersPolicy(this, "SecurityHeaders", {
+      responseHeadersPolicyName: `scrappr-security-headers-${envName}`,
+      securityHeadersBehavior: {
+        strictTransportSecurity: {
+          accessControlMaxAge: cdk.Duration.days(365),
+          includeSubdomains: true,
+          preload: true,
+          override: true,
+        },
+        contentSecurityPolicy: {
+          contentSecurityPolicy: [
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: blob: https://*.amazonaws.com",
+            "font-src 'self'",
+            "connect-src 'self' https://*.amazonaws.com https://*.amazoncognito.com https://places.googleapis.com https://cognito-idp.us-east-1.amazonaws.com",
+            "frame-ancestors 'none'",
+          ].join("; "),
+          override: true,
+        },
+        contentTypeOptions: { override: true },
+        frameOptions: {
+          frameOption: cloudfront.HeadersFrameOption.DENY,
+          override: true,
+        },
+        referrerPolicy: {
+          referrerPolicy: cloudfront.HeadersReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN,
+          override: true,
+        },
+      },
+    });
+
     // ── CloudFront Distribution ───────────────────────────────────────
 
     const distribution = new cloudfront.Distribution(this, "Distribution", {
@@ -72,6 +107,7 @@ export class UiStack extends cdk.Stack {
         origin: origins.S3BucketOrigin.withOriginAccessControl(bucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         compress: true,
+        responseHeadersPolicy,
       },
       defaultRootObject: "index.html",
       errorResponses: [

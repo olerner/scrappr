@@ -303,7 +303,13 @@ export class ApiStack extends cdk.Stack {
     const httpApi = new apigatewayv2.HttpApi(this, "HttpApi", {
       apiName: `scrappr-api-${stageName}`,
       corsPreflight: {
-        allowOrigins: ["http://localhost:5173", "http://localhost:4173", "https://*"],
+        allowOrigins: isPreview
+          ? ["https://*"]
+          : [
+              "http://localhost:5173",
+              "http://localhost:4173",
+              ...(appUrl && !appUrl.startsWith("http://localhost") ? [appUrl] : []),
+            ],
         allowMethods: [
           apigatewayv2.CorsHttpMethod.GET,
           apigatewayv2.CorsHttpMethod.POST,

@@ -1,7 +1,7 @@
 import L from "leaflet";
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import { CATEGORIES, TWIN_CITIES_CENTER } from "../data/mockData";
+import { CATEGORIES, getCategoryDisplayName, TWIN_CITIES_CENTER } from "../data/mockData";
 import type { Listing } from "../data/types";
 
 interface MapViewProps {
@@ -89,7 +89,7 @@ export function MapView({
 
       const popupContent = `
         <div style="padding: 12px; min-width: 200px;">
-          <div style="font-weight: 600; color: #065F46; margin-bottom: 4px; font-size: 14px;">${listing.category}</div>
+          <div style="font-weight: 600; color: #065F46; margin-bottom: 4px; font-size: 14px;">${getCategoryDisplayName(listing.category)}</div>
           <div style="color: #4b5563; font-size: 13px; margin-bottom: 4px; line-height: 1.4;">${listing.description.slice(0, 80)}${listing.description.length > 80 ? "..." : ""}</div>
           <div style="color: #6b7280; font-size: 12px; margin-bottom: 4px;">${listing.address || "Twin Cities area"}</div>
           <div style="font-weight: 600; color: #059669; font-size: 13px;">${catInfo?.payoutLabel ?? listing.estimatedValue}</div>

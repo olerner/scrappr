@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
+import { getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { formatRelativeDate } from "../utils/formatDate";
@@ -101,11 +102,31 @@ export function ScrappeeDashboard() {
         ) : listings.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="grid gap-4">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
+          <>
+            {listings.filter((l) => l.status === "available" || l.status === "claimed").length >
+              0 && (
+              <div className="grid gap-4">
+                {listings
+                  .filter((l) => l.status === "available" || l.status === "claimed")
+                  .map((listing) => (
+                    <ListingCard key={listing.id} listing={listing} />
+                  ))}
+              </div>
+            )}
+            {listings.filter((l) => l.status === "completed" || l.status === "confirmed").length >
+              0 && (
+              <div className="mt-8">
+                <h2 className="text-lg font-semibold text-gray-500 mb-4">Completed</h2>
+                <div className="grid gap-4 opacity-75">
+                  {listings
+                    .filter((l) => l.status === "completed" || l.status === "confirmed")
+                    .map((listing) => (
+                      <ListingCard key={listing.id} listing={listing} />
+                    ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -314,7 +335,9 @@ function ListingCard({ listing }: { listing: Listing }) {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
               <CategoryIcon category={listing.category} size={16} className="text-emerald-600" />
-              <span className="font-semibold text-gray-900 text-sm">{listing.category}</span>
+              <span className="font-semibold text-gray-900 text-sm">
+                {getCategoryDisplayName(listing.category)}
+              </span>
             </div>
             <StatusBadge status={listing.status} />
           </div>

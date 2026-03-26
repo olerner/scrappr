@@ -161,7 +161,7 @@ export function CreateListing() {
           to="/list"
           className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 text-sm mb-4"
         >
-          <ArrowLeft size={16} /> Back to Dashboard
+          <ArrowLeft size={16} /> Back to My Listings
         </Link>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Create a New Scrap Metal Listing</h1>
@@ -212,7 +212,7 @@ export function CreateListing() {
                     size={20}
                     className={category === cat.name ? "text-emerald-600" : "text-gray-400"}
                   />
-                  {cat.name}
+                  {cat.displayName ?? cat.name}
                 </button>
               ))}
             </div>

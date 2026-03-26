@@ -46,6 +46,7 @@ export type ListingStatus = "available" | "claimed" | "completed" | "confirmed";
 
 export interface CategoryInfo {
   name: Category;
+  displayName?: string;
   icon: string;
   payoutLabel: string;
   color: string;
