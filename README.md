@@ -38,6 +38,11 @@ yarn ui       # Start the UI dev server
 | Appliances | $5 - $18 flat    |
 | Mixed      | Varies           |
 
+## Documentation
+
+- [Executive Summary](https://github.com/olerner/scrappr/wiki/Executive-Summary) — Business plan, market analysis, and revenue model
+- [Original Mockups](https://github.com/olerner/scrappr/wiki/Original-Mockups) — Design reference from the original Lovable prototype
+
 ## License
 
 MIT

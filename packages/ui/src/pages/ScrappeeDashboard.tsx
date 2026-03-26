@@ -5,6 +5,7 @@ import {
   Image as ImageIcon,
   Loader2,
   LogOut,
+  MapPin,
   Plus,
   X,
 } from "lucide-react";
@@ -454,6 +455,18 @@ function NewListingModal({
         </div>
 
         <div className="px-6 py-5 space-y-6">
+          {/* Zip Code Notice */}
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+            <MapPin size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-700">Limited availability</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Scrappr is currently only available in zip code 55426 (St. Louis Park, MN). We're
+                starting small to make sure everything works great before expanding!
+              </p>
+            </div>
+          </div>
+
           {/* Photo Upload */}
           <PhotoUpload
             onFileChange={(file) => {
@@ -552,6 +565,7 @@ function NewListingModal({
           {/* Location */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+            <p className="text-xs text-gray-400 mb-2">Currently serving zip code 55426 only</p>
             <AddressAutocomplete
               onSelect={(suggestion: AddressSuggestion) => {
                 setAddress(suggestion.label);
