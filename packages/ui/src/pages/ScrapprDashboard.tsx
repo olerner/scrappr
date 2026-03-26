@@ -11,7 +11,13 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { browseListings, claimListing, completeListing, getClaimedListings } from "../api/client";
+import {
+  browseListings,
+  claimListing,
+  completeListing,
+  getClaimedListings,
+  unclaimListing,
+} from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
 import { CATEGORIES } from "../data/mockData";
@@ -93,8 +99,9 @@ export function ScrapprDashboard() {
   const [claimError, setClaimError] = useState<{ id: string; message: string } | null>(null);
   const [fadingOutId, setFadingOutId] = useState<string | null>(null);
 
-  // Complete state
+  // Complete/unclaim state
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [unclaimingId, setUnclaimingId] = useState<string | null>(null);
 
   const fetchAvailable = useCallback(async () => {
     if (!accessToken) return;
@@ -191,6 +198,23 @@ export function ScrapprDashboard() {
       // silently fail
     } finally {
       setCompletingId(null);
+    }
+  };
+
+  const handleUnclaim = async (listingId: string) => {
+    if (!accessToken) return;
+    setUnclaimingId(listingId);
+    try {
+      await unclaimListing(accessToken, listingId);
+      const unclaimed = claimedListings.find((l) => l.id === listingId);
+      setClaimedListings((prev) => prev.filter((l) => l.id !== listingId));
+      if (unclaimed) {
+        setAvailableRaw((prev) => [{ ...unclaimed, status: "available" as const }, ...prev]);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setUnclaimingId(null);
     }
   };
 
@@ -404,7 +428,7 @@ export function ScrapprDashboard() {
       ) : (
         /* Claimed Tab */
         <div className="flex-1">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {loadingClaimed ? (
               <div className="text-center py-16">
                 <Loader2 className="animate-spin text-emerald-600 mx-auto" size={32} />
@@ -435,13 +459,15 @@ export function ScrapprDashboard() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activeClaimedListings.map((listing) => (
                       <ClaimedCard
                         key={listing.id}
                         listing={listing}
                         onComplete={() => handleComplete(listing.id)}
                         completing={completingId === listing.id}
+                        onUnclaim={() => handleUnclaim(listing.id)}
+                        unclaiming={unclaimingId === listing.id}
                       />
                     ))}
                   </div>
@@ -652,11 +678,17 @@ function ClaimedCard({
   listing,
   onComplete,
   completing,
+  onUnclaim,
+  unclaiming,
 }: {
   listing: Listing;
   onComplete: () => void;
   completing: boolean;
+  onUnclaim: () => void;
+  unclaiming: boolean;
 }) {
+  const catInfo = CATEGORIES.find((c) => c.name === listing.category);
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative w-full h-48 bg-gray-100">
@@ -677,22 +709,36 @@ function ClaimedCard({
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-gray-900 mb-1">{listing.category}</h3>
-        <p className="text-gray-500 text-sm mb-1 line-clamp-2">{listing.description}</p>
+        <p className="text-gray-500 text-sm mb-2 line-clamp-2">{listing.description}</p>
         <div className="flex items-center gap-4 text-xs text-gray-400 mb-1">
-          <span>{listing.estimatedValue}</span>
+          <div className="flex items-center gap-1">
+            <CategoryIcon category={listing.category} size={14} className="text-emerald-600" />
+            <span>{catInfo?.payoutLabel}</span>
+          </div>
+          {listing.datePosted && <span>{formatRelativeDate(listing.datePosted)}</span>}
         </div>
         <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
           <MapPin size={12} />
           <span>{listing.address}</span>
         </div>
-        <button
-          type="button"
-          onClick={onComplete}
-          disabled={completing}
-          className="w-full px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all disabled:opacity-40"
-        >
-          {completing ? <Loader2 className="animate-spin mx-auto" size={16} /> : "Mark Picked Up"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onUnclaim}
+            disabled={unclaiming || completing}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all disabled:opacity-40"
+          >
+            {unclaiming ? <Loader2 className="animate-spin mx-auto" size={16} /> : "Unclaim"}
+          </button>
+          <button
+            type="button"
+            onClick={onComplete}
+            disabled={completing || unclaiming}
+            className="flex-1 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all disabled:opacity-40"
+          >
+            {completing ? <Loader2 className="animate-spin mx-auto" size={16} /> : "Mark Picked Up"}
+          </button>
+        </div>
       </div>
     </div>
   );

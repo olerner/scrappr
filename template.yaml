@@ -119,6 +119,23 @@ Resources:
             Method: POST
             ApiId: !Ref HttpApi
 
+  UnclaimListingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: unclaim-listing.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+          LISTING_ID_INDEX: listingId-index
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /listings/{listingId}/unclaim
+            Method: POST
+            ApiId: !Ref HttpApi
+
   ClaimListingFunction:
     Type: AWS::Serverless::Function
     Properties:

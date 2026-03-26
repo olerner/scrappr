@@ -179,6 +179,15 @@ export class ApiStack extends cdk.Stack {
     });
     listingsTable.grantReadWriteData(completeListingFn);
 
+    const unclaimListingFn = this.createLambda("UnclaimListing", {
+      handler: "unclaim-listing.handler",
+      environment: {
+        LISTINGS_TABLE: listingsTable.tableName,
+        LISTING_ID_INDEX: "listingId-index",
+      },
+    });
+    listingsTable.grantReadWriteData(unclaimListingFn);
+
     const claimListingFn = this.createLambda("ClaimListing", {
       handler: "claim-listing.handler",
       environment: {
@@ -302,6 +311,13 @@ export class ApiStack extends cdk.Stack {
       path: "/listings/{listingId}/complete",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration("CompleteListingInt", completeListingFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/listings/{listingId}/unclaim",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration("UnclaimListingInt", unclaimListingFn),
       authorizer: jwtAuthorizer,
     });
 

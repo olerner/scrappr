@@ -173,6 +173,16 @@ export async function claimListing(accessToken: string, listingId: string): Prom
   }
 }
 
+export async function unclaimListing(accessToken: string, listingId: string): Promise<void> {
+  const res = await apiRequest(`/listings/${listingId}/unclaim`, accessToken, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error || "Failed to unclaim listing");
+  }
+}
+
 export async function getClaimedListings(
   accessToken: string,
 ): Promise<{ listings: Record<string, unknown>[] }> {
