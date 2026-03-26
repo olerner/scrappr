@@ -6,7 +6,6 @@ import {
   Loader2,
   LogOut,
   MapPin,
-  Pencil,
   Plus,
   X,
 } from "lucide-react";
@@ -329,8 +328,24 @@ function EmptyState({ onNewListing }: { onNewListing: () => void }) {
 }
 
 function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: () => void }) {
+  const isEditable = listing.status === "available";
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+    <div
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-shadow ${
+        isEditable ? "hover:shadow-md hover:border-emerald-200 cursor-pointer" : ""
+      }`}
+      onClick={isEditable ? onEdit : undefined}
+      role={isEditable ? "button" : undefined}
+      tabIndex={isEditable ? 0 : undefined}
+      onKeyDown={
+        isEditable
+          ? (e) => {
+              if (e.key === "Enter") onEdit();
+            }
+          : undefined
+      }
+    >
       <div className="flex gap-4">
         <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
           {listing.photoUrl ? (
@@ -351,19 +366,7 @@ function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: () => void
               <CategoryIcon category={listing.category} size={16} className="text-emerald-600" />
               <span className="font-semibold text-gray-900 text-sm">{listing.category}</span>
             </div>
-            <div className="flex items-center gap-2">
-              {listing.status === "available" && (
-                <button
-                  type="button"
-                  onClick={onEdit}
-                  className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                  title="Edit listing"
-                >
-                  <Pencil size={14} />
-                </button>
-              )}
-              <StatusBadge status={listing.status} />
-            </div>
+            <StatusBadge status={listing.status} />
           </div>
           <p className="text-gray-600 text-sm mt-1 line-clamp-2">{listing.description}</p>
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
@@ -777,21 +780,23 @@ function EditListingModal({
         <div className="px-6 py-5 space-y-6">
           {/* Photo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
             {listing.photoUrl && !photoDeleted ? (
-              <div className="relative w-full h-48 rounded-xl overflow-hidden">
-                <img
-                  src={listing.photoUrl}
-                  alt={listing.category}
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => setPhotoDeleted(true)}
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"
-                >
-                  <X size={14} />
-                </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
+                <div className="relative w-full h-48 rounded-xl overflow-hidden">
+                  <img
+                    src={listing.photoUrl}
+                    alt={listing.category}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPhotoDeleted(true)}
+                    className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
               </div>
             ) : (
               <PhotoUpload
