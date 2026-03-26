@@ -1,3 +1,4 @@
+import { CLAIM_EXPIRY_HOURS } from "@scrappr/shared/src/constants";
 import {
   AlertTriangle,
   ArrowUpDown,
@@ -698,7 +699,7 @@ function AvailableCard({
           {claiming ? (
             <Loader2 className="animate-spin mx-auto" size={16} />
           ) : confirming ? (
-            "Confirm claim?"
+            `Confirm? You have ${CLAIM_EXPIRY_HOURS} hours to pick up`
           ) : (
             "Claim Pickup"
           )}
@@ -736,7 +737,7 @@ function ClaimedCard({
 
   const expiryLabel = useMemo(() => {
     if (!listing.claimedAt) return null;
-    const expiresAt = new Date(listing.claimedAt).getTime() + 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(listing.claimedAt).getTime() + CLAIM_EXPIRY_HOURS * 60 * 60 * 1000;
     const remaining = expiresAt - Date.now();
     if (remaining <= 0) return "Expired";
     const hours = Math.floor(remaining / (60 * 60 * 1000));

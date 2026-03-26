@@ -8,8 +8,8 @@ const TABLE = process.env.LISTINGS_TABLE;
 const STATUS_INDEX = process.env.STATUS_INDEX;
 const APP_URL = process.env.APP_URL || "https://scrappr.trevor.fail";
 
-const EXPIRY_HOURS = 24;
-const WARNING_HOURS = 20;
+const EXPIRY_HOURS = Number(process.env.CLAIM_EXPIRY_HOURS);
+const WARNING_HOURS = EXPIRY_HOURS * 0.75;
 
 export const handler = async () => {
   const now = new Date();

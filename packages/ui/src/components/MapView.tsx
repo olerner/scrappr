@@ -1,6 +1,7 @@
 import L from "leaflet";
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
+import { CLAIM_EXPIRY_HOURS } from "@scrappr/shared/src/constants";
 import { CATEGORIES, getCategoryDisplayName, TWIN_CITIES_CENTER } from "../data/mockData";
 import type { Listing } from "../data/types";
 
@@ -107,7 +108,21 @@ export function MapView({
             `[data-claim-id="${listing.id}"]`,
           ) as HTMLButtonElement | null;
           if (btn) {
+            let confirming = false;
             btn.addEventListener("click", async () => {
+              if (!confirming) {
+                confirming = true;
+                btn.textContent = `Confirm? You have ${CLAIM_EXPIRY_HOURS} hours to pick up`;
+                btn.style.background = "#f59e0b";
+                setTimeout(() => {
+                  if (confirming && !btn.disabled) {
+                    confirming = false;
+                    btn.textContent = "Claim Pickup";
+                    btn.style.background = "#059669";
+                  }
+                }, 3000);
+                return;
+              }
               btn.disabled = true;
               btn.textContent = "Claiming...";
               btn.style.opacity = "0.7";
@@ -118,6 +133,7 @@ export function MapView({
                 btn.style.opacity = "1";
                 setTimeout(() => marker.closePopup(), 800);
               } catch {
+                confirming = false;
                 btn.textContent = "Failed — try again";
                 btn.style.background = "#dc2626";
                 btn.style.opacity = "1";
