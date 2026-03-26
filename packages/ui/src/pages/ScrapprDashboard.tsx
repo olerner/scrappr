@@ -110,15 +110,14 @@ export function ScrapprDashboard() {
     setLoadingAvailable(true);
     setAvailableError(null);
     try {
-      const cat = filterCategory === "All" ? undefined : filterCategory;
-      const data = await browseListings(accessToken, cat);
+      const data = await browseListings(accessToken);
       setAvailableRaw((data.listings || []).map(mapApiListing));
     } catch {
       setAvailableError("Failed to load listings");
     } finally {
       setLoadingAvailable(false);
     }
-  }, [accessToken, filterCategory]);
+  }, [accessToken]);
 
   const fetchClaimed = useCallback(async () => {
     if (!accessToken) return;
@@ -142,13 +141,17 @@ export function ScrapprDashboard() {
   }, [isAuthenticated, accessToken, fetchClaimed]);
 
   const availableListings = useMemo(() => {
-    return [...availableRaw].sort((a, b) => {
+    let filtered = availableRaw;
+    if (filterCategory !== "All") {
+      filtered = filtered.filter((l) => l.category === filterCategory);
+    }
+    return [...filtered].sort((a, b) => {
       if (sortBy === "value") {
         return (VALUE_ORDER[b.category] ?? 0) - (VALUE_ORDER[a.category] ?? 0);
       }
       return a.category.localeCompare(b.category);
     });
-  }, [availableRaw, sortBy]);
+  }, [availableRaw, filterCategory, sortBy]);
 
   const routeValue = useMemo(() => {
     const active = claimedListings.filter((l) => l.status === "claimed");
@@ -393,6 +396,7 @@ export function ScrapprDashboard() {
                       listings={availableListings}
                       className="min-h-[500px] w-full"
                       visible={mobileView === "map"}
+                      onClaimClick={(id) => handleClaim(id)}
                     />
                   </div>
                 </div>
@@ -624,35 +628,41 @@ function AvailableCard({
         fadingOut ? "opacity-0 scale-95" : "opacity-100 scale-100"
       }`}
     >
-      <div className="relative w-full h-48 bg-gray-100">
-        {listing.photoUrl ? (
-          <img
-            src={listing.photoUrl}
-            alt={listing.category}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Truck size={32} className="text-gray-300" />
-          </div>
-        )}
-        <span className="absolute top-3 right-3 px-3 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full">
-          Available
-        </span>
-      </div>
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-1">{listing.category}</h3>
+        <div className="flex gap-3 mb-3">
+          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+            {listing.photoUrl ? (
+              <img
+                src={listing.photoUrl}
+                alt={listing.category}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Truck size={20} className="text-gray-300" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-semibold text-gray-900">{listing.category}</h3>
+              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                Available
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
+              <MapPin size={14} className="flex-shrink-0 text-gray-400" />
+              <span>{listing.address || "Twin Cities area"}</span>
+            </div>
+          </div>
+        </div>
         <p className="text-gray-500 text-sm mb-2 line-clamp-2">{listing.description}</p>
-        <div className="flex items-center gap-4 text-xs text-gray-400 mb-1">
+        <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
           <div className="flex items-center gap-1">
             <CategoryIcon category={listing.category} size={14} className="text-emerald-600" />
             <span>{catInfo?.payoutLabel}</span>
           </div>
           {listing.datePosted && <span>{formatRelativeDate(listing.datePosted)}</span>}
-        </div>
-        <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
-          <MapPin size={12} />
-          <span>{listing.address || "Twin Cities area"}</span>
         </div>
         {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
         <button
