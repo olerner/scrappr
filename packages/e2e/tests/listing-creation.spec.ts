@@ -73,6 +73,12 @@ test.describe("Listing Creation Flow", () => {
     await page.getByTestId("address-input").fill("Minneapolis");
     await page.getByTestId("address-suggestion").first().click({ timeout: 10_000 });
 
+    // Wait for address selection to complete before proceeding
+    await expect(page.getByTestId("address-input")).toHaveValue(
+      "123 Test St, Minneapolis, MN, USA",
+      { timeout: 10_000 },
+    );
+
     // 9b. Fill zip code (must be in service area)
     await page.getByTestId("zip-input").fill("55426");
 
