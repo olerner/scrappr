@@ -681,6 +681,7 @@ function EditListingModal({
   const [lng, setLng] = useState<number | null>(listing.lng);
   const [addressSelected, setAddressSelected] = useState(true);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoDeleted, setPhotoDeleted] = useState(false);
   const [showBlocked, setShowBlocked] = useState<string | null>(null);
   const [showChecklist, setShowChecklist] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -715,6 +716,7 @@ function EditListingModal({
 
   const handleSubmit = async () => {
     if (!category || !description) return;
+    if (photoDeleted && !photoFile) return;
     if (zipCode && zipCode.trim() !== ALLOWED_ZIP) {
       setZipError(
         `Scrappr is currently only available in zip code ${ALLOWED_ZIP}. We're starting small to make sure everything works great before expanding!`,
@@ -773,23 +775,29 @@ function EditListingModal({
         </div>
 
         <div className="px-6 py-5 space-y-6">
-          {/* Current / New Photo */}
+          {/* Photo */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
-            {listing.photoUrl && !photoFile && (
-              <div className="relative w-full h-48 rounded-xl overflow-hidden mb-2">
+            {listing.photoUrl && !photoDeleted ? (
+              <div className="relative w-full h-48 rounded-xl overflow-hidden">
                 <img
                   src={listing.photoUrl}
                   alt={listing.category}
                   className="w-full h-full object-cover"
                 />
+                <button
+                  type="button"
+                  onClick={() => setPhotoDeleted(true)}
+                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"
+                >
+                  <X size={14} />
+                </button>
               </div>
-            )}
-            <PhotoUpload onFileChange={(file) => setPhotoFile(file)} error={false} />
-            {!photoFile && listing.photoUrl && (
-              <p className="text-xs text-gray-400 mt-1">
-                Upload a new photo to replace the current one, or leave as-is.
-              </p>
+            ) : (
+              <PhotoUpload
+                onFileChange={(file) => setPhotoFile(file)}
+                error={photoDeleted && !photoFile}
+              />
             )}
           </div>
 
@@ -898,7 +906,9 @@ function EditListingModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!category || !description || !!zipError || submitting}
+            disabled={
+              !category || !description || (photoDeleted && !photoFile) || !!zipError || submitting
+            }
             className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
           >
             {submitting ? (

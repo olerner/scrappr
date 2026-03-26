@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MapView } from "../components/MapView";
+import { UserRole } from "../data/types";
+import { setPendingRole } from "../hooks/useAuth";
 import { useStore } from "../store/useStore";
 
 export function LandingPage() {
@@ -34,6 +36,7 @@ export function LandingPage() {
           <div className="text-center space-y-3">
             <Link
               to="/scrappee"
+              onClick={() => setPendingRole(UserRole.User)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-700 transition-all shadow-md"
             >
               List Your Scrap <ArrowRight size={18} />
@@ -41,6 +44,7 @@ export function LandingPage() {
             <div>
               <Link
                 to="/scrappr"
+                onClick={() => setPendingRole(UserRole.User)}
                 className="inline-flex items-center gap-2 px-6 py-3 border border-emerald-600 text-emerald-700 font-semibold rounded-full hover:bg-emerald-50 transition-all"
               >
                 Start Hauling <ArrowRight size={18} />
@@ -118,7 +122,7 @@ export function LandingPage() {
             <Feature
               icon={<MapPin size={28} className="text-emerald-600" />}
               title="Location Services"
-              desc="Automatic geolocation with the ability to edit your address"
+              desc="Enter your address so haulers can find your listing nearby"
             />
           </div>
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 text-center">

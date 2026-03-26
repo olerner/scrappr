@@ -128,7 +128,7 @@ export function AddressAutocomplete({ onSelect, warning }: AddressAutocompletePr
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         onFocus={handleFocus}
-        placeholder="Enter address or use current location"
+        placeholder="Enter your address"
         className={`w-full rounded-xl border ${
           showWarning ? "border-amber-400 ring-2 ring-amber-200" : "border-gray-300"
         } pl-9 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent`}
