@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "Running lint checks..."
-yarn check || exit 1
+yarn run check || exit 1
 
 echo "Running unit tests..."
 yarn test || exit 1
