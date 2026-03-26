@@ -90,8 +90,7 @@ export function ScrapprDashboard() {
 
   // Claim state
   const [claimingId, setClaimingId] = useState<string | null>(null);
-  const [confirmClaimId, setConfirmClaimId] = useState<string | null>(null);
-  const [claimError, setClaimError] = useState<string | null>(null);
+  const [claimError, setClaimError] = useState<{ id: string; message: string } | null>(null);
   const [fadingOutId, setFadingOutId] = useState<string | null>(null);
 
   // Complete state
@@ -159,7 +158,6 @@ export function ScrapprDashboard() {
     setClaimError(null);
     try {
       await claimListing(accessToken, listingId);
-      setConfirmClaimId(null);
       setClaimingId(null);
 
       // Fade out the card, then move it to claimed
@@ -173,7 +171,10 @@ export function ScrapprDashboard() {
         setFadingOutId(null);
       }, 400);
     } catch (err) {
-      setClaimError(err instanceof Error ? err.message : "Failed to claim listing");
+      setClaimError({
+        id: listingId,
+        message: err instanceof Error ? err.message : "Failed to claim listing",
+      });
       setClaimingId(null);
     }
   };
@@ -337,6 +338,14 @@ export function ScrapprDashboard() {
             </div>
           </div>
 
+          {/* Commitment banner */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Truck size={14} className="flex-shrink-0" />
+              <span>When you claim a pickup, you're committing to haul it to a scrap yard.</span>
+            </div>
+          </div>
+
           {loadingAvailable ? (
             <div className="flex-1 flex items-center justify-center py-20">
               <Loader2 className="animate-spin text-emerald-600" size={32} />
@@ -379,9 +388,10 @@ export function ScrapprDashboard() {
                         <AvailableCard
                           key={listing.id}
                           listing={listing}
-                          onClaim={() => setConfirmClaimId(listing.id)}
+                          onClaim={() => handleClaim(listing.id)}
                           claiming={claimingId === listing.id}
                           fadingOut={fadingOutId === listing.id}
+                          error={claimError?.id === listing.id ? claimError.message : null}
                         />
                       ))}
                     </div>
@@ -438,55 +448,6 @@ export function ScrapprDashboard() {
                 )}
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Claim Confirmation Dialog */}
-      {confirmClaimId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => {
-              setConfirmClaimId(null);
-              setClaimError(null);
-            }}
-          />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xs text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Claim this pickup?</h3>
-            <p className="text-sm text-gray-500 mb-5">
-              You'll be responsible for picking up and delivering this scrap to a yard.
-            </p>
-            {claimError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
-                <AlertTriangle size={16} className="text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-700">{claimError}</p>
-              </div>
-            )}
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmClaimId(null);
-                  setClaimError(null);
-                }}
-                className="flex-1 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleClaim(confirmClaimId)}
-                disabled={claimingId === confirmClaimId}
-                className="flex-1 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-40"
-              >
-                {claimingId === confirmClaimId ? (
-                  <Loader2 className="animate-spin mx-auto" size={16} />
-                ) : (
-                  "Claim"
-                )}
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -603,13 +564,31 @@ function AvailableCard({
   onClaim,
   claiming,
   fadingOut,
+  error,
 }: {
   listing: Listing;
   onClaim: () => void;
   claiming: boolean;
   fadingOut: boolean;
+  error: string | null;
 }) {
+  const [confirming, setConfirming] = useState(false);
   const catInfo = CATEGORIES.find((c) => c.name === listing.category);
+
+  useEffect(() => {
+    if (!confirming) return;
+    const timer = setTimeout(() => setConfirming(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirming]);
+
+  const handleClick = () => {
+    if (confirming) {
+      onClaim();
+      setConfirming(false);
+    } else {
+      setConfirming(true);
+    }
+  };
 
   return (
     <div
@@ -647,13 +626,22 @@ function AvailableCard({
           <MapPin size={12} />
           <span>{listing.address || "Twin Cities area"}</span>
         </div>
+        {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
         <button
           type="button"
-          onClick={onClaim}
+          onClick={handleClick}
           disabled={claiming}
-          className="w-full px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all disabled:opacity-40"
+          className={`w-full px-4 py-2 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-40 ${
+            confirming ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-600 hover:bg-emerald-700"
+          }`}
         >
-          {claiming ? <Loader2 className="animate-spin mx-auto" size={16} /> : "Claim Pickup"}
+          {claiming ? (
+            <Loader2 className="animate-spin mx-auto" size={16} />
+          ) : confirming ? (
+            "Confirm claim?"
+          ) : (
+            "Claim Pickup"
+          )}
         </button>
       </div>
     </div>
