@@ -163,7 +163,7 @@ export class ApiStack extends cdk.Stack {
 
     const createListingFn = this.createLambda("CreateListing", {
       handler: "create-listing.handler",
-      environment: { LISTINGS_TABLE: listingsTable.tableName },
+      environment: { LISTINGS_TABLE: listingsTable.tableName, PHOTO_BUCKET_URL: photoBucketUrl },
     });
     listingsTable.grantWriteData(createListingFn);
 
@@ -268,7 +268,7 @@ export class ApiStack extends cdk.Stack {
 
     const updateListingFn = this.createLambda("UpdateListing", {
       handler: "update-listing.handler",
-      environment: { LISTINGS_TABLE: listingsTable.tableName },
+      environment: { LISTINGS_TABLE: listingsTable.tableName, PHOTO_BUCKET_URL: photoBucketUrl },
     });
     listingsTable.grantWriteData(updateListingFn);
 
