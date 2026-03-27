@@ -196,7 +196,7 @@ export function LandingPage() {
             <span className="text-lg font-bold text-white">Scrappr</span>
           </div>
           <div className="text-right">
-            <p className="text-gray-400 text-xs">&copy; 2026 Scrappr. All rights reserved.</p>
+            <p className="text-gray-400 text-xs">&copy; {new Date().getFullYear()} Scrappr. All rights reserved.</p>
             <p className="text-gray-500 text-xs">Connecting neighborhoods with scrap haulers</p>
           </div>
         </div>
