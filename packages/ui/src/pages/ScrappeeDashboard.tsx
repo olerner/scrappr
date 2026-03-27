@@ -129,12 +129,7 @@ export function ScrappeeDashboard() {
                   {listings
                     .filter((l) => l.status === "completed" || l.status === "confirmed")
                     .map((listing) => (
-                      <ListingCard
-                        key={listing.id}
-                        listing={listing}
-                        accessToken={accessToken}
-                        onDeleted={fetchListings}
-                      />
+                      <ListingCard key={listing.id} listing={listing} />
                     ))}
                 </div>
               </div>
