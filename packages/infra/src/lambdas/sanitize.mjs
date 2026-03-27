@@ -12,15 +12,12 @@ export function escapeHtml(str) {
 /** Validate a photo URL — must be a well-formed URL under our photo bucket origin. */
 function sanitizePhotoUrl(url) {
   const bucketUrl = process.env.PHOTO_BUCKET_URL;
+  if (!bucketUrl) throw new Error("PHOTO_BUCKET_URL environment variable is required");
   if (!url || typeof url !== "string") return "";
-  if (bucketUrl && !url.startsWith(`${bucketUrl}/`)) return "";
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "https:") return "";
-    return parsed.href;
-  } catch {
-    return "";
+  if (!url.startsWith(`${bucketUrl}/`)) {
+    throw new Error("Invalid photo URL");
   }
+  return url;
 }
 
 /** Sanitize user-provided listing fields before writing to the database. */

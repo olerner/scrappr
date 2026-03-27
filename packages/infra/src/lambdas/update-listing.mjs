@@ -40,7 +40,16 @@ export const handler = async (event) => {
         raw[field] = body[field];
       }
     }
-    const updates = sanitizeListing(raw);
+    let updates;
+    try {
+      updates = sanitizeListing(raw);
+    } catch (err) {
+      return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: err.message }),
+      };
+    }
 
     if (Object.keys(updates).length === 0) {
       return {

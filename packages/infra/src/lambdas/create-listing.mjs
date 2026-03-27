@@ -44,21 +44,30 @@ export const handler = async (event) => {
     }
 
     const listingId = randomUUID();
-    const item = sanitizeListing({
-      userId,
-      listingId,
-      category,
-      description,
-      photoUrl: photoUrl || "",
-      lat: lat || 0,
-      lng: lng || 0,
-      address: address || "",
-      zipCode: zipCode.trim(),
-      status: "available",
-      datePosted: new Date().toISOString().split("T")[0],
-      estimatedValue: estimatedValue || "Varies",
-      createdAt: new Date().toISOString(),
-    });
+    let item;
+    try {
+      item = sanitizeListing({
+        userId,
+        listingId,
+        category,
+        description,
+        photoUrl: photoUrl || "",
+        lat: lat || 0,
+        lng: lng || 0,
+        address: address || "",
+        zipCode: zipCode.trim(),
+        status: "available",
+        datePosted: new Date().toISOString().split("T")[0],
+        estimatedValue: estimatedValue || "Varies",
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: err.message }),
+      };
+    }
 
     await ddb.send(new PutCommand({ TableName: TABLE, Item: item }));
 
