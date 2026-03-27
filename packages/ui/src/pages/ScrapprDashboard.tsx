@@ -263,7 +263,12 @@ export function ScrapprDashboard() {
 
   const filterCategories: (Category | "All")[] = [
     "All",
-    ...CATEGORIES.filter((c) => c.name !== "Electronics").map((c) => c.name as Category),
+    "Copper",
+    "Aluminum",
+    "Cans",
+    "Appliances",
+    "Brass",
+    "Steel",
   ];
 
   if (authLoading) {
@@ -638,7 +643,6 @@ function AvailableCard({
 
   return (
     <div
-      data-testid="available-card"
       className={`bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-400 ${
         fadingOut ? "opacity-0 scale-95" : "opacity-100 scale-100"
       }`}
@@ -686,7 +690,6 @@ function AvailableCard({
         {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
         <button
           type="button"
-          data-testid="claim-btn"
           onClick={handleClick}
           disabled={claiming}
           className={`w-full px-4 py-2 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-40 ${
@@ -776,10 +779,7 @@ function ClaimedCard({
   };
 
   return (
-    <div
-      data-testid="claimed-card"
-      className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-    >
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative w-full h-48 bg-gray-100">
         {listing.photoUrl && !imgError ? (
           <img
@@ -825,7 +825,6 @@ function ClaimedCard({
         <div className="flex gap-2">
           <button
             type="button"
-            data-testid="unclaim-btn"
             onClick={handleUnclaimClick}
             disabled={unclaiming || completing}
             className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-all disabled:opacity-40 ${
@@ -844,7 +843,6 @@ function ClaimedCard({
           </button>
           <button
             type="button"
-            data-testid="complete-btn"
             onClick={handleCompleteClick}
             disabled={completing || unclaiming}
             className={`flex-1 px-4 py-2 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-40 ${
