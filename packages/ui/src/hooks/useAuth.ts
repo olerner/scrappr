@@ -64,6 +64,10 @@ export interface AuthState {
   signOut: () => void;
   initiateGoogleSignIn: () => void;
   handleAuthCallback: (code: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  confirmPassword: (email: string, code: string, newPassword: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  confirmSignUp: (email: string, code: string) => Promise<void>;
   error: string | null;
 }
 
@@ -247,6 +251,87 @@ export function useCognito(): AuthState {
     }
   }, []);
 
+  const forgotPassword = useCallback(async (emailInput: string) => {
+    setError(null);
+    return new Promise<void>((resolve, reject) => {
+      if (!userPool) {
+        setError("Auth not configured");
+        reject(new Error("Auth not configured"));
+        return;
+      }
+      const cognitoUser = new CognitoUser({ Username: emailInput, Pool: userPool });
+      cognitoUser.forgotPassword({
+        onSuccess: () => resolve(),
+        onFailure: (err) => {
+          setError(err.message || "Failed to send reset code");
+          reject(err);
+        },
+        inputVerificationCode: () => resolve(),
+      });
+    });
+  }, []);
+
+  const confirmPassword = useCallback(
+    async (emailInput: string, code: string, newPassword: string) => {
+      setError(null);
+      return new Promise<void>((resolve, reject) => {
+        if (!userPool) {
+          setError("Auth not configured");
+          reject(new Error("Auth not configured"));
+          return;
+        }
+        const cognitoUser = new CognitoUser({ Username: emailInput, Pool: userPool });
+        cognitoUser.confirmPassword(code, newPassword, {
+          onSuccess: () => resolve(),
+          onFailure: (err) => {
+            setError(err.message || "Failed to reset password");
+            reject(err);
+          },
+        });
+      });
+    },
+    [],
+  );
+
+  const signUp = useCallback(async (emailInput: string, password: string) => {
+    setError(null);
+    return new Promise<void>((resolve, reject) => {
+      if (!userPool) {
+        setError("Auth not configured");
+        reject(new Error("Auth not configured"));
+        return;
+      }
+      userPool.signUp(emailInput, password, [], [], (err) => {
+        if (err) {
+          setError(err.message || "Sign up failed");
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+  }, []);
+
+  const confirmSignUp = useCallback(async (emailInput: string, code: string) => {
+    setError(null);
+    return new Promise<void>((resolve, reject) => {
+      if (!userPool) {
+        setError("Auth not configured");
+        reject(new Error("Auth not configured"));
+        return;
+      }
+      const cognitoUser = new CognitoUser({ Username: emailInput, Pool: userPool });
+      cognitoUser.confirmRegistration(code, true, (err) => {
+        if (err) {
+          setError(err.message || "Confirmation failed");
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+  }, []);
+
   const signOut = useCallback(() => {
     // Clear OAuth tokens
     Object.values(TOKEN_KEYS).forEach((key) => localStorage.removeItem(key));
@@ -271,6 +356,10 @@ export function useCognito(): AuthState {
     signOut,
     initiateGoogleSignIn,
     handleAuthCallback,
+    forgotPassword,
+    confirmPassword,
+    signUp,
+    confirmSignUp,
     error,
   };
 }
