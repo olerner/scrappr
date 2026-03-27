@@ -28,8 +28,7 @@ Resources:
       Environment:
         Variables:
           PHOTO_BUCKET: !Sub "scrappr-photos-${Env}-${AwsAccountId}"
-          PHOTO_BUCKET_URL: !ImportValue
-            "Fn::Sub": "scrappr-photo-bucket-url-${Env}"
+          PHOTO_BUCKET_URL: ""
       Events:
         Api:
           Type: HttpApi
@@ -46,6 +45,7 @@ Resources:
       Environment:
         Variables:
           LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+          PHOTO_BUCKET_URL: ""
       Events:
         Api:
           Type: HttpApi
@@ -163,6 +163,7 @@ Resources:
       Environment:
         Variables:
           LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+          PHOTO_BUCKET_URL: ""
       Events:
         Api:
           Type: HttpApi
