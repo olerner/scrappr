@@ -54,6 +54,7 @@ export function ForgotPassword() {
             Your password has been reset successfully. You can now sign in with your new password.
           </p>
           <button
+            type="button"
             onClick={() => navigate("/list")}
             className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-700 transition-all shadow-md"
           >
