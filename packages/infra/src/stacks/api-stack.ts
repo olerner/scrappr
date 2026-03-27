@@ -352,6 +352,16 @@ export class ApiStack extends cdk.Stack {
     const defaultStage = httpApi.defaultStage?.node.defaultChild as apigatewayv2.CfnStage;
     defaultStage.accessLogSettings = {
       destinationArn: accessLogGroup.logGroupArn,
+      format: JSON.stringify({
+        requestId: "$context.requestId",
+        ip: "$context.identity.sourceIp",
+        requestTime: "$context.requestTime",
+        httpMethod: "$context.httpMethod",
+        routeKey: "$context.routeKey",
+        status: "$context.status",
+        responseLength: "$context.responseLength",
+        integrationError: "$context.integrationErrorMessage",
+      }),
     };
     defaultStage.defaultRouteSettings = {
       throttlingBurstLimit: 100,
