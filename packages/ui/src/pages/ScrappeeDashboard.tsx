@@ -1,9 +1,8 @@
-import { Image as ImageIcon, Loader2, LogOut, Plus, Trash2 } from "lucide-react";
+import { Image as ImageIcon, Loader2, LogOut, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { deleteListing, getMyListings } from "../api/client";
+import { getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
-import { ConfirmModal } from "../components/ConfirmModal";
 import { StatusBadge } from "../components/StatusBadge";
 import { getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
@@ -118,12 +117,7 @@ export function ScrappeeDashboard() {
                 {listings
                   .filter((l) => l.status === "available" || l.status === "claimed")
                   .map((listing) => (
-                    <ListingCard
-                      key={listing.id}
-                      listing={listing}
-                      accessToken={accessToken}
-                      onDeleted={fetchListings}
-                    />
+                    <ListingCard key={listing.id} listing={listing} />
                   ))}
               </div>
             )}
@@ -286,32 +280,10 @@ function EmptyState() {
   );
 }
 
-function ListingCard({
-  listing,
-  accessToken,
-  onDeleted,
-}: {
-  listing: Listing;
-  accessToken: string | null;
-  onDeleted: () => void;
-}) {
+function ListingCard({ listing }: { listing: Listing }) {
   const navigate = useNavigate();
   const isEditable = listing.status === "available";
   const [imgError, setImgError] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    if (!accessToken) return;
-    setDeleting(true);
-    try {
-      await deleteListing(accessToken, listing.id);
-      onDeleted();
-    } catch {
-      setDeleting(false);
-      setShowDeleteModal(false);
-    }
-  };
 
   return (
     <div
@@ -352,22 +324,7 @@ function ListingCard({
                 {getCategoryDisplayName(listing.category)}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <StatusBadge status={listing.status} />
-              {isEditable && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDeleteModal(true);
-                  }}
-                  className="p-1.5 rounded-lg transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50"
-                  title="Delete listing"
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </div>
+            <StatusBadge status={listing.status} />
           </div>
           <p className="text-gray-600 text-sm mt-1 line-clamp-2">{listing.description}</p>
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
@@ -378,17 +335,6 @@ function ListingCard({
           </div>
         </div>
       </div>
-      {showDeleteModal && (
-        <ConfirmModal
-          title="Delete listing"
-          message={`Are you sure you want to delete this ${getCategoryDisplayName(listing.category).toLowerCase()} listing? This can't be undone.`}
-          confirmLabel="Delete"
-          danger
-          loading={deleting}
-          onConfirm={handleDelete}
-          onCancel={() => setShowDeleteModal(false)}
-        />
-      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, Loader2, X } fr
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  deleteListing,
   getAddresses,
   getMyListings,
   getPresignedUrl,
@@ -115,6 +116,8 @@ export function EditListing() {
 function EditListingForm({ accessToken, listing }: { accessToken: string; listing: Listing }) {
   const navigate = useNavigate();
   const { addresses, addressesLoaded, setAddresses } = useStore();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [addressesLoading, setAddressesLoading] = useState(false);
 
   // Try to match listing's current address to a saved address
@@ -409,6 +412,42 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
               </span>
             ) : (
               "Save Changes"
+            )}
+          </button>
+
+          {/* Delete */}
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={async () => {
+              if (!confirmDelete) {
+                setConfirmDelete(true);
+                return;
+              }
+              setDeleting(true);
+              try {
+                await deleteListing(accessToken, listing.id);
+                navigate("/list");
+              } catch {
+                setDeleting(false);
+                setConfirmDelete(false);
+              }
+            }}
+            onBlur={() => setConfirmDelete(false)}
+            className={`w-full py-3 font-semibold rounded-xl transition-all disabled:opacity-40 ${
+              confirmDelete
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-white text-red-600 border border-red-200 hover:bg-red-50"
+            }`}
+          >
+            {deleting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="animate-spin" size={16} /> Deleting...
+              </span>
+            ) : confirmDelete ? (
+              "Click again to confirm delete"
+            ) : (
+              "Delete Listing"
             )}
           </button>
         </div>
