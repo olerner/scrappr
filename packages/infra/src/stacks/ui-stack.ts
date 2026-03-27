@@ -80,7 +80,7 @@ export class UiStack extends cdk.Stack {
             "default-src 'self'",
             "script-src 'self'",
             "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: blob: https://*.amazonaws.com https://*.tile.openstreetmap.org",
+            "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudfront.net https://*.tile.openstreetmap.org",
             "font-src 'self'",
             "connect-src 'self' https://*.execute-api.us-east-1.amazonaws.com https://*.amazonaws.com https://*.amazoncognito.com https://places.googleapis.com https://cognito-idp.us-east-1.amazonaws.com",
             "frame-ancestors 'none'",

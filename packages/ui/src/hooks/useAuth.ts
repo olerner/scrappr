@@ -1,5 +1,5 @@
 import { AuthenticationDetails, CognitoUser, CognitoUserPool } from "amazon-cognito-identity-js";
-import { useCallback, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 const userPool =
   import.meta.env.VITE_USER_POOL_ID && import.meta.env.VITE_USER_POOL_CLIENT_ID
@@ -67,7 +67,7 @@ export interface AuthState {
   error: string | null;
 }
 
-export function useAuth(): AuthState {
+export function useCognito(): AuthState {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
@@ -273,4 +273,12 @@ export function useAuth(): AuthState {
     handleAuthCallback,
     error,
   };
+}
+
+export const AuthContext = createContext<AuthState | null>(null);
+
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within an AuthContext.Provider");
+  return ctx;
 }
