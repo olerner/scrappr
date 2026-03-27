@@ -25,6 +25,7 @@ export const handler = async (event) => {
       const result = await ddb.send(
         new QueryCommand({
           TableName: TABLE,
+          IndexName: "userId-createdAt-index",
           KeyConditionExpression: "userId = :uid",
           FilterExpression: "attribute_not_exists(isDeleted) OR isDeleted <> :true",
           ExpressionAttributeValues: { ":uid": userId, ":true": true },

@@ -144,6 +144,13 @@ export class ApiStack extends cdk.Stack {
     });
 
     listingsTable.addGlobalSecondaryIndex({
+      indexName: "userId-createdAt-index",
+      partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "createdAt", type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    listingsTable.addGlobalSecondaryIndex({
       indexName: "claimedBy-index",
       partitionKey: { name: "claimedBy", type: dynamodb.AttributeType.STRING },
       sortKey: { name: "claimedAt", type: dynamodb.AttributeType.STRING },
