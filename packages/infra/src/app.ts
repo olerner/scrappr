@@ -65,7 +65,8 @@ if (!sharesDevAuth) {
     stageName: env,
     googleClientId: process.env.GOOGLE_CLIENT_ID!,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    senderEmail: emailStack?.senderEmail,
+    // Only pass senderEmail when email stack is deployed (SES identity must exist)
+    // senderEmail: emailStack?.senderEmail,
     appUrl,
   });
 }
