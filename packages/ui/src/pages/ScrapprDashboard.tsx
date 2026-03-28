@@ -261,10 +261,7 @@ export function ScrapprDashboard() {
     }
   };
 
-  const filterCategories: (Category | "All")[] = [
-    "All",
-    ...CATEGORIES.map((c) => c.name),
-  ];
+  const filterCategories: (Category | "All")[] = ["All", ...CATEGORIES.map((c) => c.name)];
 
   if (authLoading) {
     return (
