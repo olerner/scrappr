@@ -261,15 +261,7 @@ export function ScrapprDashboard() {
     }
   };
 
-  const filterCategories: (Category | "All")[] = [
-    "All",
-    "Copper",
-    "Aluminum",
-    "Cans",
-    "Appliances",
-    "Brass",
-    "Steel",
-  ];
+  const filterCategories: (Category | "All")[] = ["All", ...CATEGORIES.map((c) => c.name)];
 
   if (authLoading) {
     return (
