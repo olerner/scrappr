@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import * as cdk from "aws-cdk-lib";
+import * as iam from "aws-cdk-lib/aws-iam";
 import { ApiStack } from "./stacks/api-stack.js";
 import { AuthStack } from "./stacks/auth-stack.js";
 import { EmailStack } from "./stacks/email-stack.js";
@@ -36,6 +37,26 @@ const isPreview = env.startsWith("pr-");
 const isLocalDev = env.startsWith("localdev-");
 const sharesDevAuth = isPreview || isLocalDev;
 
+// Email stack — deploy for dev/prod (not localdev or preview)
+// Skip when SKIP_EMAIL_STACK=1 (e.g. CI where hosted zone lookup may fail)
+// Deployed before auth stack so senderEmail is available for Cognito SES config.
+let emailStack: EmailStack | undefined;
+if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1") {
+  emailStack = new EmailStack(app, `scrappr-email-${env}`, {
+    env: awsEnv,
+    stageName: env,
+    domainName: "scrappr.trevor.fail",
+    hostedZoneDomain: "trevor.fail",
+  });
+}
+
+// Determine app URL by environment
+const appUrl = isLocalDev
+  ? "http://localhost:5173"
+  : env === "dev"
+    ? "https://scrappr.trevor.fail"
+    : `https://scrappr-${env}.trevor.fail`;
+
 // Auth stack — only deploy for dev/production (previews and localdev share dev Cognito)
 let authStack: AuthStack | undefined;
 if (!sharesDevAuth) {
@@ -44,6 +65,9 @@ if (!sharesDevAuth) {
     stageName: env,
     googleClientId: process.env.GOOGLE_CLIENT_ID!,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    // Only pass senderEmail when email stack is deployed (SES identity must exist)
+    // senderEmail: emailStack?.senderEmail,
+    appUrl,
   });
 }
 
@@ -64,24 +88,15 @@ const userPoolClientId = sharesDevAuth
   ? process.env.VITE_USER_POOL_CLIENT_ID!
   : authStack!.userPoolClient.userPoolClientId;
 
-// Email stack — deploy for dev/prod (not localdev or preview)
-// Skip when SKIP_EMAIL_STACK=1 (e.g. CI where hosted zone lookup may fail)
-let emailStack: EmailStack | undefined;
-if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1") {
-  emailStack = new EmailStack(app, `scrappr-email-${env}`, {
-    env: awsEnv,
-    stageName: env,
-    domainName: "scrappr.trevor.fail",
-    hostedZoneDomain: "trevor.fail",
+// Email config — preview/localdev share the dev SES identity
+const domainName = "scrappr.trevor.fail";
+const senderEmail = emailStack?.senderEmail ?? `noreply@${domainName}`;
+const sendEmailPolicy =
+  emailStack?.sendEmailPolicyStatement ??
+  new iam.PolicyStatement({
+    actions: ["ses:SendEmail", "ses:SendRawEmail"],
+    resources: [`arn:aws:ses:us-east-1:${awsEnv.account}:identity/${domainName}`],
   });
-}
-
-// Determine app URL by environment
-const appUrl = isLocalDev
-  ? "http://localhost:5173"
-  : env === "dev"
-    ? "https://scrappr.trevor.fail"
-    : `https://scrappr-${env}.trevor.fail`;
 
 new ApiStack(app, `scrappr-api-${env}`, {
   env: awsEnv,
@@ -90,8 +105,8 @@ new ApiStack(app, `scrappr-api-${env}`, {
   userPoolClientId,
   photoBucket: storageStack.photoBucket,
   photoBucketUrl: storageStack.photoBucketUrl,
-  senderEmail: emailStack?.senderEmail,
-  sendEmailPolicy: emailStack?.sendEmailPolicyStatement,
+  senderEmail,
+  sendEmailPolicy,
   appUrl,
 });
 
