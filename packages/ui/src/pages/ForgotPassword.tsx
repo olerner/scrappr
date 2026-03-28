@@ -5,7 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 type Step = "request" | "confirm" | "done";
 
 export function ForgotPassword() {
-  const { forgotPassword, confirmPassword, error } = useAuth();
+  const { forgotPassword, confirmPassword, signIn, error } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("request");
   const [email, setEmail] = useState("");
@@ -36,6 +36,13 @@ export function ForgotPassword() {
     setLocalError(null);
     try {
       await confirmPassword(email, code, newPassword);
+      try {
+        await signIn(email, newPassword);
+        navigate("/list");
+        return;
+      } catch {
+        // Auto-sign-in failed — fall through to success screen
+      }
       setStep("done");
     } catch {
       // error handled by useAuth

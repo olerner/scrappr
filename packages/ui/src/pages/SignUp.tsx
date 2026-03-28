@@ -37,8 +37,15 @@ export function SignUp() {
     try {
       await confirmSignUp(email, code);
       // Auto-login after successful verification
-      await signIn(email, password);
-      navigate("/list");
+      try {
+        await signIn(email, password);
+        navigate("/list");
+        return;
+      } catch {
+        // Auto-sign-in failed — redirect to sign-in page
+        navigate("/list");
+        return;
+      }
     } catch {
       // error handled by useAuth
     } finally {
