@@ -1,6 +1,11 @@
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import * as cdk from "aws-cdk-lib";
 import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as lambda from "aws-cdk-lib/aws-lambda";
 import type { Construct } from "constructs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface AuthStackProps extends cdk.StackProps {
   stageName: string;
@@ -8,6 +13,7 @@ interface AuthStackProps extends cdk.StackProps {
   googleClientSecret: string;
   /** SES-verified sender email (e.g. noreply@scrappr.trevor.fail). When provided, Cognito uses SES instead of its default email. */
   senderEmail?: string;
+  appUrl?: string;
 }
 
 export class AuthStack extends cdk.Stack {
@@ -38,11 +44,6 @@ export class AuthStack extends cdk.Stack {
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      userVerification: {
-        emailSubject: "Verify your Scrappr account",
-        emailBody: "Your Scrappr verification code is {####}",
-        emailStyle: cognito.VerificationEmailStyle.CODE,
-      },
       ...(props.senderEmail
         ? {
             email: cognito.UserPoolEmail.withSES({
@@ -53,6 +54,19 @@ export class AuthStack extends cdk.Stack {
           }
         : {}),
     });
+
+    // ── Custom Message Lambda (branded verification & reset emails) ──
+
+    const customMessageFn = new lambda.Function(this, "CustomMessageFn", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "custom-message.handler",
+      code: lambda.Code.fromAsset(path.join(__dirname, "..", "lambdas")),
+      environment: {
+        APP_URL: props.appUrl || "https://scrappr.trevor.fail",
+      },
+    });
+
+    this.userPool.addTrigger(cognito.UserPoolOperation.CUSTOM_MESSAGE, customMessageFn);
 
     // ── Google Identity Provider ────────────────────────────────────
 

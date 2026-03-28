@@ -50,6 +50,13 @@ if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1") {
   });
 }
 
+// Determine app URL by environment
+const appUrl = isLocalDev
+  ? "http://localhost:5173"
+  : env === "dev"
+    ? "https://scrappr.trevor.fail"
+    : `https://scrappr-${env}.trevor.fail`;
+
 // Auth stack — only deploy for dev/production (previews and localdev share dev Cognito)
 let authStack: AuthStack | undefined;
 if (!sharesDevAuth) {
@@ -59,6 +66,7 @@ if (!sharesDevAuth) {
     googleClientId: process.env.GOOGLE_CLIENT_ID!,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     senderEmail: emailStack?.senderEmail,
+    appUrl,
   });
 }
 
@@ -78,13 +86,6 @@ const userPoolId = sharesDevAuth ? process.env.VITE_USER_POOL_ID! : authStack!.u
 const userPoolClientId = sharesDevAuth
   ? process.env.VITE_USER_POOL_CLIENT_ID!
   : authStack!.userPoolClient.userPoolClientId;
-
-// Determine app URL by environment
-const appUrl = isLocalDev
-  ? "http://localhost:5173"
-  : env === "dev"
-    ? "https://scrappr.trevor.fail"
-    : `https://scrappr-${env}.trevor.fail`;
 
 // Email config — preview/localdev share the dev SES identity
 const domainName = "scrappr.trevor.fail";
