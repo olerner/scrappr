@@ -6,6 +6,8 @@ interface AuthStackProps extends cdk.StackProps {
   stageName: string;
   googleClientId: string;
   googleClientSecret: string;
+  /** SES-verified sender email (e.g. noreply@scrappr.trevor.fail). When provided, Cognito uses SES instead of its default email. */
+  senderEmail?: string;
 }
 
 export class AuthStack extends cdk.Stack {
@@ -36,6 +38,20 @@ export class AuthStack extends cdk.Stack {
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
+      userVerification: {
+        emailSubject: "Verify your Scrappr account",
+        emailBody: "Your Scrappr verification code is {####}",
+        emailStyle: cognito.VerificationEmailStyle.CODE,
+      },
+      ...(props.senderEmail
+        ? {
+            email: cognito.UserPoolEmail.withSES({
+              fromEmail: props.senderEmail,
+              fromName: "Scrappr",
+              sesRegion: "us-east-1",
+            }),
+          }
+        : {}),
     });
 
     // ── Google Identity Provider ────────────────────────────────────

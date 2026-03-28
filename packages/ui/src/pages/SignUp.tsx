@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
-type Step = "register" | "confirm" | "done";
+type Step = "register" | "confirm";
 
 export function SignUp() {
-  const { signUp, confirmSignUp, initiateGoogleSignIn, error } = useAuth();
+  const { signUp, confirmSignUp, signIn, initiateGoogleSignIn, error } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("register");
   const [email, setEmail] = useState("");
@@ -36,34 +36,15 @@ export function SignUp() {
     setLocalError(null);
     try {
       await confirmSignUp(email, code);
-      setStep("done");
+      // Auto-login after successful verification
+      await signIn(email, password);
+      navigate("/list");
     } catch {
       // error handled by useAuth
     } finally {
       setLoading(false);
     }
   };
-
-  if (step === "done") {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm text-center">
-          <div className="text-4xl mb-4">🎉</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Account Created!</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Your account has been verified. You can now sign in.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/list")}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-700 transition-all shadow-md"
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
