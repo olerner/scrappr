@@ -263,12 +263,7 @@ export function ScrapprDashboard() {
 
   const filterCategories: (Category | "All")[] = [
     "All",
-    "Copper",
-    "Aluminum",
-    "Cans",
-    "Appliances",
-    "Brass",
-    "Steel",
+    ...CATEGORIES.map((c) => c.name),
   ];
 
   if (authLoading) {
