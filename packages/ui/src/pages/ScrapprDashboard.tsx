@@ -11,7 +11,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   browseListings,
   claimListing,
@@ -291,15 +291,10 @@ export function ScrapprDashboard() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Hauler Dashboard</h1>
-              <p className="text-gray-500 text-xs mt-0.5">
-                {email}{" "}
-                <Link to="/signed-out" className="text-emerald-600 hover:underline ml-1">
-                  Sign out
-                </Link>
-              </p>
+              <p className="text-gray-500 text-xs mt-0.5">{email}</p>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-1">
               <button
                 type="button"
@@ -326,7 +321,7 @@ export function ScrapprDashboard() {
               </button>
             </div>
             {activeTab === "available" && (
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1 self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setMobileView("map")}
@@ -362,32 +357,37 @@ export function ScrapprDashboard() {
           {/* Filter Bar */}
           <div className="bg-white border-b border-gray-100 py-3">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center gap-3 overflow-x-auto pb-1">
-                <Filter size={16} className="text-gray-400 flex-shrink-0" />
-                {filterCategories.map((cat) => (
-                  <button
-                    type="button"
-                    key={cat}
-                    onClick={() => setFilterCategory(cat)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                      filterCategory === cat
-                        ? "bg-emerald-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-                <div className="ml-auto flex items-center gap-1 flex-shrink-0">
-                  <ArrowUpDown size={14} className="text-gray-400" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortBy)}
-                    className="text-xs text-gray-600 bg-transparent border-none focus:outline-none cursor-pointer font-medium"
-                  >
-                    <option value="value">Est. Value</option>
-                    <option value="type">Metal Type</option>
-                  </select>
+              <div className="relative">
+                <div
+                  className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
+                  <Filter size={16} className="text-gray-400 flex-shrink-0" />
+                  {filterCategories.map((cat) => (
+                    <button
+                      type="button"
+                      key={cat}
+                      onClick={() => setFilterCategory(cat)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                        filterCategory === cat
+                          ? "bg-emerald-600 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                  <div className="ml-auto flex items-center gap-1 flex-shrink-0">
+                    <ArrowUpDown size={14} className="text-gray-400" />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortBy)}
+                      className="text-xs text-gray-600 bg-transparent border-none focus:outline-none cursor-pointer font-medium"
+                    >
+                      <option value="value">Est. Value</option>
+                      <option value="type">Metal Type</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
