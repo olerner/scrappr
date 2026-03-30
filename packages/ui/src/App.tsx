@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Header } from "./components/Header";
+import { Toast } from "./components/Toast";
 import { AuthContext, useCognito } from "./hooks/useAuth";
 import { AuthCallback } from "./pages/AuthCallback";
 import { CreateListing } from "./pages/CreateListing";
@@ -16,6 +17,7 @@ function App() {
     <AuthContext.Provider value={auth}>
       <BrowserRouter>
         <div className="min-h-screen bg-gray-50 flex flex-col">
+          <Toast />
           <Header />
           <main className="flex-1 flex flex-col">
             <Routes>

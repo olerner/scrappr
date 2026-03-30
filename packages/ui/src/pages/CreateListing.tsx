@@ -23,12 +23,14 @@ import {
 
 import { useAuth } from "../hooks/useAuth";
 import { useStore } from "../store/useStore";
+import { useToast } from "../store/useToast";
 
 export function CreateListing() {
   const navigate = useNavigate();
   const { accessToken, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const { addresses, addressesLoaded, setAddresses } = useStore();
+  const toast = useToast();
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
@@ -134,6 +136,7 @@ export function CreateListing() {
         estimatedValue: catInfo?.payoutLabel || "Varies",
       });
 
+      toast.show("Listing created!");
       navigate("/list");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to create listing");
