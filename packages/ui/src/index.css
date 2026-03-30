@@ -20,3 +20,14 @@ body {
 .leaflet-popup-content {
   margin: 0 !important;
 }
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
