@@ -112,6 +112,38 @@ export class ApiStack extends cdk.Stack {
       this.alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
     }
 
+    // ── Alert Digest Lambda ─────────────────────────────────────────
+    // Subscribes to the alert topic, pulls actual error logs from
+    // CloudWatch Logs Insights, and sends an enriched email via SES.
+    // Uses a plain lambda.Function (not createLambda) to avoid circular alarms.
+
+    if (senderEmail) {
+      const alertDigestFn = new lambda.Function(this, "AlertDigestFn", {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        code: lambda.Code.fromAsset(this.lambdasDir),
+        handler: "alert-digest.handler",
+        timeout: cdk.Duration.seconds(60),
+        environment: {
+          SENDER_EMAIL: senderEmail,
+          ALERT_RECIPIENTS: "trevbot@trevor.fail,trevorlitsey@gmail.com",
+          STAGE_NAME: stageName,
+        },
+      });
+
+      alertDigestFn.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ["logs:StartQuery", "logs:GetQueryResults", "logs:DescribeLogGroups"],
+          resources: ["*"],
+        }),
+      );
+
+      if (sendEmailPolicy) {
+        alertDigestFn.addToRolePolicy(sendEmailPolicy);
+      }
+
+      this.alertTopic.addSubscription(new subs.LambdaSubscription(alertDigestFn));
+    }
+
     // ── DynamoDB Table ──────────────────────────────────────────────
 
     const listingsTable = new dynamodb.Table(this, "ListingsTable", {
