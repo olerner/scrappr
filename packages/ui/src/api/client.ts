@@ -168,6 +168,16 @@ export async function deleteListing(accessToken: string, listingId: string): Pro
   }
 }
 
+export async function browseListingsPublic(): Promise<{
+  listings: Record<string, unknown>[];
+}> {
+  const res = await fetch(`${API_URL}/listings/browse`, {
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error("Failed to browse listings");
+  return res.json();
+}
+
 export async function browseListings(
   accessToken: string,
   category?: string,

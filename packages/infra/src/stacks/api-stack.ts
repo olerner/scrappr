@@ -398,6 +398,16 @@ export class ApiStack extends cdk.Stack {
     });
 
     httpApi.addRoutes({
+      path: "/listings/browse",
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration(
+        "BrowseListingsPublicInt",
+        browseListingsFn,
+      ),
+      // No authorizer — public endpoint for landing page map
+    });
+
+    httpApi.addRoutes({
       path: "/listings/{listingId}",
       methods: [apigatewayv2.HttpMethod.PATCH],
       integration: new integrations.HttpLambdaIntegration("UpdateListingInt", updateListingFn),

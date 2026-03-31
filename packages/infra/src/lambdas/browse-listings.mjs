@@ -11,14 +11,8 @@ const STATUS_INDEX = process.env.STATUS_INDEX;
 export const handler = async (event) => {
   const log = createLogger(event);
   try {
+    // userId is optional — public callers (landing page) won't have one
     const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
 
     const category = event.queryStringParameters?.category;
     const cursor = event.queryStringParameters?.cursor;
@@ -49,9 +43,9 @@ export const handler = async (event) => {
 
     const result = await ddb.send(new QueryCommand(queryParams));
 
-    // Exclude user's own listings and strip sensitive fields
+    // Exclude user's own listings (when authenticated) and strip sensitive fields
     const listings = (result.Items || [])
-      .filter((item) => item.userId !== userId)
+      .filter((item) => !userId || item.userId !== userId)
       .map(({ userId: _ownerId, ...item }) => ({
         ...item,
         address: redactAddress(item.address),

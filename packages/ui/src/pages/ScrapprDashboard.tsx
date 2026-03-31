@@ -209,15 +209,12 @@ export function ScrapprDashboard() {
       await claimListing(accessToken, listingId);
       setClaimingId(null);
 
-      // Fade out the card, then move it to claimed
+      // Fade out the card, then remove from available and re-fetch claimed (to get full address)
       setFadingOutId(listingId);
       setTimeout(() => {
-        const claimed = availableRaw.find((l) => l.id === listingId);
         setAvailableRaw((prev) => prev.filter((l) => l.id !== listingId));
-        if (claimed) {
-          setClaimedListings((prev) => [{ ...claimed, status: "claimed" as const }, ...prev]);
-        }
         setFadingOutId(null);
+        fetchClaimed();
       }, 400);
     } catch (err) {
       setClaimError({
@@ -249,11 +246,8 @@ export function ScrapprDashboard() {
     setUnclaimingId(listingId);
     try {
       await unclaimListing(accessToken, listingId);
-      const unclaimed = claimedListings.find((l) => l.id === listingId);
       setClaimedListings((prev) => prev.filter((l) => l.id !== listingId));
-      if (unclaimed) {
-        setAvailableRaw((prev) => [{ ...unclaimed, status: "available" as const }, ...prev]);
-      }
+      fetchAvailable();
     } catch {
       // silently fail
     } finally {
@@ -303,7 +297,10 @@ export function ScrapprDashboard() {
             <div className="flex gap-1">
               <button
                 type="button"
-                onClick={() => setActiveTab("available")}
+                onClick={() => {
+                  setActiveTab("available");
+                  fetchAvailable();
+                }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === "available"
                     ? "bg-gray-900 text-white"
@@ -314,7 +311,10 @@ export function ScrapprDashboard() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("claimed")}
+                onClick={() => {
+                  setActiveTab("claimed");
+                  fetchClaimed();
+                }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === "claimed"
                     ? "bg-gray-900 text-white"

@@ -86,6 +86,12 @@ Resources:
             Path: /listings/available
             Method: GET
             ApiId: !Ref HttpApi
+        PublicApi:
+          Type: HttpApi
+          Properties:
+            Path: /listings/browse
+            Method: GET
+            ApiId: !Ref HttpApi
 
   GetClaimedListingsFunction:
     Type: AWS::Serverless::Function

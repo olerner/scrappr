@@ -7,12 +7,37 @@ import {
   MessageSquare,
   Phone,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { browseListingsPublic } from "../api/client";
 import { MapView } from "../components/MapView";
-import { useStore } from "../store/useStore";
+import type { Category, Listing } from "../data/types";
+
+function mapApiListing(item: Record<string, unknown>): Listing {
+  return {
+    id: (item.listingId as string) || "",
+    category: (item.category as Category) || "Mixed",
+    description: (item.description as string) || "",
+    photoUrl: (item.photoUrl as string) || "",
+    lat: (item.lat as number) || 0,
+    lng: (item.lng as number) || 0,
+    address: (item.address as string) || "",
+    status: (item.status as Listing["status"]) || "available",
+    datePosted: (item.datePosted as string) || (item.createdAt as string) || "",
+    estimatedValue: (item.estimatedValue as string) || "Varies",
+  };
+}
 
 export function LandingPage() {
-  const listings = useStore((s) => s.listings);
+  const [listings, setListings] = useState<Listing[]>([]);
+
+  useEffect(() => {
+    browseListingsPublic()
+      .then((data) => setListings((data.listings || []).map(mapApiListing)))
+      .catch(() => {
+        // Landing page map is best-effort — show empty map on failure
+      });
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
