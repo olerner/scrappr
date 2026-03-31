@@ -1,3 +1,4 @@
+import { DESCRIPTION_MAX_LENGTH } from "@scrappr/shared/src/constants";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -20,8 +21,6 @@ import {
   type Category,
   isAllowedZip,
 } from "../data/types";
-
-import { DESCRIPTION_MAX_LENGTH } from "@scrappr/shared/src/constants";
 import { useAuth } from "../hooks/useAuth";
 import { useStore } from "../store/useStore";
 
@@ -293,7 +292,9 @@ export function CreateListing() {
               }`}
               data-testid="description-input"
             />
-            <p className={`text-xs mt-1 text-right ${description.length >= DESCRIPTION_MAX_LENGTH ? "text-red-500" : "text-gray-400"}`}>
+            <p
+              className={`text-xs mt-1 text-right ${description.length >= DESCRIPTION_MAX_LENGTH ? "text-red-500" : "text-gray-400"}`}
+            >
               {description.length} / {DESCRIPTION_MAX_LENGTH}
             </p>
           </div>
