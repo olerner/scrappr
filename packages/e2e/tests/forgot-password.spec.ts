@@ -53,7 +53,17 @@ async function getVerificationCodeFromS3(
   );
 }
 
+// The forgot-password test requires the EmailStack to be deployed (scrappr-inbox-dev bucket).
+// This stack is only deployed in dev/prod, not in PR preview environments.
+// Skip these tests when SKIP_EMAIL_TESTS=1 is set (i.e. in PR preview CI).
 test.describe("Forgot Password Flow", () => {
+  test.beforeEach(() => {
+    test.skip(
+      process.env.SKIP_EMAIL_TESTS === "1",
+      "Skipped in PR preview: EmailStack (scrappr-inbox-dev) not deployed until this PR merges",
+    );
+  });
+
   test.afterEach(async () => {
     // Restore the original password so the test is idempotent
     await cognito.send(
