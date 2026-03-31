@@ -47,7 +47,7 @@ jobs:
 
       - name: Wait for any in-progress stack updates
         run: |
-          for STACK in scrappr-auth-dev scrappr-storage-dev scrappr-api-dev scrappr-ui-dev; do
+          for STACK in scrappr-email-dev scrappr-auth-dev scrappr-storage-dev scrappr-api-dev scrappr-ui-dev; do
             STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
             if echo "$STATUS" | grep -q "IN_PROGRESS"; then
               echo "Waiting for $STACK ($STATUS)..."
@@ -60,14 +60,13 @@ jobs:
         id: api
         run: |
           cd packages/infra
-          npx cdk deploy scrappr-auth-dev scrappr-storage-dev scrappr-api-dev \
+          npx cdk deploy scrappr-email-dev scrappr-auth-dev scrappr-storage-dev scrappr-api-dev \
             --require-approval never \
             --outputs-file /tmp/cdk-api-outputs.json 2>&1 | tail -50
           API_URL=$(node -e "const o=require('/tmp/cdk-api-outputs.json'); console.log(o['scrappr-api-dev'].ApiEndpoint)")
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
         env:
           CDK_DEFAULT_ACCOUNT: "221237747538"
-          SKIP_EMAIL_STACK: "1"
 
       - name: Build UI
         run: yarn workspace @scrappr/ui build
@@ -81,7 +80,6 @@ jobs:
             --require-approval never
         env:
           CDK_DEFAULT_ACCOUNT: "221237747538"
-          SKIP_EMAIL_STACK: "1"
 
   e2e:
     runs-on: ubuntu-latest
@@ -96,6 +94,12 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::221237747538:role/scrappr-github-actions
+          aws-region: us-east-1
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
         working-directory: packages/e2e
@@ -104,6 +108,7 @@ jobs:
         run: yarn workspace @scrappr/e2e test
         env:
           BASE_URL: https://scrappr.trevor.fail
+          USER_POOL_ID: us-east-1_N45oIsOs3
 
       - name: Upload test artifacts
         if: failure()
