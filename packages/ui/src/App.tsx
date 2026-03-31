@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { AuthContext, useCognito } from "./hooks/useAuth";
 import { AuthCallback } from "./pages/AuthCallback";
@@ -32,6 +33,7 @@ function App() {
               <Route path="/signed-out" element={<SignedOut />} />
             </Routes>
           </main>
+          <Footer />
         </div>
       </BrowserRouter>
     </AuthContext.Provider>
