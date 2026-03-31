@@ -38,13 +38,8 @@ const isPreview = env.startsWith("pr-");
 const isLocalDev = env.startsWith("localdev-");
 const sharesDevAuth = isPreview || isLocalDev;
 
-// CI stack — OIDC + IAM role for GitHub Actions (dev only)
-if (env === "dev") {
-  new CiStack(app, `scrappr-ci-${env}`, {
-    env: awsEnv,
-    stageName: env,
-  });
-}
+// CI stack — OIDC + IAM role for GitHub Actions
+new CiStack(app, "scrappr-ci", { env: awsEnv });
 
 // Email stack — deploy for dev/prod (not localdev or preview)
 // Skip when SKIP_EMAIL_STACK=1 (e.g. CI where hosted zone lookup may fail)

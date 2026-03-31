@@ -2,14 +2,10 @@ import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import type { Construct } from "constructs";
 
-interface CiStackProps extends cdk.StackProps {
-  stageName: string;
-}
-
 export class CiStack extends cdk.Stack {
   public readonly roleArn: string;
 
-  constructor(scope: Construct, id: string, props: CiStackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // ── GitHub OIDC Provider ──────────────────────────────────────────
