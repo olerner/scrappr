@@ -1,3 +1,4 @@
+import { DESCRIPTION_MAX_LENGTH } from "@scrappr/shared/src/constants";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ClipboardCheck, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -21,7 +22,6 @@ import {
   isAllowedZip,
   type Listing,
 } from "../data/types";
-
 import { useAuth } from "../hooks/useAuth";
 import { useStore } from "../store/useStore";
 
@@ -356,13 +356,21 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
             <textarea
               value={description}
               onChange={(e) => {
-                setDescription(e.target.value);
-                setUserEdited(true);
+                if (e.target.value.length <= DESCRIPTION_MAX_LENGTH) {
+                  setDescription(e.target.value);
+                  setUserEdited(true);
+                }
               }}
+              maxLength={DESCRIPTION_MAX_LENGTH}
               rows={3}
               placeholder="Describe the metal type, approximate weight, and condition..."
               className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
             />
+            <p
+              className={`text-xs mt-1 text-right ${description.length >= DESCRIPTION_MAX_LENGTH ? "text-red-500" : "text-gray-400"}`}
+            >
+              {description.length} / {DESCRIPTION_MAX_LENGTH}
+            </p>
           </div>
 
           {/* Location */}

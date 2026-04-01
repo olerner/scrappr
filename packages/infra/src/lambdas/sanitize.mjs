@@ -20,8 +20,14 @@ function sanitizePhotoUrl(url) {
   return url;
 }
 
+const DESCRIPTION_MAX_LENGTH = 1000;
+
 /** Sanitize user-provided listing fields before writing to the database. */
 export function sanitizeListing({ category, description, address, photoUrl, ...rest }) {
+  if (description !== undefined && typeof description === "string" && description.length > DESCRIPTION_MAX_LENGTH) {
+    throw new Error(`Description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer`);
+  }
+
   return {
     ...rest,
     ...(category !== undefined && { category: escapeHtml(category) }),
