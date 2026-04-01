@@ -171,7 +171,7 @@ export async function deleteListing(accessToken: string, listingId: string): Pro
 export async function browseListingsPublic(): Promise<{
   listings: Record<string, unknown>[];
 }> {
-  const res = await fetch(`${API_URL}/listings/browse`, {
+  const res = await fetch(`${API_URL}/listings`, {
     headers: { "Content-Type": "application/json" },
   });
   if (!res.ok) throw new Error("Failed to browse listings");
@@ -187,7 +187,7 @@ export async function browseListings(
   if (category) params.set("category", category);
   if (cursor) params.set("cursor", cursor);
   const qs = params.toString() ? `?${params.toString()}` : "";
-  const res = await apiRequest(`/listings/available${qs}`, accessToken);
+  const res = await apiRequest(`/listings${qs}`, accessToken);
   if (!res.ok) throw new Error("Failed to browse listings");
   return res.json();
 }

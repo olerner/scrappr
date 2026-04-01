@@ -39,9 +39,9 @@ export function getCategoryDisplayName(category: Category): string {
 // ── Geography ───────────────────────────────────────────────────────────
 
 export const TWIN_CITIES_CENTER = {
-  lat: 44.956,
-  lng: -93.2,
-  zoom: 11.5,
+  lat: 44.9483,
+  lng: -93.3702,
+  zoom: 12,
 } as const;
 
 // ── Mock listings ───────────────────────────────────────────────────────

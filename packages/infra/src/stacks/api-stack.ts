@@ -176,18 +176,12 @@ export class ApiStack extends cdk.Stack {
 
     const getListingsFn = this.createLambda("GetListings", {
       handler: "get-listings.handler",
-      environment: { LISTINGS_TABLE: listingsTable.tableName },
-    });
-    listingsTable.grantReadData(getListingsFn);
-
-    const browseListingsFn = this.createLambda("BrowseListings", {
-      handler: "browse-listings.handler",
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
         STATUS_INDEX: "status-index",
       },
     });
-    listingsTable.grantReadData(browseListingsFn);
+    listingsTable.grantReadData(getListingsFn);
 
     const getClaimedListingsFn = this.createLambda("GetClaimedListings", {
       handler: "get-claimed-listings.handler",
@@ -387,24 +381,7 @@ export class ApiStack extends cdk.Stack {
       path: "/listings",
       methods: [apigatewayv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration("GetListingsInt", getListingsFn),
-      authorizer: jwtAuthorizer,
-    });
-
-    httpApi.addRoutes({
-      path: "/listings/available",
-      methods: [apigatewayv2.HttpMethod.GET],
-      integration: new integrations.HttpLambdaIntegration("BrowseListingsInt", browseListingsFn),
-      authorizer: jwtAuthorizer,
-    });
-
-    httpApi.addRoutes({
-      path: "/listings/browse",
-      methods: [apigatewayv2.HttpMethod.GET],
-      integration: new integrations.HttpLambdaIntegration(
-        "BrowseListingsPublicInt",
-        browseListingsFn,
-      ),
-      // No authorizer — public endpoint for landing page map
+      // No authorizer — supports both public browse and authenticated mine=true
     });
 
     httpApi.addRoutes({
