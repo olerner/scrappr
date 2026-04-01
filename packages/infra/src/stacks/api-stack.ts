@@ -13,8 +13,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type * as s3 from "aws-cdk-lib/aws-s3";
-import * as sns from "aws-cdk-lib/aws-sns";
-import * as subs from "aws-cdk-lib/aws-sns-subscriptions";
+import type * as sns from "aws-cdk-lib/aws-sns";
 import type { Construct } from "constructs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -25,6 +24,7 @@ interface ApiStackProps extends cdk.StackProps {
   userPoolClientId: string;
   photoBucket: s3.IBucket;
   photoBucketUrl: string;
+  alertTopic?: sns.ITopic;
   senderEmail?: string;
   sendEmailPolicy?: iam.PolicyStatement;
   appUrl?: string;
@@ -35,7 +35,7 @@ import { CLAIM_EXPIRY_HOURS } from "@scrappr/shared/src/constants.js";
 export class ApiStack extends cdk.Stack {
   public readonly apiUrl: string;
 
-  private readonly alertTopic: sns.Topic;
+  private readonly alertTopic?: sns.ITopic;
   private readonly stageName: string;
   private readonly lambdasDir: string;
 
@@ -60,7 +60,9 @@ export class ApiStack extends cdk.Stack {
         evaluationPeriods: 1,
         treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
       });
-    invocationAlarm.addAlarmAction(new cw_actions.SnsAction(this.alertTopic));
+    if (this.alertTopic) {
+      invocationAlarm.addAlarmAction(new cw_actions.SnsAction(this.alertTopic));
+    }
 
     // Alarm on application-level errors (caught 500s logged as "level":"ERROR")
     const metricFilter = new logs.MetricFilter(this, `${id}AppErrorFilter`, {
@@ -80,7 +82,9 @@ export class ApiStack extends cdk.Stack {
       evaluationPeriods: 1,
       treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
     });
-    appErrorAlarm.addAlarmAction(new cw_actions.SnsAction(this.alertTopic));
+    if (this.alertTopic) {
+      appErrorAlarm.addAlarmAction(new cw_actions.SnsAction(this.alertTopic));
+    }
 
     return fn;
   }
@@ -90,6 +94,7 @@ export class ApiStack extends cdk.Stack {
 
     const {
       stageName,
+      alertTopic,
       userPoolId,
       userPoolClientId,
       photoBucket,
@@ -99,18 +104,9 @@ export class ApiStack extends cdk.Stack {
       appUrl,
     } = props;
     this.stageName = stageName;
+    this.alertTopic = alertTopic;
     this.lambdasDir = path.join(__dirname, "../lambdas");
     const isPreview = stageName.startsWith("pr-");
-
-    // ── SNS Alert Topic ───────────────────────────────────────────
-
-    this.alertTopic = new sns.Topic(this, "ErrorAlertTopic", {
-      topicName: `scrappr-errors-${stageName}`,
-    });
-    if (!isPreview) {
-      this.alertTopic.addSubscription(new subs.EmailSubscription("trevbot@trevor.fail"));
-      this.alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
-    }
 
     // ── DynamoDB Table ──────────────────────────────────────────────
 
