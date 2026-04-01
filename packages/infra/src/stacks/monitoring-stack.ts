@@ -2,29 +2,20 @@ import * as cdk from "aws-cdk-lib";
 import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
 import * as cw_actions from "aws-cdk-lib/aws-cloudwatch-actions";
 import * as route53 from "aws-cdk-lib/aws-route53";
-import * as sns from "aws-cdk-lib/aws-sns";
-import * as subs from "aws-cdk-lib/aws-sns-subscriptions";
+import type * as sns from "aws-cdk-lib/aws-sns";
 import type { Construct } from "constructs";
 
 interface MonitoringStackProps extends cdk.StackProps {
   stageName: string;
   domainName: string;
+  alertTopic: sns.ITopic;
 }
 
 export class MonitoringStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: MonitoringStackProps) {
     super(scope, id, props);
 
-    const { stageName, domainName } = props;
-
-    // ── SNS Topic ─────────────────────────────────────────────────
-
-    const alertTopic = new sns.Topic(this, "UptimeAlertTopic", {
-      topicName: `scrappr-uptime-${stageName}`,
-    });
-
-    alertTopic.addSubscription(new subs.EmailSubscription("trevbot@trevor.fail"));
-    alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
+    const { stageName, domainName, alertTopic } = props;
 
     // ── Route 53 Health Check ─────────────────────────────────────
 

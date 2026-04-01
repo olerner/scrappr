@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import * as cdk from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
+import { AlertStack } from "./stacks/alert-stack.js";
 import { ApiStack } from "./stacks/api-stack.js";
 import { AuthStack } from "./stacks/auth-stack.js";
 import { CiStack } from "./stacks/ci-stack.js";
@@ -103,9 +104,22 @@ const sendEmailPolicy =
     resources: [`arn:aws:ses:us-east-1:${awsEnv.account}:identity/*`],
   });
 
+// Alert stack — shared SNS topic + AlertDigest Lambda (only for static environments)
+const isStaticEnv = !isPreview && !isLocalDev;
+let alertStack: AlertStack | undefined;
+if (isStaticEnv) {
+  alertStack = new AlertStack(app, `scrappr-alert-${env}`, {
+    env: awsEnv,
+    stageName: env,
+    senderEmail,
+    sendEmailPolicy,
+  });
+}
+
 new ApiStack(app, `scrappr-api-${env}`, {
   env: awsEnv,
   stageName: env,
+  alertTopic: alertStack?.alertTopic,
   userPoolId,
   userPoolClientId,
   photoBucket: storageStack.photoBucket,
@@ -128,12 +142,13 @@ if (!isLocalDev) {
   });
 }
 
-// Monitoring stack — uptime health check (only for prod-like environments)
-if (!isLocalDev && !isPreview) {
+// Monitoring stack — uptime health check (only for static environments)
+if (alertStack) {
   new MonitoringStack(app, `scrappr-monitoring-${env}`, {
     env: awsEnv,
     stageName: env,
     domainName: "scrappr.trevor.fail",
+    alertTopic: alertStack.alertTopic,
   });
 }
 
