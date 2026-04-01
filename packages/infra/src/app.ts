@@ -5,6 +5,7 @@ import { ApiStack } from "./stacks/api-stack.js";
 import { AuthStack } from "./stacks/auth-stack.js";
 import { CiStack } from "./stacks/ci-stack.js";
 import { EmailStack } from "./stacks/email-stack.js";
+import { MonitoringStack } from "./stacks/monitoring-stack.js";
 import { StorageStack } from "./stacks/storage-stack.js";
 import { UiStack } from "./stacks/ui-stack.js";
 
@@ -99,7 +100,7 @@ const sendEmailPolicy =
   emailStack?.sendEmailPolicyStatement ??
   new iam.PolicyStatement({
     actions: ["ses:SendEmail", "ses:SendRawEmail"],
-    resources: [`arn:aws:ses:us-east-1:${awsEnv.account}:identity/${domainName}`],
+    resources: [`arn:aws:ses:us-east-1:${awsEnv.account}:identity/*`],
   });
 
 new ApiStack(app, `scrappr-api-${env}`, {
@@ -124,6 +125,15 @@ if (!isLocalDev) {
           domainName: "scrappr.trevor.fail",
         }
       : {}),
+  });
+}
+
+// Monitoring stack — uptime health check (only for prod-like environments)
+if (!isLocalDev && !isPreview) {
+  new MonitoringStack(app, `scrappr-monitoring-${env}`, {
+    env: awsEnv,
+    stageName: env,
+    domainName: "scrappr.trevor.fail",
   });
 }
 

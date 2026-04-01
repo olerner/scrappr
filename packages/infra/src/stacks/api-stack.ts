@@ -101,13 +101,15 @@ export class ApiStack extends cdk.Stack {
     this.stageName = stageName;
     this.lambdasDir = path.join(__dirname, "../lambdas");
     const isPreview = stageName.startsWith("pr-");
+    const isLocalDev = stageName.startsWith("localdev-");
+    const isStaticEnv = !isPreview && !isLocalDev;
 
     // ── SNS Alert Topic ───────────────────────────────────────────
 
     this.alertTopic = new sns.Topic(this, "ErrorAlertTopic", {
       topicName: `scrappr-errors-${stageName}`,
     });
-    if (!isPreview) {
+    if (isStaticEnv) {
       this.alertTopic.addSubscription(new subs.EmailSubscription("trevbot@trevor.fail"));
       this.alertTopic.addSubscription(new subs.EmailSubscription("trevorlitsey@gmail.com"));
     }
@@ -117,7 +119,7 @@ export class ApiStack extends cdk.Stack {
     // CloudWatch Logs Insights, and sends an enriched email via SES.
     // Uses a plain lambda.Function (not createLambda) to avoid circular alarms.
 
-    if (senderEmail) {
+    if (isStaticEnv) {
       const alertDigestFn = new lambda.Function(this, "AlertDigestFn", {
         runtime: lambda.Runtime.NODEJS_20_X,
         code: lambda.Code.fromAsset(this.lambdasDir),
