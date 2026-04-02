@@ -94,7 +94,7 @@ export async function updateListing(
 export async function getMyListings(
   accessToken: string,
 ): Promise<{ listings: Record<string, unknown>[] }> {
-  const res = await apiRequest("/listings?mine=true", accessToken);
+  const res = await apiRequest("/my/listings", accessToken);
   if (!res.ok) throw new Error("Failed to fetch listings");
   return res.json();
 }

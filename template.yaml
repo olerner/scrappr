@@ -71,6 +71,22 @@ Resources:
             Method: GET
             ApiId: !Ref HttpApi
 
+  GetMyListingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-my-listings.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /my/listings
+            Method: GET
+            ApiId: !Ref HttpApi
+
   GetClaimedListingsFunction:
     Type: AWS::Serverless::Function
     Properties:

@@ -3,23 +3,21 @@
  *
  * Priority:
  *   1. API Gateway JWT authorizer claims (when the route has an authorizer configured).
- *   2. Decode the Authorization header directly — used for routes that intentionally
- *      omit the gateway-level authorizer (e.g. /listings, which supports both public
- *      and authenticated access on the same endpoint). Note: this skips signature
- *      verification, so the claim is trusted at the application layer only.
- *      Safe because the JWT was issued by Cognito and the token's exp/iat are still
- *      checked by Cognito at issuance; a forged token would only affect read-only
- *      data scoped to the faked userId.
+ *   2. SAM local fallback: decode the Authorization header directly (no signature
+ *      verification). In deployed environments, every route that needs a userId must
+ *      have a gateway-level JWT authorizer — the fallback is disabled and throws.
  */
 export function getUserId(event) {
-  // 1. API Gateway authorizer (routes with a configured JWT authorizer)
+  // 1. API Gateway authorizer (deployed environments)
   const claims = event.requestContext?.authorizer?.jwt?.claims;
   if (claims?.sub) return claims.sub;
 
-  // 2. Decode JWT from Authorization header (routes without a gateway authorizer,
-  //    or SAM local where the authorizer is not run).
+  // 2. Decode JWT from Authorization header (SAM local fallback only)
   const authHeader = event.headers?.authorization || event.headers?.Authorization;
   if (authHeader) {
+    if (!process.env.AWS_SAM_LOCAL) {
+      throw new Error("[auth] API Gateway authorizer claims missing in deployed environment. Check that the route has a JWT authorizer configured.");
+    }
     try {
       const token = authHeader.replace(/^Bearer\s+/i, "");
       const payload = token.split(".")[1];

@@ -1,6 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
 
 const client = new DynamoDBClient({});
@@ -11,37 +10,7 @@ const STATUS_INDEX = process.env.STATUS_INDEX;
 export const handler = async (event) => {
   const log = createLogger(event);
   try {
-    const userId = getUserId(event);
-    const mine = event.queryStringParameters?.mine;
-
-    // mine=true requires authentication
-    if (mine === "true") {
-      if (!userId) {
-        return {
-          statusCode: 401,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ error: "Unauthorized" }),
-        };
-      }
-
-      const result = await ddb.send(
-        new QueryCommand({
-          TableName: TABLE,
-          IndexName: "userId-createdAt-index",
-          KeyConditionExpression: "userId = :uid",
-          FilterExpression: "attribute_not_exists(isDeleted) OR isDeleted <> :true",
-          ExpressionAttributeValues: { ":uid": userId, ":true": true },
-          ScanIndexForward: false,
-        })
-      );
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listings: result.Items || [] }),
-      };
-    }
-
-    // Browse available listings (public or authenticated)
+    // Browse available listings (public)
     const category = event.queryStringParameters?.category;
     const cursor = event.queryStringParameters?.cursor;
     const PAGE_SIZE = 20;
@@ -71,9 +40,7 @@ export const handler = async (event) => {
 
     const result = await ddb.send(new QueryCommand(queryParams));
 
-    const listings = (result.Items || [])
-      .filter((item) => !userId || item.userId !== userId)
-      .map(({ userId: _ownerId, ...item }) => ({
+    const listings = (result.Items || []).map(({ userId: _ownerId, ...item }) => ({
         ...item,
         address: redactAddress(item.address),
       }));
