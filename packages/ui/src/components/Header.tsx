@@ -5,7 +5,6 @@ export function Header() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // Determine where "Log In" should route based on current page context
   const loginPath = location.pathname === "/" ? "/list" : location.pathname;
 
   return (
