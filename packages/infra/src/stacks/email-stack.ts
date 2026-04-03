@@ -22,7 +22,7 @@ export class EmailStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EmailStackProps) {
     super(scope, id, props);
 
-    const { stageName, domainName, hostedZoneDomain } = props;
+    const { stageName, domainName } = props;
     this.senderEmail = `noreply@${domainName}`;
 
     // ── Route 53 Hosted Zone ──────────────────────────────────────────
