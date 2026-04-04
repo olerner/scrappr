@@ -1,5 +1,6 @@
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { ListingTracker } from "./helpers/cleanup.ts";
 
 // Scrappee account — creates listings for pickup
 const SCRAPPEE_EMAIL = "test@scrappr.dev";
@@ -13,7 +14,12 @@ const HAULER_PASSWORD = "TestPass123!";
 // Real address in St. Louis Park, MN (zip 55416) — within Scrappr's service area
 const ADDRESS_QUERY = "5005 Minnetonka Blvd St Louis Park";
 
+const tracker = new ListingTracker();
+
 test("scrappee creates listing, hauler claims and marks picked up", async ({ page }) => {
+  // Install response listener to capture created listing IDs
+  tracker.install(page);
+
   // Unique description so we can reliably find this listing in the hauler view
   const testDescription = `E2E hauler test - aluminum scrap ${Date.now()}`;
 
@@ -64,6 +70,16 @@ test("scrappee creates listing, hauler claims and marks picked up", async ({ pag
   await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(testDescription).first()).toBeVisible({ timeout: 10_000 });
 
+  // Save the scrappee's access token before signing out — needed for cleanup
+  const scrappeeToken = await page.evaluate(() => {
+    for (const key of Object.keys(localStorage)) {
+      if (key.endsWith(".accessToken")) {
+        return localStorage.getItem(key);
+      }
+    }
+    return null;
+  });
+
   // ── Step 2: Sign out ───────────────────────────────────────────────────────
 
   await page.goto("/signed-out");
@@ -112,4 +128,23 @@ test("scrappee creates listing, hauler claims and marks picked up", async ({ pag
 
   // Card disappears from active claims (status changes to "completed")
   await expect(claimedCard).not.toBeVisible({ timeout: 10_000 });
+
+  // ── Cleanup: Delete test listings ─────────────────────────────────────────
+
+  const apiUrl = process.env.VITE_API_URL;
+  if (apiUrl && scrappeeToken && tracker.trackedIds.length > 0) {
+    for (const id of tracker.trackedIds) {
+      try {
+        await page.request.delete(`${apiUrl}/listings/${id}`, {
+          headers: {
+            Authorization: `Bearer ${scrappeeToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (e) {
+        console.warn(`[e2e cleanup] Failed to delete listing ${id}:`, e);
+      }
+    }
+    console.log(`[e2e cleanup] Deleted ${tracker.trackedIds.length} test listing(s)`);
+  }
 });

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { expect, test } from "@playwright/test";
+import { ListingTracker } from "./helpers/cleanup.ts";
 
 const TEST_EMAIL = "test@scrappr.dev";
 const TEST_PASSWORD = "TestPass123!";
@@ -7,8 +8,12 @@ const TEST_PASSWORD = "TestPass123!";
 // Real address in St. Louis Park, MN (zip 55416) — within Scrappr's service area
 const ADDRESS_QUERY = "5005 Minnetonka Blvd St Louis Park";
 
+const tracker = new ListingTracker();
+
 test.describe("Listing Creation Flow", () => {
   test.beforeEach(async ({ page }) => {
+    tracker.install(page);
+
     await page.goto("/list");
     await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
     await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
@@ -16,6 +21,10 @@ test.describe("Listing Creation Flow", () => {
     await page.getByRole("button", { name: "Sign In", exact: true }).click();
     await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(`Signed in as ${TEST_EMAIL}`)).toBeVisible();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await tracker.cleanup(page);
   });
 
   test("create listing with photo, see it in My Listings", async ({ page }) => {
