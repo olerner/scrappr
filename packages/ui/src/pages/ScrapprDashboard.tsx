@@ -11,7 +11,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import {
   browseListings,
   claimListing,
@@ -21,7 +21,6 @@ import {
 } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
-import { SignInForm } from "../components/SignInForm";
 import { CATEGORIES, getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
@@ -273,7 +272,7 @@ export function ScrapprDashboard() {
   }
 
   if (!isAuthenticated) {
-    return <SignInForm onSignIn={signIn} onGoogleSignIn={initiateGoogleSignIn} error={authError} />;
+    return <Navigate to="/sign-in?redirect=/haul" replace />;
   }
 
   return (

@@ -10,6 +10,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { ScrappeeDashboard } from "./pages/ScrappeeDashboard";
 import { ScrapprDashboard } from "./pages/ScrapprDashboard";
 import { SignedOut } from "./pages/SignedOut";
+import { SignInPage } from "./pages/SignInPage";
 import { SignUp } from "./pages/SignUp";
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
               <Route path="/list/new" element={<CreateListing />} />
               <Route path="/list/edit/:id" element={<EditListing />} />
               <Route path="/haul" element={<ScrapprDashboard />} />
+              <Route path="/sign-in" element={<SignInPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/sign-up" element={<SignUp />} />
