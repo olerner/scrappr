@@ -27,11 +27,5 @@ export function SignInPage() {
     initiateGoogleSignIn();
   };
 
-  return (
-    <SignInForm
-      onSignIn={handleSignIn}
-      onGoogleSignIn={handleGoogleSignIn}
-      error={error}
-    />
-  );
+  return <SignInForm onSignIn={handleSignIn} onGoogleSignIn={handleGoogleSignIn} error={error} />;
 }

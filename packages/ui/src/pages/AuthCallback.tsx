@@ -32,11 +32,11 @@ export function AuthCallback() {
         // Check for explicit redirect target first (from sign-in page)
         const redirectTarget = sessionStorage.getItem("scrappr_redirect_target");
         const returnPath = sessionStorage.getItem("scrappr_return_path");
-        
+
         // Clean up both storage keys
         sessionStorage.removeItem("scrappr_redirect_target");
         sessionStorage.removeItem("scrappr_return_path");
-        
+
         // Navigate to the appropriate destination
         const destination = redirectTarget || returnPath || "/list";
         navigate(destination, { replace: true });
