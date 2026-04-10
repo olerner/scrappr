@@ -74,6 +74,9 @@ if (!sharesDevAuth) {
     senderEmail: emailStack?.senderEmail,
     appUrl,
   });
+  if (emailStack) {
+    authStack.addDependency(emailStack);
+  }
 }
 
 // Storage stack — deploy for all environments
