@@ -50,6 +50,7 @@ export class AuthStack extends cdk.Stack {
               fromEmail: props.senderEmail,
               fromName: "Scrappr",
               sesRegion: "us-east-1",
+              sesVerifiedDomain: props.senderEmail.split("@")[1],
             }),
           }
         : {}),
