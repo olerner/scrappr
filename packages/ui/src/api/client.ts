@@ -1,3 +1,5 @@
+import type { Address, Listing } from "../data/types";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 async function apiRequest(
@@ -56,7 +58,7 @@ export interface CreateListingPayload {
 export async function createListing(
   accessToken: string,
   payload: CreateListingPayload,
-): Promise<Record<string, unknown>> {
+): Promise<Listing> {
   const res = await apiRequest("/listings", accessToken, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -91,9 +93,7 @@ export async function updateListing(
   }
 }
 
-export async function getMyListings(
-  accessToken: string,
-): Promise<{ listings: Record<string, unknown>[] }> {
+export async function getMyListings(accessToken: string): Promise<{ listings: Listing[] }> {
   const res = await apiRequest("/my/listings", accessToken);
   if (!res.ok) throw new Error("Failed to fetch listings");
   return res.json();
@@ -119,9 +119,7 @@ export interface UpdateAddressPayload {
   isDefault?: boolean;
 }
 
-export async function getAddresses(
-  accessToken: string,
-): Promise<{ addresses: Record<string, unknown>[] }> {
+export async function getAddresses(accessToken: string): Promise<{ addresses: Address[] }> {
   const res = await apiRequest("/addresses", accessToken);
   if (!res.ok) throw new Error("Failed to fetch addresses");
   return res.json();
@@ -130,7 +128,7 @@ export async function getAddresses(
 export async function createAddress(
   accessToken: string,
   payload: CreateAddressPayload,
-): Promise<Record<string, unknown>> {
+): Promise<Address> {
   const res = await apiRequest("/addresses", accessToken, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -169,7 +167,7 @@ export async function deleteListing(accessToken: string, listingId: string): Pro
 }
 
 export async function browseListingsPublic(): Promise<{
-  listings: Record<string, unknown>[];
+  listings: Listing[];
 }> {
   const res = await fetch(`${API_URL}/listings`, {
     headers: { "Content-Type": "application/json" },
@@ -182,7 +180,7 @@ export async function browseListings(
   accessToken: string,
   category?: string,
   cursor?: string,
-): Promise<{ listings: Record<string, unknown>[]; nextCursor: string | null }> {
+): Promise<{ listings: Listing[]; nextCursor: string | null }> {
   const params = new URLSearchParams();
   if (category) params.set("category", category);
   if (cursor) params.set("cursor", cursor);
@@ -212,9 +210,7 @@ export async function unclaimListing(accessToken: string, listingId: string): Pr
   }
 }
 
-export async function getClaimedListings(
-  accessToken: string,
-): Promise<{ listings: Record<string, unknown>[] }> {
+export async function getClaimedListings(accessToken: string): Promise<{ listings: Listing[] }> {
   const res = await apiRequest("/listings/claimed", accessToken);
   if (!res.ok) throw new Error("Failed to fetch claimed listings");
   return res.json();

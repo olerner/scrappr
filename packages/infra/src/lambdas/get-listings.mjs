@@ -5,7 +5,7 @@ import { createLogger } from "./logger.mjs";
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.LISTINGS_TABLE;
-const STATUS_INDEX = process.env.STATUS_INDEX;
+const STATUS_INDEX = "status-index";
 
 export const handler = async (event) => {
   const log = createLogger(event);

@@ -5,7 +5,7 @@ import { notifyScrappee, getUserEmail, sendEmail } from "./email.mjs";
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.LISTINGS_TABLE;
-const STATUS_INDEX = process.env.STATUS_INDEX;
+const STATUS_INDEX = "status-index";
 const APP_URL = process.env.APP_URL || "https://scrappr.trevor.fail";
 
 const EXPIRY_HOURS = Number(process.env.CLAIM_EXPIRY_HOURS);

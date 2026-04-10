@@ -62,7 +62,6 @@ Resources:
       Environment:
         Variables:
           LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
-          STATUS_INDEX: status-index
       Events:
         Api:
           Type: HttpApi

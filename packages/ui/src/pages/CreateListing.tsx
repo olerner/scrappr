@@ -53,17 +53,7 @@ export function CreateListing() {
     setAddressesLoading(true);
     getAddresses(accessToken)
       .then((data) => {
-        const mapped: Address[] = (data.addresses || []).map((item: Record<string, unknown>) => ({
-          addressId: item.addressId as string,
-          label: item.label as string,
-          address: item.address as string,
-          lat: item.lat as number,
-          lng: item.lng as number,
-          zipCode: item.zipCode as string,
-          isDefault: item.isDefault as boolean,
-          createdAt: item.createdAt as string,
-        }));
-        setAddresses(mapped);
+        setAddresses(data.addresses || []);
       })
       .finally(() => setAddressesLoading(false));
   }, [accessToken, addressesLoaded, setAddresses]);

@@ -174,7 +174,6 @@ export class ApiStack extends cdk.Stack {
       handler: "get-listings.handler",
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
-        STATUS_INDEX: "status-index",
       },
     });
     listingsTable.grantReadData(getListingsFn);
@@ -250,7 +249,6 @@ export class ApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60),
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
-        STATUS_INDEX: "status-index",
         CLAIM_EXPIRY_HOURS: String(CLAIM_EXPIRY_HOURS),
         ...emailEnv,
       },
