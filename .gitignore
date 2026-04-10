@@ -21,3 +21,6 @@ cdk.out
 *.orig.*
 web-build/
 packages/e2e/test-results/
+
+# Claude Code
+.claude/worktrees/
