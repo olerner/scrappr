@@ -12,7 +12,10 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link
+            to="/"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity min-h-[44px]"
+          >
             <img
               src="/scrappy-mascot.png"
               alt="Scrappy the dog mascot"
@@ -26,14 +29,14 @@ export function Header() {
             {isAuthenticated ? (
               <Link
                 to="/signed-out"
-                className="px-4 py-2 border border-emerald-600 text-emerald-700 text-sm font-medium rounded-lg hover:bg-emerald-50 transition-all"
+                className="px-4 py-2 min-h-[44px] flex items-center border border-emerald-600 text-emerald-700 text-sm font-medium rounded-lg hover:bg-emerald-50 transition-all"
               >
                 Log Out
               </Link>
             ) : (
               <Link
                 to={loginPath}
-                className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all shadow-sm"
+                className="px-4 py-2 min-h-[44px] flex items-center bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all shadow-sm"
               >
                 Log In
               </Link>
