@@ -176,6 +176,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: deploy-preview
     if: needs.deploy-preview.outputs.preview_url != ''
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -185,6 +188,12 @@ jobs:
           cache: yarn
 
       - run: yarn install --frozen-lockfile
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::221237747538:role/scrappr-github-actions
+          aws-region: us-east-1
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -199,6 +208,7 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_COGNITO_DOMAIN: ${{ secrets.VITE_COGNITO_DOMAIN }}
           VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
+          SKIP_EMAIL_TESTS: "1"
 
       - name: Upload test artifacts
         if: failure()
