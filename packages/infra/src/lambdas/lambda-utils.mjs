@@ -23,8 +23,13 @@ export function json(statusCode, body) {
 // ── Auth + path param guards ─────────────────────────────────────────────
 
 /**
- * Returns { userId, log } or an early HTTP response if auth/param checks fail.
- * Callers should check `result.statusCode` to detect an early return.
+ * Parses auth and (optionally) a required path parameter from the event.
+ *
+ * On success: returns `{ userId, log }`, plus `[pathParam]: value` if `pathParam` was given.
+ * On failure: returns `{ response, log }` where `response` is a ready-to-return HTTP
+ * response (401 if unauthorized, 400 if the path param is missing).
+ *
+ * Most callers should use `withAuth` below instead of calling this directly.
  */
 export function parseRequest(event, pathParam) {
   const log = createLogger(event);
@@ -42,6 +47,31 @@ export function parseRequest(event, pathParam) {
   }
 
   return { userId, log };
+}
+
+/**
+ * Wraps an HTTP Lambda handler with auth, optional path-param extraction, and
+ * a top-level error boundary that logs and returns a 500.
+ *
+ *   export const handler = withAuth(async (event, { userId, log }) => { ... });
+ *   export const handler = withAuth("listingId", async (event, { userId, listingId, log }) => { ... });
+ *
+ * The inner handler only runs for authenticated requests. Any uncaught error
+ * is logged via `log.error("handler failed", err)` and returned as a 500.
+ */
+export function withAuth(pathParamOrHandler, maybeHandler) {
+  const pathParam = typeof pathParamOrHandler === "string" ? pathParamOrHandler : null;
+  const handler = typeof pathParamOrHandler === "function" ? pathParamOrHandler : maybeHandler;
+  return async (event) => {
+    const req = parseRequest(event, pathParam);
+    if (req.response) return req.response;
+    try {
+      return await handler(event, req);
+    } catch (err) {
+      req.log.error("handler failed", err);
+      return json(500, { error: "Internal server error" });
+    }
+  };
 }
 
 // ── Listing GSI lookup ───────────────────────────────────────────────────

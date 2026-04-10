@@ -11,8 +11,6 @@ interface EmailStackProps extends cdk.StackProps {
   stageName: string;
   /** The subdomain to send from (e.g. scrappr.trevor.fail) */
   domainName: string;
-  /** The parent hosted zone (e.g. trevor.fail) */
-  hostedZoneDomain: string;
 }
 
 export class EmailStack extends cdk.Stack {
@@ -22,7 +20,7 @@ export class EmailStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EmailStackProps) {
     super(scope, id, props);
 
-    const { stageName, domainName, hostedZoneDomain } = props;
+    const { stageName, domainName } = props;
     this.senderEmail = `noreply@${domainName}`;
 
     // ── Route 53 Hosted Zone ──────────────────────────────────────────

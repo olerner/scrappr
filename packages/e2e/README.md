@@ -19,12 +19,11 @@ No work ships without being tested. Every feature, bug fix, and change is verifi
 ## Acceptance testing workflow
 
 1. Make changes and **test them locally** first — run the app, exercise the feature in a browser, verify it works.
-2. Run `npx fallow` (or `/fallow`) to check for dead code, duplication, and health regressions. Fix any new issues before pushing.
-3. Push and open a PR with a **testing plan** in the description.
-4. Wait for the preview environment to deploy (Storage + API + UI stacks).
-5. **Test again in the preview** — run the testing plan against the preview URL. Local passing is not enough; the preview is the acceptance gate.
-6. If something fails, fix it, push, and re-test against the new preview.
-7. Once the testing plan passes in the preview, the PR is ready for review.
+2. Push and open a PR with a **testing plan** in the description.
+3. Wait for the preview environment to deploy (Storage + API + UI stacks).
+4. **Test again in the preview** — run the testing plan against the preview URL. Local passing is not enough; the preview is the acceptance gate.
+5. If something fails, fix it, push, and re-test against the new preview.
+6. Once the testing plan passes in the preview, the PR is ready for review.
 
 ## E2E test suite
 

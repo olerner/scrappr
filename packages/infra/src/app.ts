@@ -52,7 +52,6 @@ if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1") {
     env: awsEnv,
     stageName: env,
     domainName: "scrappr.trevor.fail",
-    hostedZoneDomain: "trevor.fail",
   });
 }
 
