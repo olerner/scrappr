@@ -52,6 +52,8 @@ All work must be browser-tested and accepted before shipping. See [`packages/e2e
 
 Include the GitHub issue number in commit messages when the commit addresses an issue, e.g. `fix: validate photoUrl on write (#52, #53)`.
 
+Before pushing, run `npx fallow` (or `/fallow`) to check for dead code, duplication, and health regressions. Fix any new issues before pushing.
+
 ## PRs
 
 Use `/pr` to open pull requests. See [`.claude/skills/pr/SKILL.md`](.claude/skills/pr/SKILL.md).

@@ -24,3 +24,6 @@ packages/e2e/test-results/
 
 # Claude Code
 .claude/worktrees/
+
+# Fallow
+.fallow/

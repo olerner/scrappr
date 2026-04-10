@@ -11,8 +11,6 @@ interface EmailStackProps extends cdk.StackProps {
   stageName: string;
   /** The subdomain to send from (e.g. scrappr.trevor.fail) */
   domainName: string;
-  /** The parent hosted zone (e.g. trevor.fail) */
-  hostedZoneDomain: string;
 }
 
 export class EmailStack extends cdk.Stack {

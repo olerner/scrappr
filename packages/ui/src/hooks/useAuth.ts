@@ -55,7 +55,7 @@ async function refreshOAuthTokens(
   }
 }
 
-export interface AuthState {
+interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   email: string | null;

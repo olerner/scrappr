@@ -1,16 +1,17 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { ddb, json } from "./lambda-utils.mjs";
 import { createLogger } from "./logger.mjs";
 
-const client = new DynamoDBClient({});
-const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.LISTINGS_TABLE;
 const STATUS_INDEX = "status-index";
 
+/**
+ * Public browse endpoint — lists available listings with street address redacted.
+ * Unauthenticated, so it can't use withAuth.
+ */
 export const handler = async (event) => {
   const log = createLogger(event);
   try {
-    // Browse available listings (public)
     const category = event.queryStringParameters?.category;
     const cursor = event.queryStringParameters?.cursor;
     const PAGE_SIZE = 20;
@@ -41,26 +42,18 @@ export const handler = async (event) => {
     const result = await ddb.send(new QueryCommand(queryParams));
 
     const listings = (result.Items || []).map(({ userId: _ownerId, ...item }) => ({
-        ...item,
-        address: redactAddress(item.address),
-      }));
+      ...item,
+      address: redactAddress(item.address),
+    }));
 
     const nextCursor = result.LastEvaluatedKey
       ? Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString("base64url")
       : null;
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listings, nextCursor }),
-    };
+    return json(200, { listings, nextCursor });
   } catch (err) {
     log.error("get-listings failed", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return json(500, { error: "Internal server error" });
   }
 };
 

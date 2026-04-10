@@ -44,7 +44,7 @@ export async function uploadPhoto(
   if (!res.ok) throw new Error("Failed to upload photo");
 }
 
-export interface CreateListingPayload {
+interface CreateListingPayload {
   category: string;
   description: string;
   photoUrl: string;
@@ -67,7 +67,7 @@ export async function createListing(
   return res.json();
 }
 
-export interface UpdateListingPayload {
+interface UpdateListingPayload {
   category?: string;
   description?: string;
   photoUrl?: string;
@@ -101,7 +101,7 @@ export async function getMyListings(accessToken: string): Promise<{ listings: Li
 
 // ── Addresses ────────────────────────────────────────────────────────────
 
-export interface CreateAddressPayload {
+interface CreateAddressPayload {
   label: string;
   address: string;
   lat: number;
@@ -110,7 +110,7 @@ export interface CreateAddressPayload {
   isDefault?: boolean;
 }
 
-export interface UpdateAddressPayload {
+interface UpdateAddressPayload {
   label?: string;
   address?: string;
   lat?: number;
