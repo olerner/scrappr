@@ -1,48 +1,58 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { getUserId } from "./auth.mjs";
 import { createLogger } from "./logger.mjs";
 
 const client = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.LISTINGS_TABLE;
+const STATUS_INDEX = "status-index";
 
 export const handler = async (event) => {
   const log = createLogger(event);
   try {
-    const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
+    // Browse available listings (public)
+    const category = event.queryStringParameters?.category;
+    const cursor = event.queryStringParameters?.cursor;
+    const PAGE_SIZE = 20;
+
+    const queryParams = {
+      TableName: TABLE,
+      IndexName: STATUS_INDEX,
+      KeyConditionExpression: "#status = :status",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: { ":status": "available" },
+      ScanIndexForward: false,
+      Limit: PAGE_SIZE,
+    };
+
+    if (category) {
+      queryParams.FilterExpression = "category = :cat";
+      queryParams.ExpressionAttributeValues[":cat"] = category;
     }
 
-    const mine = event.queryStringParameters?.mine;
-
-    if (mine === "true") {
-      const result = await ddb.send(
-        new QueryCommand({
-          TableName: TABLE,
-          IndexName: "userId-createdAt-index",
-          KeyConditionExpression: "userId = :uid",
-          FilterExpression: "attribute_not_exists(isDeleted) OR isDeleted <> :true",
-          ExpressionAttributeValues: { ":uid": userId, ":true": true },
-          ScanIndexForward: false,
-        })
-      );
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listings: result.Items || [] }),
-      };
+    if (cursor) {
+      try {
+        queryParams.ExclusiveStartKey = JSON.parse(Buffer.from(cursor, "base64url").toString());
+      } catch {
+        // Invalid cursor, ignore
+      }
     }
+
+    const result = await ddb.send(new QueryCommand(queryParams));
+
+    const listings = (result.Items || []).map(({ userId: _ownerId, ...item }) => ({
+        ...item,
+        address: redactAddress(item.address),
+      }));
+
+    const nextCursor = result.LastEvaluatedKey
+      ? Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString("base64url")
+      : null;
 
     return {
-      statusCode: 400,
+      statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Query parameter mine=true is required" }),
+      body: JSON.stringify({ listings, nextCursor }),
     };
   } catch (err) {
     log.error("get-listings failed", err);
@@ -53,3 +63,16 @@ export const handler = async (event) => {
     };
   }
 };
+
+/** Strip street address, keep only city/state. */
+function redactAddress(address) {
+  if (!address) return "";
+  const parts = address.split(",").map((p) => p.trim());
+  if (parts.length >= 3) {
+    return `${parts[parts.length - 2]}, ${parts[parts.length - 1].replace(/\d{5}(-\d{4})?/, "").trim()}`;
+  }
+  if (parts.length === 2) {
+    return parts[1].replace(/\d{5}(-\d{4})?/, "").trim();
+  }
+  return "Twin Cities area";
+}

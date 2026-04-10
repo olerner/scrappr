@@ -40,23 +40,6 @@ const VALUE_ORDER: Record<string, number> = {
   Lawnmowers: 1,
 };
 
-function mapApiListing(item: Record<string, unknown>): Listing {
-  return {
-    id: (item.listingId as string) || "",
-    category: (item.category as Category) || "Mixed",
-    description: (item.description as string) || "",
-    photoUrl: (item.photoUrl as string) || "",
-    lat: (item.lat as number) || 0,
-    lng: (item.lng as number) || 0,
-    address: (item.address as string) || "",
-    status: (item.status as Listing["status"]) || "available",
-    datePosted: (item.datePosted as string) || (item.createdAt as string) || "",
-    claimedBy: item.claimedBy as string | undefined,
-    claimedAt: item.claimedAt as string | undefined,
-    estimatedValue: (item.estimatedValue as string) || "Varies",
-  };
-}
-
 export function ScrapprDashboard() {
   const {
     isAuthenticated,
@@ -130,7 +113,7 @@ export function ScrapprDashboard() {
       }
       try {
         const data = await browseListings(accessToken, undefined, cursor);
-        const newListings = (data.listings || []).map(mapApiListing);
+        const newListings = data.listings || [];
         if (cursor) {
           setAvailableRaw((prev) => [...prev, ...newListings]);
         } else {
@@ -152,7 +135,7 @@ export function ScrapprDashboard() {
     setLoadingClaimed(true);
     try {
       const data = await getClaimedListings(accessToken);
-      setClaimedListings((data.listings || []).map(mapApiListing));
+      setClaimedListings(data.listings || []);
     } catch {
       // silently fail
     } finally {
@@ -209,15 +192,12 @@ export function ScrapprDashboard() {
       await claimListing(accessToken, listingId);
       setClaimingId(null);
 
-      // Fade out the card, then move it to claimed
+      // Fade out the card, then remove from available and re-fetch claimed (to get full address)
       setFadingOutId(listingId);
       setTimeout(() => {
-        const claimed = availableRaw.find((l) => l.id === listingId);
-        setAvailableRaw((prev) => prev.filter((l) => l.id !== listingId));
-        if (claimed) {
-          setClaimedListings((prev) => [{ ...claimed, status: "claimed" as const }, ...prev]);
-        }
+        setAvailableRaw((prev) => prev.filter((l) => l.listingId !== listingId));
         setFadingOutId(null);
+        fetchClaimed();
       }, 400);
     } catch (err) {
       setClaimError({
@@ -235,7 +215,7 @@ export function ScrapprDashboard() {
     try {
       await completeListing(accessToken, listingId);
       setClaimedListings((prev) =>
-        prev.map((l) => (l.id === listingId ? { ...l, status: "completed" as const } : l)),
+        prev.map((l) => (l.listingId === listingId ? { ...l, status: "completed" as const } : l)),
       );
     } catch {
       // silently fail
@@ -249,11 +229,8 @@ export function ScrapprDashboard() {
     setUnclaimingId(listingId);
     try {
       await unclaimListing(accessToken, listingId);
-      const unclaimed = claimedListings.find((l) => l.id === listingId);
-      setClaimedListings((prev) => prev.filter((l) => l.id !== listingId));
-      if (unclaimed) {
-        setAvailableRaw((prev) => [{ ...unclaimed, status: "available" as const }, ...prev]);
-      }
+      setClaimedListings((prev) => prev.filter((l) => l.listingId !== listingId));
+      fetchAvailable();
     } catch {
       // silently fail
     } finally {
@@ -290,7 +267,10 @@ export function ScrapprDashboard() {
             <div className="flex gap-1">
               <button
                 type="button"
-                onClick={() => setActiveTab("available")}
+                onClick={() => {
+                  setActiveTab("available");
+                  fetchAvailable();
+                }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === "available"
                     ? "bg-gray-900 text-white"
@@ -301,7 +281,10 @@ export function ScrapprDashboard() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("claimed")}
+                onClick={() => {
+                  setActiveTab("claimed");
+                  fetchClaimed();
+                }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === "claimed"
                     ? "bg-gray-900 text-white"
@@ -434,12 +417,12 @@ export function ScrapprDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {availableListings.map((listing) => (
                         <AvailableCard
-                          key={listing.id}
+                          key={listing.listingId}
                           listing={listing}
-                          onClaim={() => handleClaim(listing.id)}
-                          claiming={claimingId === listing.id}
-                          fadingOut={fadingOutId === listing.id}
-                          error={claimError?.id === listing.id ? claimError.message : null}
+                          onClaim={() => handleClaim(listing.listingId)}
+                          claiming={claimingId === listing.listingId}
+                          fadingOut={fadingOutId === listing.listingId}
+                          error={claimError?.id === listing.listingId ? claimError.message : null}
                         />
                       ))}
                     </div>
@@ -478,12 +461,12 @@ export function ScrapprDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activeClaimedListings.map((listing) => (
                   <ClaimedCard
-                    key={listing.id}
+                    key={listing.listingId}
                     listing={listing}
-                    onComplete={() => handleComplete(listing.id)}
-                    completing={completingId === listing.id}
-                    onUnclaim={() => handleUnclaim(listing.id)}
-                    unclaiming={unclaimingId === listing.id}
+                    onComplete={() => handleComplete(listing.listingId)}
+                    completing={completingId === listing.listingId}
+                    onUnclaim={() => handleUnclaim(listing.listingId)}
+                    unclaiming={unclaimingId === listing.listingId}
                   />
                 ))}
               </div>

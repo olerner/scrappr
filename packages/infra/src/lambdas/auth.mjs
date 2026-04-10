@@ -1,10 +1,11 @@
 /**
  * Extract user ID from a Lambda event.
  *
- * When running behind API Gateway (deployed environments), claims are populated
- * via event.requestContext.authorizer.jwt.claims.
- * SAM local doesn't run the JWT authorizer, so we fall back to decoding the
- * Authorization header directly (no verification — safe for local dev only).
+ * Priority:
+ *   1. API Gateway JWT authorizer claims (when the route has an authorizer configured).
+ *   2. SAM local fallback: decode the Authorization header directly (no signature
+ *      verification). In deployed environments, every route that needs a userId must
+ *      have a gateway-level JWT authorizer — the fallback is disabled and throws.
  */
 export function getUserId(event) {
   // 1. API Gateway authorizer (deployed environments)

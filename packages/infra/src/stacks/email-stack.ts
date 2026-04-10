@@ -4,6 +4,7 @@ import * as route53 from "aws-cdk-lib/aws-route53";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as ses from "aws-cdk-lib/aws-ses";
 import * as ses_actions from "aws-cdk-lib/aws-ses-actions";
+import * as cr from "aws-cdk-lib/custom-resources";
 import type { Construct } from "constructs";
 
 interface EmailStackProps extends cdk.StackProps {
@@ -88,6 +89,33 @@ export class EmailStack extends cdk.Stack {
           objectKeyPrefix: "incoming/",
         }),
       ],
+    });
+
+    // Activate the receipt rule set (SES allows only one active at a time)
+    new cr.AwsCustomResource(this, "ActivateRuleSet", {
+      onCreate: {
+        service: "SES",
+        action: "setActiveReceiptRuleSet",
+        parameters: { RuleSetName: ruleSet.receiptRuleSetName },
+        physicalResourceId: cr.PhysicalResourceId.of("activate-inbox-ruleset"),
+      },
+      onUpdate: {
+        service: "SES",
+        action: "setActiveReceiptRuleSet",
+        parameters: { RuleSetName: ruleSet.receiptRuleSetName },
+        physicalResourceId: cr.PhysicalResourceId.of("activate-inbox-ruleset"),
+      },
+      onDelete: {
+        service: "SES",
+        action: "setActiveReceiptRuleSet",
+        parameters: {},
+      },
+      policy: cr.AwsCustomResourcePolicy.fromStatements([
+        new iam.PolicyStatement({
+          actions: ["ses:SetActiveReceiptRuleSet"],
+          resources: ["*"],
+        }),
+      ]),
     });
 
     // ── IAM Policy for sending ────────────────────────────────────────

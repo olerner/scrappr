@@ -70,20 +70,19 @@ Resources:
             Method: GET
             ApiId: !Ref HttpApi
 
-  BrowseListingsFunction:
+  GetMyListingsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: browse-listings.handler
+      Handler: get-my-listings.handler
       CodeUri: packages/infra/src/lambdas/
       Environment:
         Variables:
           LISTINGS_TABLE: !Sub "scrappr-listings-${Env}"
-          STATUS_INDEX: status-index
       Events:
         Api:
           Type: HttpApi
           Properties:
-            Path: /listings/available
+            Path: /my/listings
             Method: GET
             ApiId: !Ref HttpApi
 

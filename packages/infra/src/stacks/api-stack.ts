@@ -172,18 +172,19 @@ export class ApiStack extends cdk.Stack {
 
     const getListingsFn = this.createLambda("GetListings", {
       handler: "get-listings.handler",
-      environment: { LISTINGS_TABLE: listingsTable.tableName },
+      environment: {
+        LISTINGS_TABLE: listingsTable.tableName,
+      },
     });
     listingsTable.grantReadData(getListingsFn);
 
-    const browseListingsFn = this.createLambda("BrowseListings", {
-      handler: "browse-listings.handler",
+    const getMyListingsFn = this.createLambda("GetMyListings", {
+      handler: "get-my-listings.handler",
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
-        STATUS_INDEX: "status-index",
       },
     });
-    listingsTable.grantReadData(browseListingsFn);
+    listingsTable.grantReadData(getMyListingsFn);
 
     const getClaimedListingsFn = this.createLambda("GetClaimedListings", {
       handler: "get-claimed-listings.handler",
@@ -248,7 +249,6 @@ export class ApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60),
       environment: {
         LISTINGS_TABLE: listingsTable.tableName,
-        STATUS_INDEX: "status-index",
         CLAIM_EXPIRY_HOURS: String(CLAIM_EXPIRY_HOURS),
         ...emailEnv,
       },
@@ -383,13 +383,13 @@ export class ApiStack extends cdk.Stack {
       path: "/listings",
       methods: [apigatewayv2.HttpMethod.GET],
       integration: new integrations.HttpLambdaIntegration("GetListingsInt", getListingsFn),
-      authorizer: jwtAuthorizer,
+      // No authorizer — public browse endpoint
     });
 
     httpApi.addRoutes({
-      path: "/listings/available",
+      path: "/my/listings",
       methods: [apigatewayv2.HttpMethod.GET],
-      integration: new integrations.HttpLambdaIntegration("BrowseListingsInt", browseListingsFn),
+      integration: new integrations.HttpLambdaIntegration("GetMyListingsInt", getMyListingsFn),
       authorizer: jwtAuthorizer,
     });
 
