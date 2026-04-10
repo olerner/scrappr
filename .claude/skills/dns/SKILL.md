@@ -61,17 +61,17 @@ curl -s -X DELETE "https://spaceship.dev/api/v1/dns/records/scrappr.io" \
 
 ## Supported record types
 
-| Type  | Key fields                          |
-|-------|-------------------------------------|
-| A     | `address` (IPv4)                    |
-| AAAA  | `address` (IPv6)                    |
-| CNAME | `cname`                             |
-| MX    | `exchange`, `preference`            |
-| TXT   | `value`                             |
-| NS    | `nameserver`                        |
-| CAA   | `flag`, `tag`, `value`              |
+| Type  | Key fields                                                    |
+| ----- | ------------------------------------------------------------- |
+| A     | `address` (IPv4)                                              |
+| AAAA  | `address` (IPv6)                                              |
+| CNAME | `cname`                                                       |
+| MX    | `exchange`, `preference`                                      |
+| TXT   | `value`                                                       |
+| NS    | `nameserver`                                                  |
+| CAA   | `flag`, `tag`, `value`                                        |
 | SRV   | `service`, `protocol`, `priority`, `weight`, `port`, `target` |
-| ALIAS | `aliasName`                         |
+| ALIAS | `aliasName`                                                   |
 
 ## Rules
 
