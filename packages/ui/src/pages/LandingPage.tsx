@@ -7,12 +7,22 @@ import {
   MessageSquare,
   Phone,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { browseListingsPublic } from "../api/client";
 import { MapView } from "../components/MapView";
-import { useStore } from "../store/useStore";
+import type { Listing } from "../data/types";
 
 export function LandingPage() {
-  const listings = useStore((s) => s.listings);
+  const [listings, setListings] = useState<Listing[]>([]);
+
+  useEffect(() => {
+    browseListingsPublic()
+      .then((data) => setListings(data.listings || []))
+      .catch(() => {
+        // Landing page map is best-effort — show empty map on failure
+      });
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -6,7 +6,7 @@ import { CategoryIcon } from "../components/CategoryIcon";
 import { SignInForm } from "../components/SignInForm";
 import { StatusBadge } from "../components/StatusBadge";
 import { getCategoryDisplayName } from "../data/mockData";
-import type { Category, Listing } from "../data/types";
+import type { Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { formatRelativeDate } from "../utils/formatDate";
 
@@ -39,19 +39,7 @@ export function ScrappeeDashboard() {
     setLoadingListings(true);
     try {
       const data = await getMyListings(accessToken);
-      const mapped: Listing[] = (data.listings || []).map((item: Record<string, unknown>) => ({
-        id: (item.listingId as string) || "",
-        category: (item.category as Category) || "Mixed",
-        description: (item.description as string) || "",
-        photoUrl: (item.photoUrl as string) || "",
-        lat: (item.lat as number) || 0,
-        lng: (item.lng as number) || 0,
-        address: (item.address as string) || "",
-        status: (item.status as Listing["status"]) || "available",
-        datePosted: (item.datePosted as string) || "",
-        estimatedValue: (item.estimatedValue as string) || "Varies",
-      }));
-      setListings(mapped);
+      setListings(data.listings || []);
     } catch {
       // silently fail for now
     } finally {
@@ -118,7 +106,7 @@ export function ScrappeeDashboard() {
                 {listings
                   .filter((l) => l.status === "available" || l.status === "claimed")
                   .map((listing) => (
-                    <ListingCard key={listing.id} listing={listing} />
+                    <ListingCard key={listing.listingId} listing={listing} />
                   ))}
               </div>
             )}
@@ -130,7 +118,7 @@ export function ScrappeeDashboard() {
                   {listings
                     .filter((l) => l.status === "completed" || l.status === "confirmed")
                     .map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} />
+                      <ListingCard key={listing.listingId} listing={listing} />
                     ))}
                 </div>
               </div>
@@ -175,13 +163,13 @@ function ListingCard({ listing }: { listing: Listing }) {
       className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 transition-shadow ${
         isEditable ? "hover:shadow-md hover:border-emerald-200 cursor-pointer" : ""
       }`}
-      onClick={isEditable ? () => navigate(`/list/edit/${listing.id}`) : undefined}
+      onClick={isEditable ? () => navigate(`/list/edit/${listing.listingId}`) : undefined}
       role={isEditable ? "button" : undefined}
       tabIndex={isEditable ? 0 : undefined}
       onKeyDown={
         isEditable
           ? (e) => {
-              if (e.key === "Enter") navigate(`/list/edit/${listing.id}`);
+              if (e.key === "Enter") navigate(`/list/edit/${listing.listingId}`);
             }
           : undefined
       }

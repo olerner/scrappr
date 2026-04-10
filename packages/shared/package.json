@@ -2,7 +2,5 @@
   "name": "@scrappr/shared",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
-  "main": "src/constants.ts",
-  "types": "src/constants.ts"
+  "type": "module"
 }

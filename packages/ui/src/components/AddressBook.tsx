@@ -6,7 +6,6 @@ import {
   getAddresses,
   updateAddress as updateAddressApi,
 } from "../api/client";
-import type { Address } from "../data/types";
 import { ALLOWED_AREA_LABEL, ALLOWED_CITY } from "../data/types";
 import type { AddressSuggestion } from "../hooks/useAddressAutocomplete";
 import { useAuth } from "../hooks/useAuth";
@@ -32,17 +31,7 @@ export function AddressBook({ initialShowAdd = false }: AddressBookProps) {
     if (addressesLoaded) return;
     getAddresses(accessToken)
       .then((data) => {
-        const mapped: Address[] = (data.addresses || []).map((item: Record<string, unknown>) => ({
-          addressId: item.addressId as string,
-          label: item.label as string,
-          address: item.address as string,
-          lat: item.lat as number,
-          lng: item.lng as number,
-          zipCode: item.zipCode as string,
-          isDefault: item.isDefault as boolean,
-          createdAt: item.createdAt as string,
-        }));
-        setAddresses(mapped);
+        setAddresses(data.addresses || []);
       })
       .catch(() => setError("Failed to load addresses"));
   }, [accessToken, addressesLoaded, setAddresses]);
