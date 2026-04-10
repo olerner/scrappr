@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { browseListingsPublic } from "../api/client";
 import { MapView } from "../components/MapView";
+import type { Listing } from "../data/types";
 
 export function LandingPage() {
   const [listings, setListings] = useState<Listing[]>([]);

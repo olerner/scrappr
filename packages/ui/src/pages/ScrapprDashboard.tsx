@@ -23,7 +23,7 @@ import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
 import { SignInForm } from "../components/SignInForm";
 import { CATEGORIES, getCategoryDisplayName } from "../data/mockData";
-import type { Listing } from "../data/types";
+import type { Category, Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { formatRelativeDate } from "../utils/formatDate";
 

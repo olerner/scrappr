@@ -21,7 +21,7 @@ export const useStore = create<AppState>((set) => ({
   updateListingStatus: (listingId, status, claimedBy) =>
     set((state) => ({
       listings: state.listings.map((l) =>
-        l.listingId === id ? { ...l, status, claimedBy: claimedBy ?? l.claimedBy } : l,
+        l.listingId === listingId ? { ...l, status, claimedBy: claimedBy ?? l.claimedBy } : l,
       ),
     })),
 
