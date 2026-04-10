@@ -1,8 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 export function Header() {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  const loginPath = location.pathname === "/" ? "/list" : location.pathname;
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -29,7 +32,7 @@ export function Header() {
               </Link>
             ) : (
               <Link
-                to="/list"
+                to={loginPath}
                 className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-all shadow-sm"
               >
                 Log In

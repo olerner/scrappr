@@ -22,5 +22,5 @@ cdk.out
 web-build/
 packages/e2e/test-results/
 
-# Claude
+# Claude Code
 .claude/worktrees/

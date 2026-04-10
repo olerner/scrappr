@@ -1,3 +1,4 @@
+import { DESCRIPTION_MAX_LENGTH } from "@scrappr/shared/src/constants";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -20,7 +21,6 @@ import {
   type Category,
   isAllowedZip,
 } from "../data/types";
-
 import { useAuth } from "../hooks/useAuth";
 import { useStore } from "../store/useStore";
 
@@ -279,7 +279,12 @@ export function CreateListing() {
             </label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value.length <= DESCRIPTION_MAX_LENGTH) {
+                  setDescription(e.target.value);
+                }
+              }}
+              maxLength={DESCRIPTION_MAX_LENGTH}
               rows={3}
               placeholder="Describe the metal type, approximate weight, and condition..."
               className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none ${
@@ -287,6 +292,11 @@ export function CreateListing() {
               }`}
               data-testid="description-input"
             />
+            <p
+              className={`text-xs mt-1 text-right ${description.length >= DESCRIPTION_MAX_LENGTH ? "text-red-500" : "text-gray-400"}`}
+            >
+              {description.length} / {DESCRIPTION_MAX_LENGTH}
+            </p>
           </div>
 
           {/* Location */}

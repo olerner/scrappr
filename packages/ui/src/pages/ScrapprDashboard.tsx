@@ -11,7 +11,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   browseListings,
   claimListing,
@@ -21,6 +21,7 @@ import {
 } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
+import { SignInForm } from "../components/SignInForm";
 import { CATEGORIES, getCategoryDisplayName } from "../data/mockData";
 import type { Category, Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
@@ -255,15 +256,7 @@ export function ScrapprDashboard() {
     }
   };
 
-  const filterCategories: (Category | "All")[] = [
-    "All",
-    "Copper",
-    "Aluminum",
-    "Cans",
-    "Appliances",
-    "Brass",
-    "Steel",
-  ];
+  const filterCategories: (Category | "All")[] = ["All", ...CATEGORIES.map((c) => c.name)];
 
   if (authLoading) {
     return (
@@ -285,15 +278,10 @@ export function ScrapprDashboard() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Hauler Dashboard</h1>
-              <p className="text-gray-500 text-xs mt-0.5">
-                {email}{" "}
-                <Link to="/signed-out" className="text-emerald-600 hover:underline ml-1">
-                  Sign out
-                </Link>
-              </p>
+              <p className="text-gray-500 text-xs mt-0.5">{email}</p>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-1">
               <button
                 type="button"
@@ -326,7 +314,7 @@ export function ScrapprDashboard() {
               </button>
             </div>
             {activeTab === "available" && (
-              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1 self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setMobileView("map")}
@@ -362,32 +350,37 @@ export function ScrapprDashboard() {
           {/* Filter Bar */}
           <div className="bg-white border-b border-gray-100 py-3">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center gap-3 overflow-x-auto pb-1">
-                <Filter size={16} className="text-gray-400 flex-shrink-0" />
-                {filterCategories.map((cat) => (
-                  <button
-                    type="button"
-                    key={cat}
-                    onClick={() => setFilterCategory(cat)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                      filterCategory === cat
-                        ? "bg-emerald-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-                <div className="ml-auto flex items-center gap-1 flex-shrink-0">
-                  <ArrowUpDown size={14} className="text-gray-400" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortBy)}
-                    className="text-xs text-gray-600 bg-transparent border-none focus:outline-none cursor-pointer font-medium"
-                  >
-                    <option value="value">Est. Value</option>
-                    <option value="type">Metal Type</option>
-                  </select>
+              <div className="relative">
+                <div
+                  className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
+                  <Filter size={16} className="text-gray-400 flex-shrink-0" />
+                  {filterCategories.map((cat) => (
+                    <button
+                      type="button"
+                      key={cat}
+                      onClick={() => setFilterCategory(cat)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                        filterCategory === cat
+                          ? "bg-emerald-600 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                  <div className="ml-auto flex items-center gap-1 flex-shrink-0">
+                    <ArrowUpDown size={14} className="text-gray-400" />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortBy)}
+                      className="text-xs text-gray-600 bg-transparent border-none focus:outline-none cursor-pointer font-medium"
+                    >
+                      <option value="value">Est. Value</option>
+                      <option value="type">Metal Type</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -501,110 +494,6 @@ export function ScrapprDashboard() {
       )}
 
       {/* Sign Out Confirmation */}
-    </div>
-  );
-}
-
-function SignInForm({
-  onSignIn,
-  onGoogleSignIn,
-  error,
-}: {
-  onSignIn: (email: string, password: string) => Promise<void>;
-  onGoogleSignIn: () => void;
-  error: string | null;
-}) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await onSignIn(email, password);
-    } catch {
-      // error is handled by useAuth
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-        <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">Sign In to Scrappr</h2>
-        <button
-          type="button"
-          onClick={onGoogleSignIn}
-          className="w-full py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all flex items-center justify-center gap-3"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            xmlns="http://www.w3.org/2000/svg"
-            role="img"
-            aria-label="Google logo"
-          >
-            <title>Google logo</title>
-            <path
-              d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
-              fill="#4285F4"
-            />
-            <path
-              d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"
-              fill="#34A853"
-            />
-            <path
-              d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
-              fill="#EA4335"
-            />
-          </svg>
-          Sign in with Google
-        </button>
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-sm text-gray-400">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-      </div>
     </div>
   );
 }

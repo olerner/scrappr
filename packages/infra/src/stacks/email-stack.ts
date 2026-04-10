@@ -27,7 +27,7 @@ export class EmailStack extends cdk.Stack {
     // ── Route 53 Hosted Zone ──────────────────────────────────────────
 
     const hostedZone = route53.HostedZone.fromLookup(this, "Zone", {
-      domainName: hostedZoneDomain,
+      domainName,
     });
 
     // ── SES Domain Identity ───────────────────────────────────────────
@@ -56,7 +56,7 @@ export class EmailStack extends cdk.Stack {
     // ── S3 Bucket for incoming emails ─────────────────────────────────
 
     const inboxBucket = new s3.Bucket(this, "InboxBucket", {
-      bucketName: `scrappr-inbox-${stageName}`,
+      bucketName: `scrappr-email-inbox-${stageName}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
       lifecycleRules: [{ expiration: cdk.Duration.days(30) }],
@@ -94,7 +94,7 @@ export class EmailStack extends cdk.Stack {
 
     this.sendEmailPolicyStatement = new iam.PolicyStatement({
       actions: ["ses:SendEmail", "ses:SendRawEmail"],
-      resources: [`arn:aws:ses:${this.region}:${this.account}:identity/${domainName}`],
+      resources: [`arn:aws:ses:${this.region}:${this.account}:identity/*`],
     });
 
     // ── Outputs ───────────────────────────────────────────────────────

@@ -1,13 +1,16 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { AuthContext, useCognito } from "./hooks/useAuth";
 import { AuthCallback } from "./pages/AuthCallback";
 import { CreateListing } from "./pages/CreateListing";
 import { EditListing } from "./pages/EditListing";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { LandingPage } from "./pages/LandingPage";
 import { ScrappeeDashboard } from "./pages/ScrappeeDashboard";
 import { ScrapprDashboard } from "./pages/ScrapprDashboard";
 import { SignedOut } from "./pages/SignedOut";
+import { SignUp } from "./pages/SignUp";
 
 function App() {
   const auth = useCognito();
@@ -25,9 +28,12 @@ function App() {
               <Route path="/list/edit/:id" element={<EditListing />} />
               <Route path="/haul" element={<ScrapprDashboard />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/sign-up" element={<SignUp />} />
               <Route path="/signed-out" element={<SignedOut />} />
             </Routes>
           </main>
+          <Footer />
         </div>
       </BrowserRouter>
     </AuthContext.Provider>

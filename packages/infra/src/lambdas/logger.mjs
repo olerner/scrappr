@@ -1,6 +1,7 @@
 import { getUserId } from "./auth.mjs";
 
-export function createLogger(event) {
+export function createLogger(event = {}) {
+  event = event ?? {};
   const requestId = event.requestContext?.requestId || "unknown";
   const path = event.rawPath || event.requestContext?.http?.path || "unknown";
   const method = event.requestContext?.http?.method || "unknown";
