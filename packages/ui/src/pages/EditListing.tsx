@@ -34,22 +34,9 @@ export function EditListing() {
     if (!accessToken || !id) return;
     try {
       const data = await getMyListings(accessToken);
-      const found = (data.listings || []).find(
-        (item: Record<string, unknown>) => item.listingId === id,
-      );
+      const found = (data.listings || []).find((item) => item.listingId === id);
       if (found) {
-        setListing({
-          id: (found.listingId as string) || "",
-          category: (found.category as Category) || "Mixed",
-          description: (found.description as string) || "",
-          photoUrl: (found.photoUrl as string) || "",
-          lat: (found.lat as number) || 0,
-          lng: (found.lng as number) || 0,
-          address: (found.address as string) || "",
-          status: (found.status as Listing["status"]) || "available",
-          datePosted: (found.datePosted as string) || "",
-          estimatedValue: (found.estimatedValue as string) || "Varies",
-        });
+        setListing(found);
       }
     } finally {
       setLoading(false);
@@ -202,7 +189,7 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
       if (address) payload.address = address;
       if (zipCode) payload.zipCode = zipCode.trim();
 
-      await updateListing(accessToken, listing.id, payload);
+      await updateListing(accessToken, listing.listingId, payload);
       navigate("/list");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to update listing");
@@ -351,7 +338,7 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
               }
               setDeleting(true);
               try {
-                await deleteListing(accessToken, listing.id);
+                await deleteListing(accessToken, listing.listingId);
                 navigate("/list");
               } catch {
                 setDeleting(false);

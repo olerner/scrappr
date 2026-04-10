@@ -82,7 +82,7 @@ export function MapView({
 
       const claimButton = onClaimClick
         ? `<button
-            data-claim-id="${listing.id}"
+            data-claim-id="${listing.listingId}"
             style="width: 100%; margin-top: 8px; padding: 6px 12px; background: #059669; color: white;
               border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;"
           >Claim Pickup</button>`
@@ -105,7 +105,7 @@ export function MapView({
       if (onClaimClick) {
         marker.on("popupopen", () => {
           const btn = document.querySelector(
-            `[data-claim-id="${listing.id}"]`,
+            `[data-claim-id="${listing.listingId}"]`,
           ) as HTMLButtonElement | null;
           if (btn) {
             let confirming = false;
@@ -127,7 +127,7 @@ export function MapView({
               btn.textContent = "Claiming...";
               btn.style.opacity = "0.7";
               try {
-                await onClaimClickRef.current?.(listing.id);
+                await onClaimClickRef.current?.(listing.listingId);
                 btn.textContent = "Claimed!";
                 btn.style.background = "#059669";
                 btn.style.opacity = "1";

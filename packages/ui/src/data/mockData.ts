@@ -39,16 +39,16 @@ export function getCategoryDisplayName(category: Category): string {
 // ── Geography ───────────────────────────────────────────────────────────
 
 export const TWIN_CITIES_CENTER = {
-  lat: 44.956,
-  lng: -93.2,
-  zoom: 11.5,
+  lat: 44.9483,
+  lng: -93.3702,
+  zoom: 12,
 } as const;
 
 // ── Mock listings ───────────────────────────────────────────────────────
 
 export const MOCK_LISTINGS: Listing[] = [
   {
-    id: "1",
+    listingId: "1",
     category: "Copper",
     description: "Approx 15 lbs of stripped copper pipe from bathroom remodel. Clean, no fittings.",
     photoUrl: "https://images.unsplash.com/photo-1652785723146-ca1a6daf5ecc?w=300&h=200&fit=crop",
@@ -60,7 +60,7 @@ export const MOCK_LISTINGS: Listing[] = [
     estimatedValue: "$16.50 - $72.00",
   },
   {
-    id: "2",
+    listingId: "2",
     category: "Copper",
     description:
       "Box of copper wire scraps from electrical job. About 8 lbs, mixed insulated and bare.",
@@ -73,7 +73,7 @@ export const MOCK_LISTINGS: Listing[] = [
     estimatedValue: "$8.80 - $38.40",
   },
   {
-    id: "3",
+    listingId: "3",
     category: "Cans",
     description: "Two large garbage bags full of crushed aluminum cans. Rinsed and ready.",
     photoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=300&h=200&fit=crop",
@@ -85,7 +85,7 @@ export const MOCK_LISTINGS: Listing[] = [
     estimatedValue: "$6.50 - $13.00",
   },
   {
-    id: "4",
+    listingId: "4",
     category: "Cans",
     description: "Bag of aluminum cans from office recycling drive. About 10 lbs.",
     photoUrl: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=300&h=200&fit=crop",
@@ -98,7 +98,7 @@ export const MOCK_LISTINGS: Listing[] = [
     estimatedValue: "$6.50",
   },
   {
-    id: "5",
+    listingId: "5",
     category: "Appliances",
     description: "Old Kenmore washing machine. Works but leaks. Curbside, ready for pickup.",
     photoUrl: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=300&h=200&fit=crop",
@@ -110,7 +110,7 @@ export const MOCK_LISTINGS: Listing[] = [
     estimatedValue: "$7.50 flat",
   },
   {
-    id: "6",
+    listingId: "6",
     category: "Appliances",
     description:
       "Large 50-gallon water heater. Heavy, will need two people or a dolly. Garage pickup.",
@@ -123,7 +123,7 @@ export const MOCK_LISTINGS: Listing[] = [
     estimatedValue: "$16.00 flat",
   },
   {
-    id: "7",
+    listingId: "7",
     category: "Steel",
     description: "Old charcoal grill frame, steel. Grates removed. About 30 lbs of steel.",
     photoUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=300&h=200&fit=crop",
@@ -135,7 +135,7 @@ export const MOCK_LISTINGS: Listing[] = [
     estimatedValue: "$1.50 - $3.60",
   },
   {
-    id: "8",
+    listingId: "8",
     category: "Brass",
     description: "Bag of assorted brass fittings and valves from plumbing job. About 5 lbs total.",
     photoUrl: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=300&h=200&fit=crop",
