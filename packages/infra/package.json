@@ -12,6 +12,12 @@
     "synth": "cdk synth"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.0.0",
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/client-ses": "^3.0.0",
+    "@aws-sdk/client-sesv2": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@aws-sdk/s3-presigned-post": "^3.0.0",
     "@scrappr/shared": "0.0.1",
     "aws-cdk-lib": "^2.180.0",
     "constructs": "^10.4.0"

@@ -1,39 +1,14 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import {
-  DynamoDBDocumentClient,
-  DeleteCommand,
-  QueryCommand,
-  UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
-import { getUserId } from "./auth.mjs";
-import { createLogger } from "./logger.mjs";
+import { DeleteCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { ddb, json, parseRequest } from "./lambda-utils.mjs";
 
-const client = new DynamoDBClient({});
-const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.ADDRESSES_TABLE;
 
 export const handler = async (event) => {
-  const log = createLogger(event);
+  const req = parseRequest(event, "addressId");
+  if (req.response) return req.response;
+  const { userId, addressId, log } = req;
+
   try {
-    const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
-
-    const addressId = event.pathParameters?.addressId;
-    if (!addressId) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "addressId is required" }),
-      };
-    }
-
-    // Delete the address and get the old item to check if it was default
     const result = await ddb.send(
       new DeleteCommand({
         TableName: TABLE,
@@ -67,24 +42,12 @@ export const handler = async (event) => {
       }
     }
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Address deleted" }),
-    };
+    return json(200, { message: "Address deleted" });
   } catch (err) {
     if (err.name === "ConditionalCheckFailedException") {
-      return {
-        statusCode: 404,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Address not found" }),
-      };
+      return json(404, { error: "Address not found" });
     }
     log.error("delete-address failed", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return json(500, { error: "Internal server error" });
   }
 };

@@ -1,3 +1,5 @@
+import { json } from "./lambda-utils.mjs";
+
 const MAX_BODY_BYTES = 64 * 1024; // 64KB
 const MAX_FIELD_LENGTH = 2000;
 
@@ -9,7 +11,7 @@ function truncate(val) {
 export const handler = async (event) => {
   try {
     if ((event.body || "").length > MAX_BODY_BYTES) {
-      return { statusCode: 413, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ error: "Payload too large" }) };
+      return json(413, { error: "Payload too large" });
     }
 
     const body = JSON.parse(event.body || "{}");
@@ -28,11 +30,7 @@ export const handler = async (event) => {
       }),
     );
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ok: true }),
-    };
+    return json(200, { ok: true });
   } catch (err) {
     console.error(
       JSON.stringify({
@@ -41,10 +39,6 @@ export const handler = async (event) => {
         errorMessage: err.message,
       }),
     );
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return json(500, { error: "Internal server error" });
   }
 };

@@ -1,24 +1,14 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { getUserId } from "./auth.mjs";
-import { createLogger } from "./logger.mjs";
+import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { ddb, json, parseRequest } from "./lambda-utils.mjs";
 
-const client = new DynamoDBClient({});
-const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.ADDRESSES_TABLE;
 
 export const handler = async (event) => {
-  const log = createLogger(event);
-  try {
-    const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
+  const req = parseRequest(event);
+  if (req.response) return req.response;
+  const { userId, log } = req;
 
+  try {
     const result = await ddb.send(
       new QueryCommand({
         TableName: TABLE,
@@ -28,17 +18,9 @@ export const handler = async (event) => {
       }),
     );
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ addresses: result.Items || [] }),
-    };
+    return json(200, { addresses: result.Items || [] });
   } catch (err) {
     log.error("get-addresses failed", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return json(500, { error: "Internal server error" });
   }
 };

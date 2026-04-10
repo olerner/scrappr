@@ -1,65 +1,23 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { getUserId } from "./auth.mjs";
+import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { notifyScrappee } from "./email.mjs";
-import { createLogger } from "./logger.mjs";
+import { ddb, json, parseRequest, lookupListingById } from "./lambda-utils.mjs";
 
-const client = new DynamoDBClient({});
-const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.LISTINGS_TABLE;
 const LISTING_ID_INDEX = process.env.LISTING_ID_INDEX;
 
 export const handler = async (event) => {
-  const log = createLogger(event);
+  const req = parseRequest(event, "listingId");
+  if (req.response) return req.response;
+  const { userId, listingId, log } = req;
+
   try {
-    const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
+    const listing = await lookupListingById(TABLE, LISTING_ID_INDEX, listingId);
+    if (!listing) return json(404, { error: "Listing not found" });
 
-    const listingId = event.pathParameters?.listingId;
-    if (!listingId) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "listingId is required" }),
-      };
-    }
-
-    // Look up listing by ID
-    const queryResult = await ddb.send(
-      new QueryCommand({
-        TableName: TABLE,
-        IndexName: LISTING_ID_INDEX,
-        KeyConditionExpression: "listingId = :lid",
-        ExpressionAttributeValues: { ":lid": listingId },
-        Limit: 1,
-      })
-    );
-
-    const listing = queryResult.Items?.[0];
-    if (!listing) {
-      return {
-        statusCode: 404,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Listing not found" }),
-      };
-    }
-
-    // Only the hauler who claimed it can mark it complete
     if (listing.claimedBy !== userId) {
-      return {
-        statusCode: 403,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Only the hauler who claimed this listing can mark it complete" }),
-      };
+      return json(403, { error: "Only the hauler who claimed this listing can mark it complete" });
     }
 
-    // Update status to completed
     try {
       await ddb.send(
         new UpdateCommand({
@@ -77,11 +35,7 @@ export const handler = async (event) => {
       );
     } catch (err) {
       if (err.name === "ConditionalCheckFailedException") {
-        return {
-          statusCode: 409,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ error: "Listing is not in claimed status" }),
-        };
+        return json(409, { error: "Listing is not in claimed status" });
       }
       throw err;
     }
@@ -94,17 +48,9 @@ export const handler = async (event) => {
       listing,
     });
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Pickup marked as completed" }),
-    };
+    return json(200, { message: "Pickup marked as completed" });
   } catch (err) {
     log.error("complete-listing failed", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return json(500, { error: "Internal server error" });
   }
 };

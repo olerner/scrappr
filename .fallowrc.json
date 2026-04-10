@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "src/index.{js,jsx,mjs,ts,tsx}",
+    "src/main.{js,jsx,mjs,ts,tsx}",
+    "packages/infra/src/app.ts",
+    "packages/infra/src/lambdas/*.mjs",
+    "packages/infra/src/stacks/*.ts",
+    "packages/infra/src/lambdas/*.test.mjs"
+  ],
+  "workspaces": {
+    "packages": ["packages/*"]
+  }
+}

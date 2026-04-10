@@ -1,22 +1,7 @@
-// ── User roles ──────────────────────────────────────────────────────────
-
-export const UserRole = {
-  User: "user",
-  Scrapyard: "scrapyard",
-  Admin: "admin",
-} as const;
-
-export type UserRole = (typeof UserRole)[keyof typeof UserRole];
-
 // ── Service area ─────────────────────────────────────────────────────────
 
-export const ALLOWED_ZIPS = ["55426", "55416"];
+export { ALLOWED_AREA_LABEL, isAllowedZip } from "@scrappr/shared/src/constants";
 export const ALLOWED_CITY = "St. Louis Park";
-export const ALLOWED_AREA_LABEL = "St. Louis Park, MN";
-
-export function isAllowedZip(zip: string): boolean {
-  return ALLOWED_ZIPS.includes(zip.trim());
-}
 
 // ── Categories ──────────────────────────────────────────────────────────
 

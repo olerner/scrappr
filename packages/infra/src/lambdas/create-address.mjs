@@ -1,51 +1,24 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import {
-  DynamoDBDocumentClient,
-  PutCommand,
-  QueryCommand,
-  UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "node:crypto";
-import { getUserId } from "./auth.mjs";
-import { createLogger } from "./logger.mjs";
+import { ddb, json, parseRequest, validateZip } from "./lambda-utils.mjs";
 
-const client = new DynamoDBClient({});
-const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.ADDRESSES_TABLE;
 
 export const handler = async (event) => {
-  const log = createLogger(event);
-  try {
-    const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
+  const req = parseRequest(event);
+  if (req.response) return req.response;
+  const { userId, log } = req;
 
+  try {
     const body = JSON.parse(event.body || "{}");
     const { label, address, lat, lng, zipCode } = body;
 
     if (!address || lat == null || lng == null || !zipCode) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "address, lat, lng, and zipCode are required" }),
-      };
+      return json(400, { error: "address, lat, lng, and zipCode are required" });
     }
 
-    const ALLOWED_ZIPS = ["55426", "55416"];
-    if (!ALLOWED_ZIPS.includes(zipCode.trim())) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          error: "Scrappr is currently only available in St. Louis Park, MN. Addresses outside this area cannot be saved at this time.",
-        }),
-      };
-    }
+    const zipErr = validateZip(zipCode);
+    if (zipErr) return zipErr;
 
     // Check existing addresses to determine default
     const existing = await ddb.send(
@@ -97,17 +70,9 @@ export const handler = async (event) => {
 
     await ddb.send(new PutCommand({ TableName: TABLE, Item: item }));
 
-    return {
-      statusCode: 201,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(item),
-    };
+    return json(201, item);
   } catch (err) {
     log.error("create-address failed", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return json(500, { error: "Internal server error" });
   }
 };

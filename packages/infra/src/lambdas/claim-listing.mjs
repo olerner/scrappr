@@ -1,65 +1,23 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { getUserId } from "./auth.mjs";
+import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { notifyScrappee } from "./email.mjs";
-import { createLogger } from "./logger.mjs";
+import { ddb, json, parseRequest, lookupListingById } from "./lambda-utils.mjs";
 
-const client = new DynamoDBClient({});
-const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.LISTINGS_TABLE;
 const LISTING_ID_INDEX = process.env.LISTING_ID_INDEX;
 
 export const handler = async (event) => {
-  const log = createLogger(event);
+  const req = parseRequest(event, "listingId");
+  if (req.response) return req.response;
+  const { userId, listingId, log } = req;
+
   try {
-    const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
+    const listing = await lookupListingById(TABLE, LISTING_ID_INDEX, listingId);
+    if (!listing) return json(404, { error: "Listing not found" });
 
-    const listingId = event.pathParameters?.listingId;
-    if (!listingId) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "listingId is required" }),
-      };
-    }
-
-    // Look up the listing by listingId using the GSI
-    const queryResult = await ddb.send(
-      new QueryCommand({
-        TableName: TABLE,
-        IndexName: LISTING_ID_INDEX,
-        KeyConditionExpression: "listingId = :lid",
-        ExpressionAttributeValues: { ":lid": listingId },
-        Limit: 1,
-      })
-    );
-
-    const listing = queryResult.Items?.[0];
-    if (!listing) {
-      return {
-        statusCode: 404,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Listing not found" }),
-      };
-    }
-
-    // Prevent claiming your own listing
     if (listing.userId === userId) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "You cannot claim your own listing" }),
-      };
+      return json(400, { error: "You cannot claim your own listing" });
     }
 
-    // Atomically update status to "claimed" only if currently "available"
     try {
       await ddb.send(
         new UpdateCommand({
@@ -78,16 +36,11 @@ export const handler = async (event) => {
       );
     } catch (err) {
       if (err.name === "ConditionalCheckFailedException") {
-        return {
-          statusCode: 409,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ error: "This listing has already been claimed" }),
-        };
+        return json(409, { error: "This listing has already been claimed" });
       }
       throw err;
     }
 
-    // Notify the scrappee (non-blocking)
     notifyScrappee({
       ownerUserId: listing.userId,
       subject: "A hauler is coming to pick up your scrap!",
@@ -96,17 +49,9 @@ export const handler = async (event) => {
       listing,
     });
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Listing claimed successfully" }),
-    };
+    return json(200, { message: "Listing claimed successfully" });
   } catch (err) {
     log.error("claim-listing failed", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return json(500, { error: "Internal server error" });
   }
 };

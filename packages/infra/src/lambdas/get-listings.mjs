@@ -1,24 +1,14 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { getUserId } from "./auth.mjs";
-import { createLogger } from "./logger.mjs";
+import { QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { ddb, json, parseRequest } from "./lambda-utils.mjs";
 
-const client = new DynamoDBClient({});
-const ddb = DynamoDBDocumentClient.from(client);
 const TABLE = process.env.LISTINGS_TABLE;
 
 export const handler = async (event) => {
-  const log = createLogger(event);
-  try {
-    const userId = getUserId(event);
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Unauthorized" }),
-      };
-    }
+  const req = parseRequest(event);
+  if (req.response) return req.response;
+  const { userId, log } = req;
 
+  try {
     const mine = event.queryStringParameters?.mine;
 
     if (mine === "true") {
@@ -32,24 +22,12 @@ export const handler = async (event) => {
           ScanIndexForward: false,
         })
       );
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listings: result.Items || [] }),
-      };
+      return json(200, { listings: result.Items || [] });
     }
 
-    return {
-      statusCode: 400,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Query parameter mine=true is required" }),
-    };
+    return json(400, { error: "Query parameter mine=true is required" });
   } catch (err) {
     log.error("get-listings failed", err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Internal server error" }),
-    };
+    return json(500, { error: "Internal server error" });
   }
 };
