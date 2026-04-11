@@ -7,21 +7,27 @@ import {
   getMyListings,
   getPresignedUrl,
   updateListing,
+  updateProfile,
   uploadPhoto,
 } from "../api/client";
 import { AddressPicker } from "../components/AddressPicker";
 import { CategorySelector } from "../components/CategorySelector";
+import { PhoneSharingField } from "../components/PhoneSharingField";
 import { PhotoUpload } from "../components/PhotoUpload";
 import { CATEGORIES } from "../data/mockData";
 import {
   type Address,
   ALLOWED_AREA_LABEL,
   type Category,
+  formatPhoneForDisplay,
   isAllowedZip,
+  isValidPhone,
   type Listing,
+  normalizePhone,
 } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { useLoadAddresses } from "../hooks/useLoadAddresses";
+import { useStore } from "../store/useStore";
 
 export function EditListing() {
   const { id } = useParams<{ id: string }>();
@@ -117,6 +123,11 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [userEdited, setUserEdited] = useState(false);
+  const [sharePhone, setSharePhone] = useState(Boolean(listing.sharePhone));
+  const [phone, setPhone] = useState(listing.phone ? formatPhoneForDisplay(listing.phone) : "");
+  const setProfile = useStore((s) => s.setProfile);
+
+  const phoneInvalid = sharePhone && !isValidPhone(phone);
 
   const validateZip = useCallback((zip: string) => {
     if (zip && !isAllowedZip(zip)) {
@@ -156,6 +167,7 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
       );
       return;
     }
+    if (phoneInvalid) return;
     setSubmitting(true);
     setSubmitError(null);
 
@@ -169,11 +181,14 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
       }
 
       const catInfo = CATEGORIES.find((c) => c.name === category);
+      const normalizedPhone = sharePhone && phone ? normalizePhone(phone) : "";
 
       const payload: Record<string, unknown> = {
         category: category as string,
         description,
         estimatedValue: catInfo?.payoutLabel || "Varies",
+        sharePhone,
+        phone: normalizedPhone,
       };
 
       if (photoUrl) payload.photoUrl = photoUrl;
@@ -183,6 +198,17 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
       if (zipCode) payload.zipCode = zipCode.trim();
 
       await updateListing(accessToken, listing.listingId, payload);
+
+      // Save updated phone to profile so future listings auto-fill it.
+      if (sharePhone && normalizedPhone) {
+        try {
+          const res = await updateProfile(accessToken, { phone: normalizedPhone });
+          setProfile(res.profile);
+        } catch {
+          // Non-fatal
+        }
+      }
+
       navigate("/list");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to update listing");
@@ -284,6 +310,21 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
             />
           </div>
 
+          <PhoneSharingField
+            sharePhone={sharePhone}
+            phone={phone}
+            invalid={phoneInvalid}
+            showError={true}
+            onShareChange={(value) => {
+              setSharePhone(value);
+              setUserEdited(true);
+            }}
+            onPhoneChange={(value) => {
+              setPhone(value);
+              setUserEdited(true);
+            }}
+          />
+
           {zipError && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
               <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
@@ -306,6 +347,7 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
               !description ||
               (photoDeleted && !photoFile) ||
               !!zipError ||
+              phoneInvalid ||
               !userEdited ||
               submitting
             }

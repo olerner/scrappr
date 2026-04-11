@@ -7,7 +7,18 @@ const TABLE = process.env.LISTINGS_TABLE;
 
 export const handler = withAuth(async (event, { userId }) => {
   const body = JSON.parse(event.body || "{}");
-  const { category, description, photoUrl, lat, lng, address, zipCode, estimatedValue } = body;
+  const {
+    category,
+    description,
+    photoUrl,
+    lat,
+    lng,
+    address,
+    zipCode,
+    estimatedValue,
+    sharePhone,
+    phone,
+  } = body;
 
   if (!category || !description) {
     return json(400, { error: "category and description are required" });
@@ -33,6 +44,8 @@ export const handler = withAuth(async (event, { userId }) => {
       datePosted: new Date().toISOString().split("T")[0],
       estimatedValue: estimatedValue || "Varies",
       createdAt: new Date().toISOString(),
+      sharePhone: Boolean(sharePhone),
+      phone: sharePhone ? phone || "" : "",
     });
   } catch (err) {
     return json(400, { error: err.message });

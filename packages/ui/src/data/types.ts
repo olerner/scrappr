@@ -6,8 +6,12 @@ export {
   type BlockedCategory,
   type Category,
   type CategoryInfo,
+  formatPhoneForDisplay,
   isAllowedZip,
+  isValidPhone,
   type Listing,
   type ListingStatus,
+  normalizePhone,
+  type UserProfile,
   UserRole,
 } from "@scrappr/shared/src/types";

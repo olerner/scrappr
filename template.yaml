@@ -251,6 +251,38 @@ Resources:
             Method: DELETE
             ApiId: !Ref HttpApi
 
+  GetProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: get-profile.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          USER_PROFILES_TABLE: !Sub "scrappr-user-profiles-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /profile
+            Method: GET
+            ApiId: !Ref HttpApi
+
+  UpdateProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: update-profile.handler
+      CodeUri: packages/infra/src/lambdas/
+      Environment:
+        Variables:
+          USER_PROFILES_TABLE: !Sub "scrappr-user-profiles-${Env}"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /profile
+            Method: PATCH
+            ApiId: !Ref HttpApi
+
   ReportErrorFunction:
     Type: AWS::Serverless::Function
     Properties:

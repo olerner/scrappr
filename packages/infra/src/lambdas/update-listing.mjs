@@ -4,7 +4,18 @@ import { ddb, json, withAuth, buildUpdateExpression, validateZip } from "./lambd
 
 const TABLE = process.env.LISTINGS_TABLE;
 
-const ALLOWED_FIELDS = ["category", "description", "photoUrl", "lat", "lng", "address", "zipCode", "estimatedValue"];
+const ALLOWED_FIELDS = [
+  "category",
+  "description",
+  "photoUrl",
+  "lat",
+  "lng",
+  "address",
+  "zipCode",
+  "estimatedValue",
+  "sharePhone",
+  "phone",
+];
 
 export const handler = withAuth("listingId", async (event, { userId, listingId }) => {
   const body = JSON.parse(event.body || "{}");
@@ -14,6 +25,11 @@ export const handler = withAuth("listingId", async (event, { userId, listingId }
     if (body[field] !== undefined) {
       raw[field] = body[field];
     }
+  }
+  // If the user is toggling phone sharing off, clear the stored phone server-side
+  // even if the client didn't include `phone` in the patch body.
+  if (raw.sharePhone === false) {
+    raw.phone = "";
   }
   let updates;
   try {

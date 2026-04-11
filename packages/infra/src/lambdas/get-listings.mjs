@@ -41,7 +41,9 @@ export const handler = async (event) => {
 
     const result = await ddb.send(new QueryCommand(queryParams));
 
-    const listings = (result.Items || []).map(({ userId: _ownerId, ...item }) => ({
+    // Strip `userId` and `phone` — both are revealed only after the hauler claims.
+    // `sharePhone` is kept so the UI can (optionally) hint that a phone is available.
+    const listings = (result.Items || []).map(({ userId: _ownerId, phone: _phone, ...item }) => ({
       ...item,
       address: redactAddress(item.address),
     }));

@@ -1,4 +1,4 @@
-import type { Address, Listing } from "../data/types";
+import type { Address, Listing, UserProfile } from "../data/types";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -53,6 +53,8 @@ interface CreateListingPayload {
   address: string;
   zipCode: string;
   estimatedValue: string;
+  sharePhone?: boolean;
+  phone?: string;
 }
 
 export async function createListing(
@@ -76,6 +78,8 @@ interface UpdateListingPayload {
   address?: string;
   zipCode?: string;
   estimatedValue?: string;
+  sharePhone?: boolean;
+  phone?: string;
 }
 
 export async function updateListing(
@@ -213,6 +217,29 @@ export async function unclaimListing(accessToken: string, listingId: string): Pr
 export async function getClaimedListings(accessToken: string): Promise<{ listings: Listing[] }> {
   const res = await apiRequest("/listings/claimed", accessToken);
   if (!res.ok) throw new Error("Failed to fetch claimed listings");
+  return res.json();
+}
+
+// ── User profile ─────────────────────────────────────────────────────────
+
+export async function getProfile(accessToken: string): Promise<{ profile: UserProfile }> {
+  const res = await apiRequest("/profile", accessToken);
+  if (!res.ok) throw new Error("Failed to fetch profile");
+  return res.json();
+}
+
+export async function updateProfile(
+  accessToken: string,
+  payload: { phone?: string },
+): Promise<{ profile: UserProfile }> {
+  const res = await apiRequest("/profile", accessToken, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { error?: string }).error || "Failed to update profile");
+  }
   return res.json();
 }
 

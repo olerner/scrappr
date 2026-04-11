@@ -22,10 +22,36 @@ function sanitizePhotoUrl(url) {
 
 const DESCRIPTION_MAX_LENGTH = 1000;
 
+/**
+ * Normalize a US phone number to E.164 `+1XXXXXXXXXX`. Throws on invalid input.
+ * Mirror of `normalizePhone` in packages/shared/src/types.ts — keep in sync.
+ */
+export function sanitizePhone(phone) {
+  if (!phone) return "";
+  const digits = String(phone).replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  throw new Error("Invalid phone number");
+}
+
 /** Sanitize user-provided listing fields before writing to the database. */
-export function sanitizeListing({ category, description, address, photoUrl, ...rest }) {
+export function sanitizeListing({
+  category,
+  description,
+  address,
+  photoUrl,
+  phone,
+  sharePhone,
+  ...rest
+}) {
   if (description !== undefined && typeof description === "string" && description.length > DESCRIPTION_MAX_LENGTH) {
     throw new Error(`Description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer`);
+  }
+
+  // If user opted out, force phone to empty regardless of what was sent.
+  let normalizedPhone;
+  if (phone !== undefined) {
+    normalizedPhone = sharePhone === false ? "" : sanitizePhone(phone);
   }
 
   return {
@@ -34,5 +60,7 @@ export function sanitizeListing({ category, description, address, photoUrl, ...r
     ...(description !== undefined && { description: escapeHtml(description) }),
     ...(address !== undefined && { address: escapeHtml(address) }),
     ...(photoUrl !== undefined && { photoUrl: sanitizePhotoUrl(photoUrl) }),
+    ...(sharePhone !== undefined && { sharePhone: Boolean(sharePhone) }),
+    ...(normalizedPhone !== undefined && { phone: normalizedPhone }),
   };
 }

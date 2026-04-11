@@ -59,6 +59,10 @@ test("scrappee creates listing, hauler claims and marks picked up", async ({ pag
     await page.getByRole("button", { name: "Done" }).click();
   }
 
+  // Opt in to phone sharing — hauler should see the phone only after claiming.
+  await page.getByTestId("share-phone-checkbox").check();
+  await page.getByTestId("phone-input").fill("(612) 555-0199");
+
   await expect(page.getByTestId("submit-listing-btn")).toBeEnabled({ timeout: 10_000 });
   await page.getByTestId("submit-listing-btn").click();
   await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
@@ -86,6 +90,9 @@ test("scrappee creates listing, hauler claims and marks picked up", async ({ pag
   const availableCard = page.getByTestId("available-card").filter({ hasText: testDescription });
   await expect(availableCard).toBeVisible({ timeout: 10_000 });
 
+  // Phone is redacted in browse — it must not appear anywhere on the available card
+  await expect(availableCard.getByText(/555-?0199/)).toHaveCount(0);
+
   // ── Step 4: Claim the listing (2-click confirmation) ──────────────────────
 
   await availableCard.getByTestId("claim-btn").click();
@@ -101,6 +108,12 @@ test("scrappee creates listing, hauler claims and marks picked up", async ({ pag
   const claimedCard = page.getByTestId("claimed-card").filter({ hasText: testDescription });
   await expect(claimedCard).toBeVisible({ timeout: 10_000 });
   await expect(claimedCard.getByText("Claimed by you")).toBeVisible();
+
+  // Phone is revealed to the hauler only after claiming
+  const phoneLink = claimedCard.getByTestId("claimed-phone-link");
+  await expect(phoneLink).toBeVisible();
+  await expect(phoneLink).toHaveText("(612) 555-0199");
+  await expect(phoneLink).toHaveAttribute("href", "tel:+16125550199");
 
   // ── Step 6: Mark as picked up (2-click confirmation) ──────────────────────
 
