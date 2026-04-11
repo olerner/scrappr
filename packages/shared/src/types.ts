@@ -19,34 +19,15 @@ export function isAllowedZip(zip: string): boolean {
 }
 
 // ── Phone numbers ────────────────────────────────────────────────────────
-// Stored as E.164 (+1XXXXXXXXXX). US-only for MVP — mirror this logic in
-// packages/infra/src/lambdas/sanitize.mjs (sanitizePhone).
-
-/** Returns true if the input can be normalized to a valid 10-digit US phone. */
-export function isValidPhone(phone: string): boolean {
-  if (!phone) return false;
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 10) return true;
-  if (digits.length === 11 && digits.startsWith("1")) return true;
-  return false;
-}
-
-/** Normalize any supported US format to E.164 `+1XXXXXXXXXX`. Throws if invalid. */
-export function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  throw new Error("Invalid phone number");
-}
-
-/** Format E.164 `+1XXXXXXXXXX` as `(XXX) XXX-XXXX` for display. */
-export function formatPhoneForDisplay(phone: string): string {
-  if (!phone) return "";
-  const digits = phone.replace(/\D/g, "");
-  const ten = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
-  if (ten.length !== 10) return phone;
-  return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
-}
+// The canonical implementation lives in packages/infra/src/lambdas/phone.mjs
+// so it can be shipped as-is by `lambda.Code.fromAsset`. We re-export it here
+// so UI code can import from `@scrappr/shared/src/types` as before.
+// Stored as E.164 (+1XXXXXXXXXX). US-only for MVP.
+export {
+  formatPhoneForDisplay,
+  isValidPhone,
+  normalizePhone,
+} from "../../infra/src/lambdas/phone.mjs";
 
 // ── Categories ──────────────────────────────────────────────────────────
 

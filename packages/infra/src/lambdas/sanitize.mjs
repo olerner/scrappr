@@ -1,3 +1,5 @@
+import { normalizePhone } from "./phone.mjs";
+
 /** Escape HTML special characters to prevent XSS when user input is rendered. */
 export function escapeHtml(str) {
   if (!str) return "";
@@ -24,14 +26,12 @@ const DESCRIPTION_MAX_LENGTH = 1000;
 
 /**
  * Normalize a US phone number to E.164 `+1XXXXXXXXXX`. Throws on invalid input.
- * Mirror of `normalizePhone` in packages/shared/src/types.ts — keep in sync.
+ * Thin wrapper over the canonical implementation in ./phone.mjs that treats
+ * an empty string as "no phone" rather than an error.
  */
 export function sanitizePhone(phone) {
   if (!phone) return "";
-  const digits = String(phone).replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  throw new Error("Invalid phone number");
+  return normalizePhone(phone);
 }
 
 /** Sanitize user-provided listing fields before writing to the database. */
