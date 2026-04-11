@@ -38,12 +38,22 @@ jobs:
 
       - name: Load secrets from SSM
         run: |
-          echo "GOOGLE_CLIENT_ID=$(aws ssm get-parameter --name /scrappr/ci/google-client-id --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "GOOGLE_CLIENT_SECRET=$(aws ssm get-parameter --name /scrappr/ci/google-client-secret --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "VITE_GOOGLE_PLACES_API_KEY=$(aws ssm get-parameter --name /scrappr/ci/google-places-api-key --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "VITE_USER_POOL_ID=$(aws ssm get-parameter --name /scrappr/ci/vite-user-pool-id --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "VITE_USER_POOL_CLIENT_ID=$(aws ssm get-parameter --name /scrappr/ci/vite-user-pool-client-id --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "VITE_COGNITO_DOMAIN=$(aws ssm get-parameter --name /scrappr/ci/vite-cognito-domain --query Parameter.Value --output text)" >> $GITHUB_ENV
+          # Mask values as GitHub Actions secrets before exporting to $GITHUB_ENV.
+          # Without ::add-mask::, SSM values print in plaintext when the next step
+          # logs its env block.
+          load_secret() {
+            local name=$1 param=$2
+            local value
+            value=$(aws ssm get-parameter --name "$param" --with-decryption --query Parameter.Value --output text)
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          }
+          load_secret GOOGLE_CLIENT_ID /scrappr/ci/google-client-id
+          load_secret GOOGLE_CLIENT_SECRET /scrappr/ci/google-client-secret
+          load_secret VITE_GOOGLE_PLACES_API_KEY /scrappr/ci/google-places-api-key
+          load_secret VITE_USER_POOL_ID /scrappr/ci/vite-user-pool-id
+          load_secret VITE_USER_POOL_CLIENT_ID /scrappr/ci/vite-user-pool-client-id
+          load_secret VITE_COGNITO_DOMAIN /scrappr/ci/vite-cognito-domain
 
       - name: Wait for any in-progress stack updates
         run: |
@@ -156,12 +166,22 @@ jobs:
 
       - name: Load secrets from SSM
         run: |
-          echo "GOOGLE_CLIENT_ID=$(aws ssm get-parameter --name /scrappr/ci/google-client-id --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "GOOGLE_CLIENT_SECRET=$(aws ssm get-parameter --name /scrappr/ci/google-client-secret --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "VITE_GOOGLE_PLACES_API_KEY=$(aws ssm get-parameter --name /scrappr/ci/google-places-api-key --with-decryption --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "VITE_USER_POOL_ID=$(aws ssm get-parameter --name /scrappr/ci/vite-user-pool-id --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "VITE_USER_POOL_CLIENT_ID=$(aws ssm get-parameter --name /scrappr/ci/vite-user-pool-client-id --query Parameter.Value --output text)" >> $GITHUB_ENV
-          echo "VITE_COGNITO_DOMAIN=$(aws ssm get-parameter --name /scrappr/ci/vite-cognito-domain --query Parameter.Value --output text)" >> $GITHUB_ENV
+          # Mask values as GitHub Actions secrets before exporting to $GITHUB_ENV.
+          # Without ::add-mask::, SSM values print in plaintext when the next step
+          # logs its env block.
+          load_secret() {
+            local name=$1 param=$2
+            local value
+            value=$(aws ssm get-parameter --name "$param" --with-decryption --query Parameter.Value --output text)
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          }
+          load_secret GOOGLE_CLIENT_ID /scrappr/ci/google-client-id
+          load_secret GOOGLE_CLIENT_SECRET /scrappr/ci/google-client-secret
+          load_secret VITE_GOOGLE_PLACES_API_KEY /scrappr/ci/google-places-api-key
+          load_secret VITE_USER_POOL_ID /scrappr/ci/vite-user-pool-id
+          load_secret VITE_USER_POOL_CLIENT_ID /scrappr/ci/vite-user-pool-client-id
+          load_secret VITE_COGNITO_DOMAIN /scrappr/ci/vite-cognito-domain
 
       - name: Redeploy API stacks from previous commit
         id: api
