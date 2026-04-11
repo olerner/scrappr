@@ -1,6 +1,6 @@
-import { Image as ImageIcon, Loader2, LogOut, Plus } from "lucide-react";
+import { CheckCircle, Image as ImageIcon, Loader2, LogOut, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { SignInForm } from "../components/SignInForm";
@@ -21,8 +21,19 @@ export function ScrappeeDashboard() {
     error: authError,
   } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);
+  const [showSuccessBanner, setShowSuccessBanner] = useState(
+    () => !!(location.state as { listingCreated?: boolean } | null)?.listingCreated,
+  );
+
+  // Auto-dismiss success banner after 4 seconds
+  useEffect(() => {
+    if (!showSuccessBanner) return;
+    const timer = setTimeout(() => setShowSuccessBanner(false), 4000);
+    return () => clearTimeout(timer);
+  }, [showSuccessBanner]);
 
   // Redirect to saved return path after sign-in (e.g. user was on /haul)
   useEffect(() => {
@@ -90,6 +101,26 @@ export function ScrappeeDashboard() {
             New Listing
           </Link>
         </div>
+
+        {/* Success banner */}
+        {showSuccessBanner && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-3 px-4 py-3 mb-6 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-medium"
+          >
+            <CheckCircle size={18} className="text-emerald-600 flex-shrink-0" />
+            <span>Listing created! Your scrap metal is now available for haulers to claim.</span>
+            <button
+              type="button"
+              onClick={() => setShowSuccessBanner(false)}
+              className="ml-auto text-emerald-500 hover:text-emerald-700 text-lg leading-none"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Listings */}
         {loadingListings ? (

@@ -86,7 +86,7 @@ export function CreateListing() {
         estimatedValue: catInfo?.payoutLabel || "Varies",
       });
 
-      navigate("/list");
+      navigate("/list", { state: { listingCreated: true } });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to create listing");
     } finally {
