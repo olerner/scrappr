@@ -1,21 +1,33 @@
 import { DESCRIPTION_MAX_LENGTH } from "@scrappr/shared/src/constants";
 import { AlertTriangle, ArrowLeft, Loader2, MapPin } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createListing, getPresignedUrl, uploadPhoto } from "../api/client";
+import { createListing, getPresignedUrl, updateProfile, uploadPhoto } from "../api/client";
 import { AddressPicker } from "../components/AddressPicker";
 import { CategorySelector } from "../components/CategorySelector";
+import { PhoneSharingField } from "../components/PhoneSharingField";
 import { PhotoUpload } from "../components/PhotoUpload";
 import { CATEGORIES } from "../data/mockData";
-import { type Address, ALLOWED_AREA_LABEL, type Category, isAllowedZip } from "../data/types";
+import {
+  type Address,
+  ALLOWED_AREA_LABEL,
+  type Category,
+  formatPhoneForDisplay,
+  isAllowedZip,
+  isValidPhone,
+} from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { useLoadAddresses } from "../hooks/useLoadAddresses";
+import { useLoadProfile } from "../hooks/useLoadProfile";
+import { useStore } from "../store/useStore";
 
 export function CreateListing() {
   const navigate = useNavigate();
   const { accessToken } = useAuth();
 
   const { addresses, loading: addressesLoading } = useLoadAddresses(accessToken);
+  const { profile } = useLoadProfile(accessToken);
+  const setProfile = useStore((s) => s.setProfile);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const [category, setCategory] = useState<Category | "">("");
@@ -30,6 +42,18 @@ export function CreateListing() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState(false);
   const [attempted, setAttempted] = useState(false);
+  const [sharePhone, setSharePhone] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
+
+  // Auto-fill phone and opt-in state from the user's saved profile.
+  useEffect(() => {
+    if (!profile?.phone || phoneTouched) return;
+    setPhone(formatPhoneForDisplay(profile.phone));
+    setSharePhone(true);
+  }, [profile, phoneTouched]);
+
+  const phoneInvalid = sharePhone && !isValidPhone(phone);
 
   const validateZip = useCallback((zip: string) => {
     if (zip && !isAllowedZip(zip)) {
@@ -66,6 +90,7 @@ export function CreateListing() {
     }
     if (!photoFile || !category || !description || !address || !zipCode || !isAllowedZip(zipCode))
       return;
+    if (phoneInvalid) return;
     setSubmitting(true);
     setSubmitError(null);
 
@@ -74,6 +99,7 @@ export function CreateListing() {
       await uploadPhoto(presign.uploadUrl, photoFile, presign.fields);
 
       const catInfo = CATEGORIES.find((c) => c.name === category);
+      const phoneToSend = sharePhone ? phone : "";
 
       await createListing(accessToken, {
         category: category as string,
@@ -84,7 +110,20 @@ export function CreateListing() {
         address,
         zipCode: zipCode.trim(),
         estimatedValue: catInfo?.payoutLabel || "Varies",
+        sharePhone,
+        phone: phoneToSend,
       });
+
+      // Save phone to the user profile so future listings auto-fill it.
+      // Backend normalizes — compare in local state below by using the response.
+      if (sharePhone && phoneToSend) {
+        try {
+          const res = await updateProfile(accessToken, { phone: phoneToSend });
+          setProfile(res.profile);
+        } catch {
+          // Non-fatal — the listing was created successfully.
+        }
+      }
 
       navigate("/list");
     } catch (err) {
@@ -183,6 +222,21 @@ export function CreateListing() {
             />
           </div>
 
+          <PhoneSharingField
+            sharePhone={sharePhone}
+            phone={phone}
+            invalid={phoneInvalid}
+            showError={attempted}
+            onShareChange={(value) => {
+              setSharePhone(value);
+              setPhoneTouched(true);
+            }}
+            onPhoneChange={(value) => {
+              setPhone(value);
+              setPhoneTouched(true);
+            }}
+          />
+
           {zipError && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
               <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
@@ -220,6 +274,7 @@ export function CreateListing() {
               !address ||
               !zipCode ||
               !!zipError ||
+              phoneInvalid ||
               submitting
             }
             className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md"

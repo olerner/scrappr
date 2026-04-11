@@ -8,6 +8,7 @@ import {
   Loader2,
   Map as MapIcon,
   MapPin,
+  Phone,
   Truck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,7 +23,7 @@ import {
 import { CategoryIcon } from "../components/CategoryIcon";
 import { MapView } from "../components/MapView";
 import { CATEGORIES, getCategoryDisplayName } from "../data/mockData";
-import type { Category, Listing } from "../data/types";
+import { type Category, formatPhoneForDisplay, type Listing } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { formatRelativeDate } from "../utils/formatDate";
 
@@ -667,10 +668,23 @@ function ClaimedCard({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
+        <div className="flex items-center gap-1 text-xs text-gray-400 mb-1">
           <MapPin size={12} />
           <span>{listing.address}</span>
         </div>
+        {listing.phone && (
+          <div className="flex items-center gap-1 text-xs text-emerald-600 mb-3">
+            <Phone size={12} />
+            <a
+              href={`tel:${listing.phone}`}
+              className="hover:underline"
+              data-testid="claimed-phone-link"
+            >
+              {formatPhoneForDisplay(listing.phone)}
+            </a>
+          </div>
+        )}
+        {!listing.phone && <div className="mb-3" />}
         <div className="flex gap-2">
           <button
             type="button"

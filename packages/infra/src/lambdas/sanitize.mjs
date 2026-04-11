@@ -1,3 +1,5 @@
+import { normalizePhone } from "./phone.mjs";
+
 /** Escape HTML special characters to prevent XSS when user input is rendered. */
 export function escapeHtml(str) {
   if (!str) return "";
@@ -22,10 +24,34 @@ function sanitizePhotoUrl(url) {
 
 const DESCRIPTION_MAX_LENGTH = 1000;
 
+/**
+ * Normalize a US phone number to E.164 `+1XXXXXXXXXX`. Throws on invalid input.
+ * Thin wrapper over the canonical implementation in ./phone.mjs that treats
+ * an empty string as "no phone" rather than an error.
+ */
+export function sanitizePhone(phone) {
+  if (!phone) return "";
+  return normalizePhone(phone);
+}
+
 /** Sanitize user-provided listing fields before writing to the database. */
-export function sanitizeListing({ category, description, address, photoUrl, ...rest }) {
+export function sanitizeListing({
+  category,
+  description,
+  address,
+  photoUrl,
+  phone,
+  sharePhone,
+  ...rest
+}) {
   if (description !== undefined && typeof description === "string" && description.length > DESCRIPTION_MAX_LENGTH) {
     throw new Error(`Description must be ${DESCRIPTION_MAX_LENGTH} characters or fewer`);
+  }
+
+  // If user opted out, force phone to empty regardless of what was sent.
+  let normalizedPhone;
+  if (phone !== undefined) {
+    normalizedPhone = sharePhone === false ? "" : sanitizePhone(phone);
   }
 
   return {
@@ -34,5 +60,7 @@ export function sanitizeListing({ category, description, address, photoUrl, ...r
     ...(description !== undefined && { description: escapeHtml(description) }),
     ...(address !== undefined && { address: escapeHtml(address) }),
     ...(photoUrl !== undefined && { photoUrl: sanitizePhotoUrl(photoUrl) }),
+    ...(sharePhone !== undefined && { sharePhone: Boolean(sharePhone) }),
+    ...(normalizedPhone !== undefined && { phone: normalizedPhone }),
   };
 }

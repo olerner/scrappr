@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { MOCK_LISTINGS } from "../data/mockData";
-import type { Address, Listing, ListingStatus } from "../data/types";
+import type { Address, Listing, ListingStatus, UserProfile } from "../data/types";
 
 interface AppState {
   listings: Listing[];
@@ -13,6 +13,10 @@ interface AppState {
   addAddress: (address: Address) => void;
   updateAddress: (addressId: string, updates: Partial<Address>) => void;
   removeAddress: (addressId: string) => void;
+
+  profile: UserProfile | null;
+  profileLoaded: boolean;
+  setProfile: (profile: UserProfile) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -54,4 +58,8 @@ export const useStore = create<AppState>((set) => ({
       }
       return { addresses: remaining };
     }),
+
+  profile: null,
+  profileLoaded: false,
+  setProfile: (profile) => set({ profile, profileLoaded: true }),
 }));

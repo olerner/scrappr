@@ -68,6 +68,51 @@ test.describe("Listing Creation Flow", () => {
     await expect(page.getByAltText("copper").first()).toBeVisible();
   });
 
+  test("phone sharing: checkbox gates input, invalid number blocks submit", async ({ page }) => {
+    await page.getByRole("link", { name: "New Listing" }).click();
+    await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
+
+    // Phone input is hidden until the checkbox is ticked
+    await expect(page.getByTestId("phone-input")).not.toBeVisible();
+
+    const shareCheckbox = page.getByTestId("share-phone-checkbox");
+    await shareCheckbox.check();
+    await expect(page.getByTestId("phone-input")).toBeVisible();
+
+    // Fill in required fields so the only thing blocking submit is the phone
+    const fileInput = page.getByTestId("photo-input");
+    const testPhotoPath = path.join(import.meta.dirname, "../fixtures/test-photo.jpg");
+    await fileInput.setInputFiles(testPhotoPath);
+    await page.getByTestId("category-copper").click();
+    await page.getByTestId("description-input").fill("phone validation test");
+
+    // Address — add if none saved, otherwise auto-selected by AddressPicker
+    await expect(
+      page.getByRole("button", { name: "Add a pickup address" }).or(page.getByRole("combobox")),
+    ).toBeVisible({ timeout: 10_000 });
+    if (await page.getByRole("button", { name: "Add a pickup address" }).isVisible()) {
+      await page.getByRole("button", { name: "Add a pickup address" }).click();
+      await page.getByTestId("address-input").fill(ADDRESS_QUERY);
+      await expect(page.getByTestId("address-suggestion").first()).toBeVisible({ timeout: 15_000 });
+      await page.getByTestId("address-suggestion").first().click();
+      await page.getByRole("button", { name: "Save" }).click();
+      await page.getByRole("button", { name: "Done" }).click();
+    }
+
+    // Invalid phone → submit disabled
+    await page.getByTestId("phone-input").fill("123");
+    await expect(page.getByTestId("submit-listing-btn")).toBeDisabled();
+
+    // Valid phone → submit enabled
+    await page.getByTestId("phone-input").fill("(612) 555-0199");
+    await expect(page.getByTestId("submit-listing-btn")).toBeEnabled({ timeout: 5_000 });
+
+    // Unchecking the box clears the validation block even if phone is empty
+    await shareCheckbox.uncheck();
+    await expect(page.getByTestId("phone-input")).not.toBeVisible();
+    await expect(page.getByTestId("submit-listing-btn")).toBeEnabled();
+  });
+
   test("drag-and-drop photo upload shows preview", async ({ page }) => {
     // 1. Navigate to New Listing page
     await page.getByRole("link", { name: "New Listing" }).click();

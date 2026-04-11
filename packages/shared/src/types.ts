@@ -18,6 +18,17 @@ export function isAllowedZip(zip: string): boolean {
   return ALLOWED_ZIPS.includes(zip.trim());
 }
 
+// ── Phone numbers ────────────────────────────────────────────────────────
+// The canonical implementation lives in packages/infra/src/lambdas/phone.mjs
+// so it can be shipped as-is by `lambda.Code.fromAsset`. We re-export it here
+// so UI code can import from `@scrappr/shared/src/types` as before.
+// Stored as E.164 (+1XXXXXXXXXX). US-only for MVP.
+export {
+  formatPhoneForDisplay,
+  isValidPhone,
+  normalizePhone,
+} from "../../infra/src/lambdas/phone.mjs";
+
 // ── Categories ──────────────────────────────────────────────────────────
 
 export type Category =
@@ -80,4 +91,22 @@ export interface Listing {
   claimedBy?: string;
   claimedAt?: string;
   estimatedValue: string;
+  /** Opt-in flag persisted on the listing so re-edit shows the correct state. */
+  sharePhone?: boolean;
+  /** E.164 `+1XXXXXXXXXX`. Redacted from public browse; revealed to the hauler after claim. */
+  phone?: string;
+}
+
+// ── User profile ────────────────────────────────────────────────────────
+
+/**
+ * Lightweight per-user profile for data that doesn't belong on a listing.
+ * Currently just holds an optional default phone number to auto-fill on new
+ * listings when the user opts in to phone sharing.
+ */
+export interface UserProfile {
+  userId: string;
+  /** Default phone stored as E.164. Used to auto-fill the listing form. */
+  phone?: string;
+  updatedAt?: string;
 }

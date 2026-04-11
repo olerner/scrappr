@@ -126,6 +126,14 @@ export class ApiStack extends cdk.Stack {
       removalPolicy: stageName === "prod" ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
 
+    // One row per user — holds a default phone to auto-fill on listing creation.
+    const userProfilesTable = new dynamodb.Table(this, "UserProfilesTable", {
+      tableName: `scrappr-user-profiles-${stageName}`,
+      partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: stageName === "prod" ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
     listingsTable.addGlobalSecondaryIndex({
       indexName: "status-index",
       partitionKey: { name: "status", type: dynamodb.AttributeType.STRING },
@@ -305,6 +313,18 @@ export class ApiStack extends cdk.Stack {
     });
     addressesTable.grantReadWriteData(deleteAddressFn);
 
+    const getProfileFn = this.createLambda("GetProfile", {
+      handler: "get-profile.handler",
+      environment: { USER_PROFILES_TABLE: userProfilesTable.tableName },
+    });
+    userProfilesTable.grantReadData(getProfileFn);
+
+    const updateProfileFn = this.createLambda("UpdateProfile", {
+      handler: "update-profile.handler",
+      environment: { USER_PROFILES_TABLE: userProfilesTable.tableName },
+    });
+    userProfilesTable.grantReadWriteData(updateProfileFn);
+
     const reportErrorFn = this.createLambda("ReportError", {
       handler: "report-error.handler",
     });
@@ -463,6 +483,20 @@ export class ApiStack extends cdk.Stack {
       path: "/addresses/{addressId}",
       methods: [apigatewayv2.HttpMethod.DELETE],
       integration: new integrations.HttpLambdaIntegration("DeleteAddressInt", deleteAddressFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/profile",
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration("GetProfileInt", getProfileFn),
+      authorizer: jwtAuthorizer,
+    });
+
+    httpApi.addRoutes({
+      path: "/profile",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: new integrations.HttpLambdaIntegration("UpdateProfileInt", updateProfileFn),
       authorizer: jwtAuthorizer,
     });
 
