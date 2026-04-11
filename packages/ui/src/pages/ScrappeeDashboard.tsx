@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
-import { SignInForm } from "../components/SignInForm";
 import { StatusBadge } from "../components/StatusBadge";
 import { getCategoryDisplayName } from "../data/mockData";
 import type { Listing } from "../data/types";
@@ -11,28 +10,9 @@ import { useAuth } from "../hooks/useAuth";
 import { formatRelativeDate } from "../utils/formatDate";
 
 export function ScrappeeDashboard() {
-  const {
-    isAuthenticated,
-    isLoading: authLoading,
-    email,
-    accessToken,
-    signIn,
-    initiateGoogleSignIn,
-    error: authError,
-  } = useAuth();
-  const navigate = useNavigate();
+  const { email, accessToken } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);
-
-  // Redirect to saved return path after sign-in (e.g. user was on /haul)
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const returnPath = sessionStorage.getItem("scrappr_return_path");
-    if (returnPath && returnPath !== "/list") {
-      sessionStorage.removeItem("scrappr_return_path");
-      navigate(returnPath, { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
 
   const fetchListings = useCallback(async () => {
     if (!accessToken) return;
@@ -48,22 +28,13 @@ export function ScrappeeDashboard() {
   }, [accessToken]);
 
   useEffect(() => {
-    if (isAuthenticated && accessToken) {
-      fetchListings();
-    }
-  }, [isAuthenticated, accessToken, fetchListings]);
+    fetchListings();
+  }, [fetchListings]);
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-emerald-600" size={32} />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <SignInForm onSignIn={signIn} onGoogleSignIn={initiateGoogleSignIn} error={authError} />;
-  }
+  // Remember this as the user's last-visited dashboard for post-sign-in defaults.
+  useEffect(() => {
+    localStorage.setItem("scrappr_last_role", "scrappee");
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">

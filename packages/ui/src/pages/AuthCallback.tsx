@@ -29,9 +29,11 @@ export function AuthCallback() {
 
     handleAuthCallback(code)
       .then(() => {
-        const returnPath = sessionStorage.getItem("scrappr_return_path") || "/list";
-        sessionStorage.removeItem("scrappr_return_path");
-        navigate(returnPath, { replace: true });
+        const redirectTarget = sessionStorage.getItem("scrappr_redirect_target");
+        sessionStorage.removeItem("scrappr_redirect_target");
+        const defaultRedirect =
+          localStorage.getItem("scrappr_last_role") === "scrappr" ? "/haul" : "/list";
+        navigate(redirectTarget || defaultRedirect, { replace: true });
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Authentication failed");
