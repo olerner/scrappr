@@ -11,7 +11,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   browseListings,
   claimListing,
@@ -41,27 +41,7 @@ const VALUE_ORDER: Record<string, number> = {
 };
 
 export function ScrapprDashboard() {
-  const {
-    isAuthenticated,
-    isLoading: authLoading,
-    accessToken,
-    signIn,
-    initiateGoogleSignIn,
-    email,
-    error: authError,
-  } = useAuth();
-
-  const navigate = useNavigate();
-
-  // Redirect to saved return path after sign-in (e.g. user was on /list/new)
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const returnPath = sessionStorage.getItem("scrappr_return_path");
-    if (returnPath && returnPath !== "/haul") {
-      sessionStorage.removeItem("scrappr_return_path");
-      navigate(returnPath, { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
+  const { accessToken, email } = useAuth();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("available");
@@ -144,12 +124,17 @@ export function ScrapprDashboard() {
   }, [accessToken]);
 
   useEffect(() => {
-    if (isAuthenticated && accessToken) fetchAvailable();
-  }, [isAuthenticated, accessToken, fetchAvailable]);
+    if (accessToken) fetchAvailable();
+  }, [accessToken, fetchAvailable]);
 
   useEffect(() => {
-    if (isAuthenticated && accessToken) fetchClaimed();
-  }, [isAuthenticated, accessToken, fetchClaimed]);
+    if (accessToken) fetchClaimed();
+  }, [accessToken, fetchClaimed]);
+
+  // Remember this as the user's last-visited dashboard for post-sign-in defaults.
+  useEffect(() => {
+    localStorage.setItem("scrappr_last_role", "scrappr");
+  }, []);
 
   // Infinite scroll — load more when sentinel is visible
   useEffect(() => {
@@ -239,18 +224,6 @@ export function ScrapprDashboard() {
   };
 
   const filterCategories: (Category | "All")[] = ["All", ...CATEGORIES.map((c) => c.name)];
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-emerald-600" size={32} />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/sign-in?redirect=/haul" replace />;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

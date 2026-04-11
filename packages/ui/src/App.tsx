@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
+import { RequireAuth } from "./components/RequireAuth";
 import { AuthContext, useCognito } from "./hooks/useAuth";
 import { AuthCallback } from "./pages/AuthCallback";
 import { CreateListing } from "./pages/CreateListing";
@@ -24,10 +25,38 @@ function App() {
           <main className="flex-1 flex flex-col">
             <Routes>
               <Route path="/" element={<LandingPage />} />
-              <Route path="/list" element={<ScrappeeDashboard />} />
-              <Route path="/list/new" element={<CreateListing />} />
-              <Route path="/list/edit/:id" element={<EditListing />} />
-              <Route path="/haul" element={<ScrapprDashboard />} />
+              <Route
+                path="/list"
+                element={
+                  <RequireAuth>
+                    <ScrappeeDashboard />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/list/new"
+                element={
+                  <RequireAuth>
+                    <CreateListing />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/list/edit/:id"
+                element={
+                  <RequireAuth>
+                    <EditListing />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/haul"
+                element={
+                  <RequireAuth>
+                    <ScrapprDashboard />
+                  </RequireAuth>
+                }
+              />
               <Route path="/sign-in" element={<SignInPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />

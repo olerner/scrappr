@@ -29,17 +29,11 @@ export function AuthCallback() {
 
     handleAuthCallback(code)
       .then(() => {
-        // Check for explicit redirect target first (from sign-in page)
         const redirectTarget = sessionStorage.getItem("scrappr_redirect_target");
-        const returnPath = sessionStorage.getItem("scrappr_return_path");
-
-        // Clean up both storage keys
         sessionStorage.removeItem("scrappr_redirect_target");
-        sessionStorage.removeItem("scrappr_return_path");
-
-        // Navigate to the appropriate destination
-        const destination = redirectTarget || returnPath || "/list";
-        navigate(destination, { replace: true });
+        const defaultRedirect =
+          localStorage.getItem("scrappr_last_role") === "scrappr" ? "/haul" : "/list";
+        navigate(redirectTarget || defaultRedirect, { replace: true });
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : "Authentication failed");

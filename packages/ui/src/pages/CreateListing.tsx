@@ -26,7 +26,7 @@ import { useStore } from "../store/useStore";
 
 export function CreateListing() {
   const navigate = useNavigate();
-  const { accessToken, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { accessToken } = useAuth();
 
   const { addresses, addressesLoaded, setAddresses } = useStore();
   const [addressesLoading, setAddressesLoading] = useState(false);
@@ -131,20 +131,6 @@ export function CreateListing() {
       setSubmitting(false);
     }
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-emerald-600" size={32} />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    sessionStorage.setItem("scrappr_return_path", window.location.pathname);
-    navigate("/list");
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

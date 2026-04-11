@@ -8,7 +8,10 @@ export function SignInPage() {
   const [searchParams] = useSearchParams();
   const { isAuthenticated, isLoading, signIn, initiateGoogleSignIn, error } = useAuth();
 
-  const redirectTo = searchParams.get("redirect") || "/list";
+  // If no explicit redirect, fall back to the user's last-visited dashboard.
+  const defaultRedirect =
+    localStorage.getItem("scrappr_last_role") === "scrappr" ? "/haul" : "/list";
+  const redirectTo = searchParams.get("redirect") || defaultRedirect;
 
   // After successful sign-in, redirect to the target
   useEffect(() => {

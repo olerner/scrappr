@@ -27,8 +27,7 @@ import { useStore } from "../store/useStore";
 
 export function EditListing() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { accessToken, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { accessToken } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,21 +45,15 @@ export function EditListing() {
   }, [accessToken, id]);
 
   useEffect(() => {
-    if (isAuthenticated && accessToken) fetchListing();
-  }, [isAuthenticated, accessToken, fetchListing]);
+    if (accessToken) fetchListing();
+  }, [accessToken, fetchListing]);
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="animate-spin text-emerald-600" size={32} />
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    sessionStorage.setItem("scrappr_return_path", window.location.pathname);
-    navigate("/list");
-    return null;
   }
 
   if (!listing) {
