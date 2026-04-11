@@ -15,7 +15,6 @@ import {
   formatPhoneForDisplay,
   isAllowedZip,
   isValidPhone,
-  normalizePhone,
 } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { useLoadAddresses } from "../hooks/useLoadAddresses";
@@ -100,7 +99,7 @@ export function CreateListing() {
       await uploadPhoto(presign.uploadUrl, photoFile, presign.fields);
 
       const catInfo = CATEGORIES.find((c) => c.name === category);
-      const normalizedPhone = sharePhone && phone ? normalizePhone(phone) : "";
+      const phoneToSend = sharePhone ? phone : "";
 
       await createListing(accessToken, {
         category: category as string,
@@ -112,13 +111,14 @@ export function CreateListing() {
         zipCode: zipCode.trim(),
         estimatedValue: catInfo?.payoutLabel || "Varies",
         sharePhone,
-        phone: normalizedPhone,
+        phone: phoneToSend,
       });
 
       // Save phone to the user profile so future listings auto-fill it.
-      if (sharePhone && normalizedPhone && normalizedPhone !== profile?.phone) {
+      // Backend normalizes — compare in local state below by using the response.
+      if (sharePhone && phoneToSend) {
         try {
-          const res = await updateProfile(accessToken, { phone: normalizedPhone });
+          const res = await updateProfile(accessToken, { phone: phoneToSend });
           setProfile(res.profile);
         } catch {
           // Non-fatal — the listing was created successfully.

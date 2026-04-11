@@ -23,7 +23,6 @@ import {
   isAllowedZip,
   isValidPhone,
   type Listing,
-  normalizePhone,
 } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { useLoadAddresses } from "../hooks/useLoadAddresses";
@@ -190,14 +189,14 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
       }
 
       const catInfo = CATEGORIES.find((c) => c.name === category);
-      const normalizedPhone = sharePhone && phone ? normalizePhone(phone) : "";
+      const phoneToSend = sharePhone ? phone : "";
 
       const payload: Record<string, unknown> = {
         category: category as string,
         description,
         estimatedValue: catInfo?.payoutLabel || "Varies",
         sharePhone,
-        phone: normalizedPhone,
+        phone: phoneToSend,
       };
 
       if (photoUrl) payload.photoUrl = photoUrl;
@@ -209,9 +208,9 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
       await updateListing(accessToken, listing.listingId, payload);
 
       // Save updated phone to profile so future listings auto-fill it.
-      if (sharePhone && normalizedPhone) {
+      if (sharePhone && phoneToSend) {
         try {
-          const res = await updateProfile(accessToken, { phone: normalizedPhone });
+          const res = await updateProfile(accessToken, { phone: phoneToSend });
           setProfile(res.profile);
         } catch {
           // Non-fatal

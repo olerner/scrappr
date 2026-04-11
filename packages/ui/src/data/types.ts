@@ -11,7 +11,6 @@ export {
   isValidPhone,
   type Listing,
   type ListingStatus,
-  normalizePhone,
   type UserProfile,
   UserRole,
 } from "@scrappr/shared/src/types";
