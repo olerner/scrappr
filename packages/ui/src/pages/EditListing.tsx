@@ -27,6 +27,7 @@ import {
 } from "../data/types";
 import { useAuth } from "../hooks/useAuth";
 import { useLoadAddresses } from "../hooks/useLoadAddresses";
+import { useLoadProfile } from "../hooks/useLoadProfile";
 import { useStore } from "../store/useStore";
 
 export function EditListing() {
@@ -100,6 +101,7 @@ export function EditListing() {
 function EditListingForm({ accessToken, listing }: { accessToken: string; listing: Listing }) {
   const navigate = useNavigate();
   const { addresses, loading: addressesLoading } = useLoadAddresses(accessToken);
+  const { profile } = useLoadProfile(accessToken);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -126,6 +128,13 @@ function EditListingForm({ accessToken, listing }: { accessToken: string; listin
   const [sharePhone, setSharePhone] = useState(Boolean(listing.sharePhone));
   const [phone, setPhone] = useState(listing.phone ? formatPhoneForDisplay(listing.phone) : "");
   const setProfile = useStore((s) => s.setProfile);
+
+  // When user toggles sharing on and no phone is set yet, seed from their profile.
+  useEffect(() => {
+    if (sharePhone && !phone && profile?.phone) {
+      setPhone(formatPhoneForDisplay(profile.phone));
+    }
+  }, [sharePhone, phone, profile]);
 
   const phoneInvalid = sharePhone && !isValidPhone(phone);
 
