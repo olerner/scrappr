@@ -233,7 +233,7 @@ export async function updateProfile(
   payload: { phone?: string },
 ): Promise<{ profile: UserProfile }> {
   const res = await apiRequest("/profile", accessToken, {
-    method: "PATCH",
+    method: "POST",
     body: JSON.stringify(payload),
   });
   if (!res.ok) {

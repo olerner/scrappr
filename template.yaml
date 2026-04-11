@@ -280,7 +280,7 @@ Resources:
           Type: HttpApi
           Properties:
             Path: /profile
-            Method: PATCH
+            Method: POST
             ApiId: !Ref HttpApi
 
   ReportErrorFunction:

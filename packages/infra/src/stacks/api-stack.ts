@@ -495,7 +495,7 @@ export class ApiStack extends cdk.Stack {
 
     httpApi.addRoutes({
       path: "/profile",
-      methods: [apigatewayv2.HttpMethod.PATCH],
+      methods: [apigatewayv2.HttpMethod.POST],
       integration: new integrations.HttpLambdaIntegration("UpdateProfileInt", updateProfileFn),
       authorizer: jwtAuthorizer,
     });
