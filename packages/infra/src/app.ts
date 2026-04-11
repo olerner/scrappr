@@ -138,6 +138,10 @@ if (!isLocalDev) {
     ...(env === "dev"
       ? {
           domainName: "scrappr.trevor.fail",
+          // Temporary alias to prove out Spaceship DNS automation before migrating
+          // dev to dev.scrappr.io. DNS is synced via scripts/sync-spaceship-dns.mjs.
+          // See issue #103.
+          additionalDomains: ["staging.scrappr.io"],
         }
       : {}),
   });

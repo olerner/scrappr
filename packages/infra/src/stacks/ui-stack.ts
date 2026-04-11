@@ -155,16 +155,28 @@ export class UiStack extends cdk.Stack {
       value: distribution.distributionId,
     });
 
-    if (allDomains.length > 0) {
-      new cdk.CfnOutput(this, "CustomDomains", {
-        value: allDomains.map((d) => `https://${d}`).join(", "),
+    // Plain hostname (no scheme) — consumed by sync-spaceship-dns.mjs to build CNAMEs
+    new cdk.CfnOutput(this, "DistributionDomain", {
+      value: distribution.distributionDomainName,
+    });
+
+    if (certificate) {
+      // Cert ARN — consumed by sync-spaceship-dns.mjs to fetch validation records via ACM
+      new cdk.CfnOutput(this, "CertificateArn", {
+        value: certificate.certificateArn,
       });
     }
 
-    for (const domain of additionalDomains) {
-      new cdk.CfnOutput(this, `ManualDns-${domain.replace(/\./g, "-")}`, {
-        value: `Add CNAME: ${domain} → ${distribution.distributionDomainName}`,
-        description: `Manual DNS setup needed for ${domain}`,
+    if (additionalDomains.length > 0) {
+      // Comma-separated list — consumed by sync-spaceship-dns.mjs to know which CNAMEs to create
+      new cdk.CfnOutput(this, "AdditionalDomains", {
+        value: additionalDomains.join(","),
+      });
+    }
+
+    if (allDomains.length > 0) {
+      new cdk.CfnOutput(this, "CustomDomains", {
+        value: allDomains.map((d) => `https://${d}`).join(", "),
       });
     }
   }

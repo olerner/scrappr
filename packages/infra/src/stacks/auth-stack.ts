@@ -94,6 +94,13 @@ export class AuthStack extends cdk.Stack {
 
     // ── App Client (with OAuth) ─────────────────────────────────────
 
+    // staging.scrappr.io is a temporary dev alias used to prove out Spaceship DNS
+    // automation before cutting dev over to dev.scrappr.io. See issue #103.
+    const devStagingCallbacks =
+      props.stageName === "dev" ? ["https://staging.scrappr.io/auth/callback"] : [];
+    const devStagingLogouts =
+      props.stageName === "dev" ? ["https://staging.scrappr.io/auth/sign-out"] : [];
+
     this.userPoolClient = this.userPool.addClient("AppClient", {
       userPoolClientName: `scrappr-app-${props.stageName}`,
       generateSecret: false,
@@ -108,6 +115,7 @@ export class AuthStack extends cdk.Stack {
           "http://localhost:8081/auth/callback",
           "http://localhost:5173/auth/callback",
           "https://scrappr.trevor.fail/auth/callback",
+          ...devStagingCallbacks,
         ],
         logoutUrls: [
           "scrappr://auth/sign-out",
@@ -115,6 +123,7 @@ export class AuthStack extends cdk.Stack {
           "http://localhost:8081/auth/sign-out",
           "http://localhost:5173/auth/sign-out",
           "https://scrappr.trevor.fail/auth/sign-out",
+          ...devStagingLogouts,
         ],
       },
       authFlows: {

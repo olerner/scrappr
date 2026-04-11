@@ -9,6 +9,7 @@
     "api": "nodemon --watch template.yaml --exec 'sam local start-api' --signal SIGTERM --delay 1",
     "ui": "yarn workspace @scrappr/ui dev",
     "deploy": "yarn workspace @scrappr/ui build && yarn workspace @scrappr/infra deploy",
+    "deploy:dev": "yarn workspace @scrappr/ui build && yarn workspace @scrappr/infra deploy:dev",
     "infra:diff": "yarn workspace @scrappr/infra diff",
     "lint": "biome check packages/",
     "lint:fix": "biome check --fix packages/",
