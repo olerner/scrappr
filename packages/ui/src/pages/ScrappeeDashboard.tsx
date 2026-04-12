@@ -171,17 +171,15 @@ function ListingCard({ listing }: { listing: Listing }) {
             <div className="flex items-center gap-2">
               <StatusBadge status={listing.status} />
               {isEditable && (
-                <button
+                <Link
+                  to={`/list/edit/${listing.listingId}`}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/list/edit/${listing.listingId}`);
-                  }}
+                  onClick={(e) => e.stopPropagation()}
                   aria-label="Edit listing"
                   title="Edit listing"
                 >
                   <Pencil size={15} />
-                </button>
+                </Link>
               )}
             </div>
           </div>
