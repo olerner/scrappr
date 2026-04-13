@@ -125,7 +125,7 @@ export function CreateListing() {
         }
       }
 
-      navigate("/list");
+      navigate("/list", { state: { listingCreated: true } });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Failed to create listing");
     } finally {

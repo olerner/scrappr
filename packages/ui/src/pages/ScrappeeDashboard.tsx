@@ -1,6 +1,6 @@
-import { Image as ImageIcon, Loader2, LogOut, Plus } from "lucide-react";
+import { CheckCircle, Image as ImageIcon, Loader2, LogOut, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
@@ -13,6 +13,16 @@ export function ScrappeeDashboard() {
   const { email, accessToken } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);
+  const location = useLocation();
+  const [showSuccessToast, setShowSuccessToast] = useState(
+    () => !!(location.state as { listingCreated?: boolean } | null)?.listingCreated,
+  );
+
+  useEffect(() => {
+    if (!showSuccessToast) return;
+    const timer = setTimeout(() => setShowSuccessToast(false), 4000);
+    return () => clearTimeout(timer);
+  }, [showSuccessToast]);
 
   const fetchListings = useCallback(async () => {
     if (!accessToken) return;
@@ -38,6 +48,12 @@ export function ScrappeeDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {showSuccessToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white text-sm font-medium rounded-xl shadow-lg animate-fade-in">
+          <CheckCircle size={18} className="flex-shrink-0" />
+          Listing created!
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
