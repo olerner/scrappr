@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { AuthLayout } from "./AuthLayout";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 
 export function SignInForm({
@@ -28,72 +29,68 @@ export function SignInForm({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-        <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">Sign In to Scrappr</h2>
+    <AuthLayout heading="Sign In to Scrappr">
+      <GoogleSignInButton onClick={onGoogleSignIn} />
 
-        <GoogleSignInButton onClick={onGoogleSignIn} />
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-sm text-gray-400">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
-
-        {/* Email/Password Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-
-        {/* Forgot Password & Sign Up Links */}
-        <div className="mt-6 text-center space-y-3">
-          <Link
-            to="/forgot-password"
-            className="block text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
-          >
-            Forgot password?
-          </Link>
-          <p className="text-sm text-gray-500">
-            Don&apos;t have an account?{" "}
-            <Link
-              to="/sign-up"
-              className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
-            >
-              Sign up
-            </Link>
-          </p>
-        </div>
+      {/* Divider */}
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 h-px bg-gray-200" />
+        <span className="text-sm text-gray-400">or</span>
+        <div className="flex-1 h-px bg-gray-200" />
       </div>
-    </div>
+
+      {/* Email/Password Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+        {error && <p className="text-red-600 text-sm">{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-40"
+        >
+          {loading ? "Signing in..." : "Sign In"}
+        </button>
+      </form>
+
+      {/* Forgot Password & Sign Up Links */}
+      <div className="mt-6 text-center space-y-3">
+        <Link
+          to="/forgot-password"
+          className="block text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
+        >
+          Forgot password?
+        </Link>
+        <p className="text-sm text-gray-500">
+          Don&apos;t have an account?{" "}
+          <Link
+            to="/sign-up"
+            className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
+          >
+            Sign up
+          </Link>
+        </p>
+      </div>
+    </AuthLayout>
   );
 }

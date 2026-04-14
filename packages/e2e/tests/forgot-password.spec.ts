@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
 const TEST_EMAIL = "testuser1@scrappr.trevor.fail";
 const ORIGINAL_PASSWORD = "TestPass123!";
 const TEMP_PASSWORD = "TempResetPass456!";
-const INBOX_BUCKET = "scrappr-inbox-dev";
+const INBOX_BUCKET = "scrappr-email-inbox-dev";
 const INBOX_PREFIX = "incoming/";
 const USER_POOL_ID = process.env.USER_POOL_ID || "us-east-1_N45oIsOs3";
 

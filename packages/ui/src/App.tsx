@@ -8,6 +8,7 @@ import { CreateListing } from "./pages/CreateListing";
 import { EditListing } from "./pages/EditListing";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { LandingPage } from "./pages/LandingPage";
+import { NotFound } from "./pages/NotFound";
 import { ScrappeeDashboard } from "./pages/ScrappeeDashboard";
 import { ScrapprDashboard } from "./pages/ScrapprDashboard";
 import { SignedOut } from "./pages/SignedOut";
@@ -62,6 +63,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/sign-up" element={<SignUp />} />
               <Route path="/signed-out" element={<SignedOut />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />

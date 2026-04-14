@@ -7,8 +7,6 @@
     "build": "tsc",
     "deploy": "cdk deploy --all --require-approval never",
     "deploy:dev": "node scripts/deploy-env.mjs --env dev",
-    "deploy:ui": "cdk deploy scrappr-ui-* --require-approval never",
-    "destroy:ui": "cdk destroy scrappr-ui-* --force",
     "diff": "cdk diff --all",
     "synth": "cdk synth"
   },
