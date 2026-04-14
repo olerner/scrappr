@@ -104,8 +104,8 @@ const userPoolClientId = sharesDevAuth
   ? process.env.VITE_USER_POOL_CLIENT_ID!
   : authStack!.userPoolClient.userPoolClientId;
 
-// Email config — preview/localdev share the dev SES identity
-const senderEmail = emailStack?.senderEmail ?? "noreply@dev.scrappr.io";
+// Email config — preview/localdev share the dev SES identity (no email stack of their own)
+const senderEmail = emailStack?.senderEmail ?? `noreply@dev.scrappr.io`;
 const sendEmailPolicy =
   emailStack?.sendEmailPolicyStatement ??
   new iam.PolicyStatement({

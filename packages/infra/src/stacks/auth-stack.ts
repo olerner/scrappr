@@ -65,7 +65,7 @@ export class AuthStack extends cdk.Stack {
       handler: "custom-message.handler",
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "lambdas")),
       environment: {
-        APP_URL: props.appUrl || "https://dev.scrappr.io",
+        APP_URL: props.appUrl,
       },
     });
 
