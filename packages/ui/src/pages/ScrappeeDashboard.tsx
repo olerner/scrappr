@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Loader2, LogOut, Plus } from "lucide-react";
+import { Image as ImageIcon, Loader2, LogOut, Pencil, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getMyListings } from "../api/client";
@@ -168,7 +168,20 @@ function ListingCard({ listing }: { listing: Listing }) {
                 {getCategoryDisplayName(listing.category)}
               </span>
             </div>
-            <StatusBadge status={listing.status} />
+            <div className="flex items-center gap-2">
+              <StatusBadge status={listing.status} />
+              {isEditable && (
+                <Link
+                  to={`/list/edit/${listing.listingId}`}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Edit listing"
+                  title="Edit listing"
+                >
+                  <Pencil size={15} />
+                </Link>
+              )}
+            </div>
           </div>
           <p className="text-gray-600 text-sm mt-1 line-clamp-2">{listing.description}</p>
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
