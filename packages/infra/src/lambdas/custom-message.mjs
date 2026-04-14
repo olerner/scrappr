@@ -1,4 +1,4 @@
-const APP_URL = process.env.APP_URL || "https://scrappr.trevor.fail";
+const APP_URL = process.env.APP_URL || "https://dev.scrappr.io";
 
 function wrap(heading, body) {
   return `

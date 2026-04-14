@@ -7,6 +7,7 @@ import { AuthStack } from "./stacks/auth-stack.js";
 import { CiStack } from "./stacks/ci-stack.js";
 import { EmailStack } from "./stacks/email-stack.js";
 import { MonitoringStack } from "./stacks/monitoring-stack.js";
+import { RedirectStack } from "./stacks/redirect-stack.js";
 import { StorageStack } from "./stacks/storage-stack.js";
 import { UiStack } from "./stacks/ui-stack.js";
 
@@ -40,30 +41,32 @@ const isPreview = env.startsWith("pr-");
 const isLocalDev = env.startsWith("localdev-");
 const sharesDevAuth = isPreview || isLocalDev;
 
+// ── Per-environment domain config ─────────────────────────────────────
+const envDomain = env === "prod" ? "scrappr.io" : env === "dev" ? "dev.scrappr.io" : undefined;
+
+const appUrl = isLocalDev
+  ? "http://localhost:5173"
+  : envDomain
+    ? `https://${envDomain}`
+    : `https://scrappr-${env}.scrappr.io`;
+
+const domains = envDomain ? [envDomain] : [];
+
 // CI stack — OIDC + IAM role for GitHub Actions
 new CiStack(app, "scrappr-ci", { env: awsEnv });
 
 // Email stack — deploy for dev/prod (not localdev or preview)
-// Skip when SKIP_EMAIL_STACK=1 (e.g. CI where hosted zone lookup may fail)
+// Skip when SKIP_EMAIL_STACK=1 (e.g. CI rollback where SES setup may fail)
 // Deployed before auth stack so senderEmail is available for Cognito SES config.
 let emailStack: EmailStack | undefined;
-if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1") {
+if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1" && envDomain) {
   emailStack = new EmailStack(app, `scrappr-email-${env}`, {
     env: awsEnv,
     stageName: env,
-    domainName: "scrappr.trevor.fail",
+    domainName: envDomain,
+    enableInbound: env === "dev",
   });
 }
-
-// Determine app URL by environment
-const appUrl = isLocalDev
-  ? "http://localhost:5173"
-  : env === "dev"
-    ? "https://scrappr.trevor.fail"
-    : `https://scrappr-${env}.trevor.fail`;
-
-// Additional domain aliases managed via Spaceship DNS (see issue #103)
-const additionalDomains = env === "dev" ? ["dev.scrappr.io"] : [];
 
 // Auth stack — only deploy for dev/production (previews and localdev share dev Cognito)
 let authStack: AuthStack | undefined;
@@ -75,7 +78,7 @@ if (!sharesDevAuth) {
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     senderEmail: emailStack?.senderEmail,
     appUrl,
-    additionalDomains,
+    additionalDomains: domains,
   });
   if (emailStack) {
     authStack.addDependency(emailStack);
@@ -87,7 +90,7 @@ const storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
   env: awsEnv,
   stageName: env,
   appUrl,
-  additionalDomains,
+  additionalDomains: domains,
 });
 
 // API stack — deploy for all environments (previews and localdev use dev Cognito)
@@ -102,8 +105,7 @@ const userPoolClientId = sharesDevAuth
   : authStack!.userPoolClient.userPoolClientId;
 
 // Email config — preview/localdev share the dev SES identity
-const domainName = "scrappr.trevor.fail";
-const senderEmail = emailStack?.senderEmail ?? `noreply@${domainName}`;
+const senderEmail = emailStack?.senderEmail ?? "noreply@dev.scrappr.io";
 const sendEmailPolicy =
   emailStack?.sendEmailPolicyStatement ??
   new iam.PolicyStatement({
@@ -134,7 +136,7 @@ new ApiStack(app, `scrappr-api-${env}`, {
   senderEmail,
   sendEmailPolicy,
   appUrl,
-  additionalDomains,
+  additionalDomains: domains,
 });
 
 // UI stack — skip for localdev (runs locally), deploy for everything else
@@ -142,23 +144,25 @@ if (!isLocalDev) {
   new UiStack(app, `scrappr-ui-${env}`, {
     env: awsEnv,
     envName: env,
-    ...(env === "dev"
-      ? {
-          domainName: "scrappr.trevor.fail",
-          additionalDomains,
-        }
-      : {}),
+    domains,
   });
 }
 
 // Monitoring stack — uptime health check (only for static environments)
-if (alertStack) {
+if (alertStack && envDomain) {
   new MonitoringStack(app, `scrappr-monitoring-${env}`, {
     env: awsEnv,
     stageName: env,
-    domainName: "scrappr.trevor.fail",
+    domainName: envDomain,
     alertTopic: alertStack.alertTopic,
   });
 }
+
+// Redirect old domain to new dev domain
+new RedirectStack(app, "scrappr-redirect", {
+  env: awsEnv,
+  fromDomain: "scrappr.trevor.fail",
+  toDomain: "dev.scrappr.io",
+});
 
 app.synth();

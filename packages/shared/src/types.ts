@@ -88,6 +88,7 @@ export interface Listing {
   address: string;
   status: ListingStatus;
   datePosted: string;
+  createdAt: string;
   claimedBy?: string;
   claimedAt?: string;
   estimatedValue: string;

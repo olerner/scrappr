@@ -4,7 +4,7 @@
 
 Scrappr is a two-sided gig economy marketplace for scrap metal pickup in the Twin Cities. Scrappees (residents and landlords) list unwanted scrap metal for free pickup, and Scrapprs (haulers) claim listings, pick up the metal, and deliver it to scrap yards for commodity income.
 
-**Live:** https://scrappr.trevor.fail
+**Live:** https://scrappr.io | **Dev:** https://dev.scrappr.io
 
 ## Getting Started
 

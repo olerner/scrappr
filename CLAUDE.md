@@ -68,4 +68,5 @@ Use `/pr` to open pull requests. See [`.claude/skills/pr/SKILL.md`](.claude/skil
 ## AWS
 
 - Region: us-east-1
-- Domain: scrappr.trevor.fail
+- Prod domain: scrappr.io
+- Dev domain: dev.scrappr.io

@@ -11,7 +11,7 @@ interface AuthStackProps extends cdk.StackProps {
   stageName: string;
   googleClientId: string;
   googleClientSecret: string;
-  /** SES-verified sender email (e.g. noreply@scrappr.trevor.fail). When provided, Cognito uses SES instead of its default email. */
+  /** SES-verified sender email (e.g. noreply@dev.scrappr.io). When provided, Cognito uses SES instead of its default email. */
   senderEmail?: string;
   appUrl?: string;
   /** Additional domain aliases that need Cognito callback/logout URLs (e.g. ["dev.scrappr.io"]) */
@@ -65,7 +65,7 @@ export class AuthStack extends cdk.Stack {
       handler: "custom-message.handler",
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "lambdas")),
       environment: {
-        APP_URL: props.appUrl || "https://scrappr.trevor.fail",
+        APP_URL: props.appUrl || "https://dev.scrappr.io",
       },
     });
 
@@ -90,7 +90,7 @@ export class AuthStack extends cdk.Stack {
 
     this.userPoolDomain = this.userPool.addDomain("CognitoDomain", {
       cognitoDomain: {
-        domainPrefix: `scrappr-${props.stageName}`,
+        domainPrefix: props.stageName === "prod" ? "scrappr" : `scrappr-${props.stageName}`,
       },
     });
 

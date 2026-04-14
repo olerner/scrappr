@@ -5,8 +5,6 @@ import * as cdk from "aws-cdk-lib";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
-import * as route53 from "aws-cdk-lib/aws-route53";
-import * as targets from "aws-cdk-lib/aws-route53-targets";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
 import type { Construct } from "constructs";
@@ -21,19 +19,16 @@ if (!existsSync(UI_DIST_PATH)) {
 
 interface UiStackProps extends cdk.StackProps {
   envName: string;
-  /** Managed domain name — hosted zone looked up in this account */
-  domainName?: string;
-  /** Additional domain aliases (unmanaged — user handles DNS externally) */
-  additionalDomains?: string[];
+  /** Custom domain aliases — DNS managed externally via Spaceship. ACM cert validation records are synced by sync-spaceship-dns.mjs during deploy. */
+  domains?: string[];
 }
 
 export class UiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: UiStackProps) {
     super(scope, id, props);
 
-    const { envName, domainName, additionalDomains = [] } = props;
+    const { envName, domains = [] } = props;
     const isPreview = envName.startsWith("pr-");
-    const allDomains = [...(domainName ? [domainName] : []), ...additionalDomains];
 
     // ── S3 Bucket (private — CloudFront uses OAC) ─────────────────────
 
@@ -42,25 +37,16 @@ export class UiStack extends cdk.Stack {
       autoDeleteObjects: isPreview,
     });
 
-    // ── Route 53 Hosted Zone (lookup existing) ────────────────────────
-
-    let hostedZone: route53.IHostedZone | undefined;
-    if (domainName) {
-      hostedZone = route53.HostedZone.fromLookup(this, "Zone", {
-        domainName,
-      });
-    }
-
     // ── ACM Certificate ───────────────────────────────────────────────
+    // DNS validation records are pushed to Spaceship by sync-spaceship-dns.mjs
+    // which runs in parallel during deploy (via deploy-env.mjs or the CI workflow).
 
     let certificate: acm.ICertificate | undefined;
-    if (domainName && hostedZone) {
-      // Only auto-validate the managed domain; unmanaged domains require manual DNS validation
-      const validationZones: Record<string, route53.IHostedZone> = { [domainName]: hostedZone };
+    if (domains.length > 0) {
       certificate = new acm.Certificate(this, "Certificate", {
-        domainName,
-        subjectAlternativeNames: additionalDomains.length > 0 ? additionalDomains : undefined,
-        validation: acm.CertificateValidation.fromDnsMultiZone(validationZones),
+        domainName: domains[0],
+        subjectAlternativeNames: domains.length > 1 ? domains.slice(1) : undefined,
+        validation: acm.CertificateValidation.fromDns(),
       });
     }
 
@@ -124,17 +110,8 @@ export class UiStack extends cdk.Stack {
           ttl: cdk.Duration.seconds(0),
         },
       ],
-      ...(certificate && allDomains.length > 0 ? { certificate, domainNames: allDomains } : {}),
+      ...(certificate && domains.length > 0 ? { certificate, domainNames: domains } : {}),
     });
-
-    // ── Route 53 A Record ─────────────────────────────────────────────
-
-    if (hostedZone && domainName) {
-      new route53.ARecord(this, "AliasRecord", {
-        zone: hostedZone,
-        target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
-      });
-    }
 
     // ── Deploy UI Files ───────────────────────────────────────────────
 
@@ -167,16 +144,14 @@ export class UiStack extends cdk.Stack {
       });
     }
 
-    if (additionalDomains.length > 0) {
+    if (domains.length > 0) {
       // Comma-separated list — consumed by sync-spaceship-dns.mjs to know which CNAMEs to create
       new cdk.CfnOutput(this, "AdditionalDomains", {
-        value: additionalDomains.join(","),
+        value: domains.join(","),
       });
-    }
 
-    if (allDomains.length > 0) {
       new cdk.CfnOutput(this, "CustomDomains", {
-        value: allDomains.map((d) => `https://${d}`).join(", "),
+        value: domains.map((d) => `https://${d}`).join(", "),
       });
     }
   }

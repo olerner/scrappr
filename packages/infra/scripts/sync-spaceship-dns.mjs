@@ -21,7 +21,7 @@
 import { execFileSync } from "node:child_process";
 
 const SPACESHIP_DOMAIN = "scrappr.io";
-const AWS_PROFILE = process.env.AWS_PROFILE || "scrappr";
+const AWS_PROFILE = process.env.AWS_PROFILE;
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -39,7 +39,8 @@ function parseArgs() {
 }
 
 function aws(args) {
-  return execFileSync("aws", [...args, "--profile", AWS_PROFILE, "--output", "json"], {
+  const profileArgs = AWS_PROFILE ? ["--profile", AWS_PROFILE] : [];
+  return execFileSync("aws", [...args, ...profileArgs, "--output", "json"], {
     encoding: "utf-8",
     stdio: ["ignore", "pipe", "pipe"],
   });

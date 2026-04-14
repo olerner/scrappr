@@ -10,9 +10,9 @@ import {
 const ses = new SESClient({});
 
 const cognito = new CognitoIdentityProviderClient({});
-const SENDER = process.env.SENDER_EMAIL || "noreply@scrappr.trevor.fail";
+const SENDER = process.env.SENDER_EMAIL || "noreply@dev.scrappr.io";
 const USER_POOL_ID = process.env.USER_POOL_ID;
-const APP_URL = process.env.APP_URL || "https://scrappr.trevor.fail";
+const APP_URL = process.env.APP_URL || "https://dev.scrappr.io";
 
 /**
  * Send a transactional email via SES.
