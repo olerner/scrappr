@@ -116,7 +116,9 @@ export class AuthStack extends cdk.Stack {
           "exp://127.0.0.1:8081/--/auth/callback",
           "http://localhost:8081/auth/callback",
           "http://localhost:5173/auth/callback",
-          "https://scrappr.trevor.fail/auth/callback",
+          ...(props.appUrl && !props.appUrl.startsWith("http://localhost")
+            ? [`${props.appUrl}/auth/callback`]
+            : []),
           ...additionalCallbacks,
         ],
         logoutUrls: [
@@ -124,7 +126,9 @@ export class AuthStack extends cdk.Stack {
           "exp://127.0.0.1:8081/--/auth/sign-out",
           "http://localhost:8081/auth/sign-out",
           "http://localhost:5173/auth/sign-out",
-          "https://scrappr.trevor.fail/auth/sign-out",
+          ...(props.appUrl && !props.appUrl.startsWith("http://localhost")
+            ? [`${props.appUrl}/auth/sign-out`]
+            : []),
           ...additionalLogouts,
         ],
       },

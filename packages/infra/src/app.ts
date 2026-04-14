@@ -86,6 +86,8 @@ if (!sharesDevAuth) {
 const storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
   env: awsEnv,
   stageName: env,
+  appUrl,
+  additionalDomains,
 });
 
 // API stack — deploy for all environments (previews and localdev use dev Cognito)
@@ -132,6 +134,7 @@ new ApiStack(app, `scrappr-api-${env}`, {
   senderEmail,
   sendEmailPolicy,
   appUrl,
+  additionalDomains,
 });
 
 // UI stack — skip for localdev (runs locally), deploy for everything else
