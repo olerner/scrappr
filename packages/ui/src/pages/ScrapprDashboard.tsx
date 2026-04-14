@@ -531,7 +531,7 @@ function AvailableCard({
             <CategoryIcon category={listing.category} size={14} className="text-emerald-600" />
             <span>{catInfo?.payoutLabel}</span>
           </div>
-          {listing.datePosted && <span>{formatRelativeDate(listing.datePosted)}</span>}
+          {listing.createdAt && <span>{formatRelativeDate(listing.createdAt)}</span>}
         </div>
         {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
         <button
