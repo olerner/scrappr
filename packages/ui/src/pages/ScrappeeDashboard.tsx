@@ -185,7 +185,7 @@ function ListingCard({ listing }: { listing: Listing }) {
           </div>
           <p className="text-gray-600 text-sm mt-1 line-clamp-2">{listing.description}</p>
           <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-            <span>Posted {formatRelativeDate(listing.datePosted)}</span>
+            <span>Posted {formatRelativeDate(listing.createdAt)}</span>
             {listing.claimedBy && (
               <span className="text-yellow-600 font-medium">Hauler: {listing.claimedBy}</span>
             )}
