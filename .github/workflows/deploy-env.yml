@@ -88,6 +88,7 @@ jobs:
             "scrappr-storage-${ENV}" \
             "scrappr-api-${ENV}" \
             "scrappr-monitoring-${ENV}" \
+            -c env="${ENV}" \
             --require-approval never \
             --outputs-file /tmp/cdk-api-outputs.json 2>&1 | tail -50
           API_URL=$(node -e "const o=require('/tmp/cdk-api-outputs.json'); console.log(o['scrappr-api-${ENV}'].ApiEndpoint)")
@@ -116,7 +117,7 @@ jobs:
           ) &
           SYNC_PID=$!
 
-          npx cdk deploy "scrappr-ui-${ENV}" --require-approval never
+          npx cdk deploy "scrappr-ui-${ENV}" -c env="${ENV}" --require-approval never
           CDK_EXIT=$?
 
           kill $SYNC_PID 2>/dev/null || true
