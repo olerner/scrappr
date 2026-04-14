@@ -50,7 +50,7 @@ const appUrl = isLocalDev
     ? `https://${envDomain}`
     : `https://scrappr-${env}.scrappr.io`;
 
-const domains = envDomain ? [envDomain] : [];
+const uiDomains = envDomain ? [envDomain] : [];
 
 // CI stack — OIDC + IAM role for GitHub Actions
 new CiStack(app, "scrappr-ci", { env: awsEnv });
@@ -78,7 +78,6 @@ if (!sharesDevAuth) {
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     senderEmail: emailStack?.senderEmail,
     appUrl,
-    additionalDomains: domains,
   });
   if (emailStack) {
     authStack.addDependency(emailStack);
@@ -90,7 +89,6 @@ const storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
   env: awsEnv,
   stageName: env,
   appUrl,
-  additionalDomains: domains,
 });
 
 // API stack — deploy for all environments (previews and localdev use dev Cognito)
@@ -136,7 +134,6 @@ new ApiStack(app, `scrappr-api-${env}`, {
   senderEmail,
   sendEmailPolicy,
   appUrl,
-  additionalDomains: domains,
 });
 
 // UI stack — skip for localdev (runs locally), deploy for everything else
@@ -144,7 +141,7 @@ if (!isLocalDev) {
   new UiStack(app, `scrappr-ui-${env}`, {
     env: awsEnv,
     envName: env,
-    domains,
+    domains: uiDomains,
   });
 }
 
