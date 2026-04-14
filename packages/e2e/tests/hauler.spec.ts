@@ -126,3 +126,71 @@ test("scrappee creates listing, hauler claims and marks picked up", async ({ pag
   // Card disappears from active claims (status changes to "completed")
   await expect(claimedCard).not.toBeVisible({ timeout: 10_000 });
 });
+
+test("abandoned claim confirmation does not claim the listing", async ({ page }) => {
+  const testDescription = `E2E abandon claim test ${Date.now()}`;
+
+  // 1. Sign in as scrappee and create a listing
+  await page.goto("/list");
+  await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
+  await page.getByPlaceholder("you@example.com").fill(SCRAPPEE_EMAIL);
+  await page.getByPlaceholder("••••••••").fill(SCRAPPEE_PASSWORD);
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
+
+  await page.getByRole("link", { name: "New Listing" }).click();
+  await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
+
+  const testPhotoPath = path.join(import.meta.dirname, "../fixtures/test-photo.jpg");
+  await page.getByTestId("photo-input").setInputFiles(testPhotoPath);
+  await page.getByTestId("category-aluminum").click();
+  await page.getByTestId("description-input").fill(testDescription);
+
+  await expect(
+    page.getByRole("button", { name: "Add a pickup address" }).or(page.getByRole("combobox")),
+  ).toBeVisible({ timeout: 10_000 });
+  if (await page.getByRole("button", { name: "Add a pickup address" }).isVisible()) {
+    await page.getByRole("button", { name: "Add a pickup address" }).click();
+    await page.getByTestId("address-input").fill(ADDRESS_QUERY);
+    await expect(page.getByTestId("address-suggestion").first()).toBeVisible({ timeout: 15_000 });
+    await page.getByTestId("address-suggestion").first().click();
+    await expect(page.getByRole("button", { name: "Save" })).toBeEnabled({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.locator("span").filter({ hasText: "Minnetonka" })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole("button", { name: "Done" }).click();
+  }
+
+  await expect(page.getByTestId("submit-listing-btn")).toBeEnabled({ timeout: 10_000 });
+  await page.getByTestId("submit-listing-btn").click();
+  await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
+
+  // 2. Sign out, sign in as hauler
+  await page.goto("/signed-out");
+  await expect(page.getByText("You've been signed out")).toBeVisible({ timeout: 10_000 });
+
+  await page.goto("/haul");
+  await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
+  await page.getByPlaceholder("you@example.com").fill(HAULER_EMAIL);
+  await page.getByPlaceholder("••••••••").fill(HAULER_PASSWORD);
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await expect(page.getByText("Hauler Dashboard")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".animate-spin").first()).not.toBeVisible({ timeout: 10_000 });
+
+  // 3. Start claim but don't confirm — navigate away
+  const card = page.getByTestId("available-card").filter({ hasText: testDescription });
+  await expect(card).toBeVisible({ timeout: 10_000 });
+
+  await card.getByTestId("claim-btn").click();
+  await expect(card.getByTestId("claim-btn")).toContainText("Confirm", { timeout: 3_000 });
+
+  // Navigate away without confirming
+  await page.goto("/haul");
+  await expect(page.getByText("Hauler Dashboard")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".animate-spin").first()).not.toBeVisible({ timeout: 10_000 });
+
+  // 4. Listing should still be available (claim was never confirmed)
+  const cardAfter = page.getByTestId("available-card").filter({ hasText: testDescription });
+  await expect(cardAfter).toBeVisible({ timeout: 10_000 });
+});
