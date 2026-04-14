@@ -1,13 +1,11 @@
 #!/usr/bin/env node
-// Orchestrator that runs `cdk deploy` and, in parallel, polls
-// sync-spaceship-dns.mjs every 30s so DNS records (and ACM validation CNAMEs)
-// land in Spaceship while CloudFormation is waiting on them.
-//
-// Only targets the dev UI + auth stacks for now. Expand as more envs / stacks
-// start needing Spaceship-managed DNS.
+// Orchestrator that runs `cdk deploy` for all stacks in an environment and,
+// in parallel, polls sync-spaceship-dns.mjs every 30s so DNS records (and ACM
+// validation CNAMEs) land in Spaceship while CloudFormation is waiting on them.
 //
 // Usage:
 //   node scripts/deploy-env.mjs --env dev
+//   node scripts/deploy-env.mjs --env prod
 
 import { spawn, execFileSync } from "node:child_process";
 import * as path from "node:path";
@@ -30,17 +28,15 @@ function parseArgs() {
   return out;
 }
 
-// Stacks each env needs to sync DNS for. The orchestrator will cdk-deploy this
-// list (CDK figures out dependency order) and poll sync for each stack in the
-// list throughout the deploy.
-const STACKS_BY_ENV = {
-  dev: ["scrappr-auth-dev", "scrappr-ui-dev"],
-};
+// CDK glob pattern deploys all stacks for the given env.
+// Only the UI stack has CloudFront/ACM that needs DNS syncing to Spaceship.
+function stackGlob(env) {
+  return `scrappr-*-${env}`;
+}
 
-// Only these stacks have DNS that needs syncing to Spaceship.
-const DNS_STACKS_BY_ENV = {
-  dev: ["scrappr-ui-dev"],
-};
+function dnsStack(env) {
+  return `scrappr-ui-${env}`;
+}
 
 function runSyncOnce(stackName) {
   try {
@@ -55,18 +51,14 @@ function runSyncOnce(stackName) {
 
 async function main() {
   const { env } = parseArgs();
-  const stacks = STACKS_BY_ENV[env];
-  const dnsStacks = DNS_STACKS_BY_ENV[env];
-  if (!stacks) {
-    console.error(`Unknown env: ${env}`);
-    process.exit(2);
-  }
+  const glob = stackGlob(env);
+  const dnsStackName = dnsStack(env);
 
-  console.log(`[deploy] deploying stacks for ${env}: ${stacks.join(" ")}`);
+  console.log(`[deploy] deploying stacks matching ${glob}`);
 
   const cdk = spawn(
     "npx",
-    ["cdk", "deploy", ...stacks, "--require-approval", "never", "-c", `env=${env}`],
+    ["cdk", "deploy", glob, "--require-approval", "never", "-c", `env=${env}`],
     { stdio: "inherit", cwd: path.join(__dirname, "..") },
   );
 
@@ -76,9 +68,7 @@ async function main() {
     // Give CDK a head start before the first poll
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
     while (polling) {
-      for (const stack of dnsStacks) {
-        runSyncOnce(stack);
-      }
+      runSyncOnce(dnsStackName);
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
     }
   })();
@@ -92,9 +82,7 @@ async function main() {
   // One final sync so any just-created records are pushed
   if (code === 0) {
     console.log(`[deploy] cdk deploy succeeded — running final sync`);
-    for (const stack of dnsStacks) {
-      runSyncOnce(stack);
-    }
+    runSyncOnce(dnsStackName);
   } else {
     console.error(`[deploy] cdk deploy failed with code ${code}`);
   }

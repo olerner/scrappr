@@ -62,6 +62,9 @@ const appUrl = isLocalDev
     ? "https://scrappr.trevor.fail"
     : `https://scrappr-${env}.trevor.fail`;
 
+// Additional domain aliases managed via Spaceship DNS (see issue #103)
+const additionalDomains = env === "dev" ? ["dev.scrappr.io"] : [];
+
 // Auth stack — only deploy for dev/production (previews and localdev share dev Cognito)
 let authStack: AuthStack | undefined;
 if (!sharesDevAuth) {
@@ -72,6 +75,7 @@ if (!sharesDevAuth) {
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     senderEmail: emailStack?.senderEmail,
     appUrl,
+    additionalDomains,
   });
   if (emailStack) {
     authStack.addDependency(emailStack);
@@ -138,10 +142,7 @@ if (!isLocalDev) {
     ...(env === "dev"
       ? {
           domainName: "scrappr.trevor.fail",
-          // Temporary alias to prove out Spaceship DNS automation before migrating
-          // dev to dev.scrappr.io. DNS is synced via scripts/sync-spaceship-dns.mjs.
-          // See issue #103.
-          additionalDomains: ["staging.scrappr.io"],
+          additionalDomains,
         }
       : {}),
   });

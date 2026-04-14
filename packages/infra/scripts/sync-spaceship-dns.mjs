@@ -86,8 +86,8 @@ function describeCertificate(certArn) {
 
 /**
  * Strip the Spaceship-managed zone suffix from an FQDN so Spaceship's API gets
- * just the subdomain name. ACM returns names like `_abc123.staging.scrappr.io.`
- * and Spaceship wants `_abc123.staging`.
+ * just the subdomain name. ACM returns names like `_abc123.dev.scrappr.io.`
+ * and Spaceship wants `_abc123.dev`.
  */
 function toSpaceshipName(fqdn) {
   const trimmed = fqdn.replace(/\.$/, "");

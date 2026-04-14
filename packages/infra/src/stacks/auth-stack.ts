@@ -14,6 +14,8 @@ interface AuthStackProps extends cdk.StackProps {
   /** SES-verified sender email (e.g. noreply@scrappr.trevor.fail). When provided, Cognito uses SES instead of its default email. */
   senderEmail?: string;
   appUrl?: string;
+  /** Additional domain aliases that need Cognito callback/logout URLs (e.g. ["dev.scrappr.io"]) */
+  additionalDomains?: string[];
 }
 
 export class AuthStack extends cdk.Stack {
@@ -94,12 +96,12 @@ export class AuthStack extends cdk.Stack {
 
     // ── App Client (with OAuth) ─────────────────────────────────────
 
-    // staging.scrappr.io is a temporary dev alias used to prove out Spaceship DNS
-    // automation before cutting dev over to dev.scrappr.io. See issue #103.
-    const devStagingCallbacks =
-      props.stageName === "dev" ? ["https://staging.scrappr.io/auth/callback"] : [];
-    const devStagingLogouts =
-      props.stageName === "dev" ? ["https://staging.scrappr.io/auth/sign-out"] : [];
+    const additionalCallbacks = (props.additionalDomains ?? []).map(
+      (d) => `https://${d}/auth/callback`,
+    );
+    const additionalLogouts = (props.additionalDomains ?? []).map(
+      (d) => `https://${d}/auth/sign-out`,
+    );
 
     this.userPoolClient = this.userPool.addClient("AppClient", {
       userPoolClientName: `scrappr-app-${props.stageName}`,
@@ -115,7 +117,7 @@ export class AuthStack extends cdk.Stack {
           "http://localhost:8081/auth/callback",
           "http://localhost:5173/auth/callback",
           "https://scrappr.trevor.fail/auth/callback",
-          ...devStagingCallbacks,
+          ...additionalCallbacks,
         ],
         logoutUrls: [
           "scrappr://auth/sign-out",
@@ -123,7 +125,7 @@ export class AuthStack extends cdk.Stack {
           "http://localhost:8081/auth/sign-out",
           "http://localhost:5173/auth/sign-out",
           "https://scrappr.trevor.fail/auth/sign-out",
-          ...devStagingLogouts,
+          ...additionalLogouts,
         ],
       },
       authFlows: {
