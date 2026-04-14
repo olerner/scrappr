@@ -1,24 +1,16 @@
 import path from "node:path";
-import { expect, test } from "@playwright/test";
-
-const TEST_EMAIL = "test@scrappr.dev";
-const TEST_PASSWORD = "TestPass123!";
+import { expect, test } from "../fixtures";
 
 // Real address in St. Louis Park, MN (zip 55416) — within Scrappr's service area
 const ADDRESS_QUERY = "5005 Minnetonka Blvd St Louis Park";
 
 test.describe("Listing Creation Flow", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ authedPage: page }) => {
     await page.goto("/list");
-    await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
-    await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
-    await page.getByPlaceholder("••••••••").fill(TEST_PASSWORD);
-    await page.getByRole("button", { name: "Sign In", exact: true }).click();
     await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(`Signed in as ${TEST_EMAIL}`)).toBeVisible();
   });
 
-  test("create listing with photo, see it in My Listings", async ({ page }) => {
+  test("create listing with photo, see it in My Listings", async ({ authedPage: page }) => {
     // 1. Navigate to New Listing page
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
@@ -68,7 +60,9 @@ test.describe("Listing Creation Flow", () => {
     await expect(page.getByAltText("copper").first()).toBeVisible();
   });
 
-  test("phone sharing: checkbox gates input, invalid number blocks submit", async ({ page }) => {
+  test("phone sharing: checkbox gates input, invalid number blocks submit", async ({
+    authedPage: page,
+  }) => {
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
 
@@ -113,7 +107,7 @@ test.describe("Listing Creation Flow", () => {
     await expect(page.getByTestId("submit-listing-btn")).toBeEnabled();
   });
 
-  test("drag-and-drop photo upload shows preview", async ({ page }) => {
+  test("drag-and-drop photo upload shows preview", async ({ authedPage: page }) => {
     // 1. Navigate to New Listing page
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
