@@ -1,4 +1,4 @@
-name: Deploy Production
+name: Deploy
 
 on:
   push:
@@ -6,206 +6,20 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-prod
+  group: deploy
   cancel-in-progress: true
 
-permissions:
-  id-token: write
-  contents: read
-
-env:
-  AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: "221237747538"
-
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  dev:
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      environment: dev
+      base_url: https://dev.scrappr.io
+      run_e2e: true
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: yarn
-
-      - run: yarn install --frozen-lockfile
-
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::221237747538:role/scrappr-github-actions
-          aws-region: us-east-1
-
-      - name: Load secrets from SSM
-        run: |
-          # Mask values as GitHub Actions secrets before exporting to $GITHUB_ENV.
-          # Without ::add-mask::, SSM values print in plaintext when the next step
-          # logs its env block.
-          load_secret() {
-            local name=$1 param=$2
-            local value
-            value=$(aws ssm get-parameter --name "$param" --with-decryption --query Parameter.Value --output text)
-            echo "::add-mask::$value"
-            echo "$name=$value" >> "$GITHUB_ENV"
-          }
-          load_secret GOOGLE_CLIENT_ID /scrappr/ci/google-client-id
-          load_secret GOOGLE_CLIENT_SECRET /scrappr/ci/google-client-secret
-          load_secret VITE_GOOGLE_PLACES_API_KEY /scrappr/ci/google-places-api-key
-          load_secret VITE_USER_POOL_ID /scrappr/ci/vite-user-pool-id
-          load_secret VITE_USER_POOL_CLIENT_ID /scrappr/ci/vite-user-pool-client-id
-          load_secret VITE_COGNITO_DOMAIN /scrappr/ci/vite-cognito-domain
-
-      - name: Wait for any in-progress stack updates
-        run: |
-          for STACK in scrappr-email-dev scrappr-alert-dev scrappr-auth-dev scrappr-storage-dev scrappr-api-dev scrappr-ui-dev scrappr-monitoring-dev; do
-            STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
-            if echo "$STATUS" | grep -q "IN_PROGRESS"; then
-              echo "Waiting for $STACK ($STATUS)..."
-              aws cloudformation wait stack-update-complete --stack-name "$STACK" || \
-              aws cloudformation wait stack-create-complete --stack-name "$STACK" || true
-            fi
-          done
-
-      - name: Deploy email + alert + auth + storage + API + monitoring stacks
-        id: api
-        run: |
-          cd packages/infra
-          npx cdk deploy \
-            scrappr-email-dev \
-            scrappr-alert-dev \
-            scrappr-auth-dev \
-            scrappr-storage-dev \
-            scrappr-api-dev \
-            scrappr-monitoring-dev \
-            --require-approval never \
-            --outputs-file /tmp/cdk-api-outputs.json 2>&1 | tail -50
-          API_URL=$(node -e "const o=require('/tmp/cdk-api-outputs.json'); console.log(o['scrappr-api-dev'].ApiEndpoint)")
-          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
-        env:
-          CDK_DEFAULT_ACCOUNT: "221237747538"
-
-      - name: Build UI
-        run: yarn workspace @scrappr/ui build
-        env:
-          VITE_API_URL: ${{ steps.api.outputs.api_url }}
-
-      - name: Deploy UI stack
-        run: |
-          cd packages/infra
-          npx cdk deploy scrappr-ui-dev \
-            --require-approval never
-        env:
-          CDK_DEFAULT_ACCOUNT: "221237747538"
-
-  e2e:
-    runs-on: ubuntu-latest
-    needs: deploy
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: yarn
-
-      - run: yarn install --frozen-lockfile
-
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::221237747538:role/scrappr-github-actions
-          aws-region: us-east-1
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-        working-directory: packages/e2e
-
-      - name: Run E2E tests against dev
-        run: yarn workspace @scrappr/e2e test
-        env:
-          BASE_URL: https://scrappr.trevor.fail
-          USER_POOL_ID: us-east-1_N45oIsOs3
-
-      - name: Upload test artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-dev
-          path: packages/e2e/test-results/
-          retention-days: 7
-
-  rollback:
-    runs-on: ubuntu-latest
-    needs: e2e
-    if: failure()
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Resolve previous commit
-        id: prev
-        run: |
-          PREV_SHA=$(git rev-parse HEAD~1)
-          echo "Rolling back to $PREV_SHA"
-          echo "prev_sha=$PREV_SHA" >> $GITHUB_OUTPUT
-          git checkout "$PREV_SHA"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: yarn
-
-      - run: yarn install --frozen-lockfile
-
-      - name: Configure AWS credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::221237747538:role/scrappr-github-actions
-          aws-region: us-east-1
-
-      - name: Load secrets from SSM
-        run: |
-          # Mask values as GitHub Actions secrets before exporting to $GITHUB_ENV.
-          # Without ::add-mask::, SSM values print in plaintext when the next step
-          # logs its env block.
-          load_secret() {
-            local name=$1 param=$2
-            local value
-            value=$(aws ssm get-parameter --name "$param" --with-decryption --query Parameter.Value --output text)
-            echo "::add-mask::$value"
-            echo "$name=$value" >> "$GITHUB_ENV"
-          }
-          load_secret GOOGLE_CLIENT_ID /scrappr/ci/google-client-id
-          load_secret GOOGLE_CLIENT_SECRET /scrappr/ci/google-client-secret
-          load_secret VITE_GOOGLE_PLACES_API_KEY /scrappr/ci/google-places-api-key
-          load_secret VITE_USER_POOL_ID /scrappr/ci/vite-user-pool-id
-          load_secret VITE_USER_POOL_CLIENT_ID /scrappr/ci/vite-user-pool-client-id
-          load_secret VITE_COGNITO_DOMAIN /scrappr/ci/vite-cognito-domain
-
-      - name: Redeploy API stacks from previous commit
-        id: api
-        run: |
-          cd packages/infra
-          npx cdk deploy scrappr-auth-dev scrappr-storage-dev scrappr-api-dev \
-            --require-approval never \
-            --outputs-file /tmp/cdk-api-outputs.json 2>&1 | tail -50
-          API_URL=$(node -e "const o=require('/tmp/cdk-api-outputs.json'); console.log(o['scrappr-api-dev'].ApiEndpoint)")
-          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
-        env:
-          CDK_DEFAULT_ACCOUNT: "221237747538"
-          SKIP_EMAIL_STACK: "1"
-
-      - name: Build UI from previous commit
-        run: yarn workspace @scrappr/ui build
-        env:
-          VITE_API_URL: ${{ steps.api.outputs.api_url }}
-
-      - name: Redeploy UI stack from previous commit
-        run: |
-          cd packages/infra
-          npx cdk deploy scrappr-ui-dev \
-            --require-approval never
-        env:
-          CDK_DEFAULT_ACCOUNT: "221237747538"
-          SKIP_EMAIL_STACK: "1"
+  prod:
+    needs: dev
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      environment: prod
+      base_url: https://scrappr.io

@@ -43,13 +43,14 @@ export class CiStack extends cdk.Stack {
 
     // ── SSM Parameters ───────────────────────────────────────────────
     // The following parameters must be created manually via AWS CLI
-    // before the deploy workflow can read them:
+    // before the deploy workflow can read them.
+    // Replace {env} with the target environment (dev, prod, etc.):
     //
-    // aws ssm put-parameter --name /scrappr/ci/google-client-id --type SecureString --value "..."
-    // aws ssm put-parameter --name /scrappr/ci/google-client-secret --type SecureString --value "..."
-    // aws ssm put-parameter --name /scrappr/ci/google-places-api-key --type SecureString --value "..."
-    // aws ssm put-parameter --name /scrappr/ci/vite-user-pool-id --type String --value "..."
-    // aws ssm put-parameter --name /scrappr/ci/vite-user-pool-client-id --type String --value "..."
-    // aws ssm put-parameter --name /scrappr/ci/vite-cognito-domain --type String --value "..."
+    // aws ssm put-parameter --name /scrappr/{env}/google-client-id --type SecureString --value "..."
+    // aws ssm put-parameter --name /scrappr/{env}/google-client-secret --type SecureString --value "..."
+    // aws ssm put-parameter --name /scrappr/{env}/google-places-api-key --type SecureString --value "..."
+    // aws ssm put-parameter --name /scrappr/{env}/vite-user-pool-id --type String --value "..."
+    // aws ssm put-parameter --name /scrappr/{env}/vite-user-pool-client-id --type String --value "..."
+    // aws ssm put-parameter --name /scrappr/{env}/vite-cognito-domain --type String --value "..."
   }
 }

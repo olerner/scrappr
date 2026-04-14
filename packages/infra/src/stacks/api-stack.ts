@@ -27,7 +27,7 @@ interface ApiStackProps extends cdk.StackProps {
   alertTopic?: sns.ITopic;
   senderEmail?: string;
   sendEmailPolicy?: iam.PolicyStatement;
-  appUrl?: string;
+  appUrl: string;
 }
 
 import { CLAIM_EXPIRY_HOURS } from "@scrappr/shared/src/constants.js";
@@ -345,7 +345,7 @@ export class ApiStack extends cdk.Stack {
           : [
               "http://localhost:5173",
               "http://localhost:4173",
-              ...(appUrl && !appUrl.startsWith("http://localhost") ? [appUrl] : []),
+              ...(appUrl.startsWith("http://localhost") ? [] : [appUrl]),
             ],
         allowMethods: [
           apigatewayv2.CorsHttpMethod.GET,

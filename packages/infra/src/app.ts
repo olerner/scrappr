@@ -40,27 +40,32 @@ const isPreview = env.startsWith("pr-");
 const isLocalDev = env.startsWith("localdev-");
 const sharesDevAuth = isPreview || isLocalDev;
 
+// ── Per-environment domain config ─────────────────────────────────────
+const envDomain = env === "prod" ? "scrappr.io" : env === "dev" ? "dev.scrappr.io" : undefined;
+
+const appUrl = isLocalDev
+  ? "http://localhost:5173"
+  : envDomain
+    ? `https://${envDomain}`
+    : `https://scrappr-${env}.scrappr.io`;
+
+const uiDomains = envDomain ? [envDomain] : [];
+
 // CI stack — OIDC + IAM role for GitHub Actions
 new CiStack(app, "scrappr-ci", { env: awsEnv });
 
 // Email stack — deploy for dev/prod (not localdev or preview)
-// Skip when SKIP_EMAIL_STACK=1 (e.g. CI where hosted zone lookup may fail)
+// Skip when SKIP_EMAIL_STACK=1 (e.g. CI rollback where SES setup may fail)
 // Deployed before auth stack so senderEmail is available for Cognito SES config.
 let emailStack: EmailStack | undefined;
-if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1") {
+if (!isLocalDev && !isPreview && process.env.SKIP_EMAIL_STACK !== "1" && envDomain) {
   emailStack = new EmailStack(app, `scrappr-email-${env}`, {
     env: awsEnv,
     stageName: env,
-    domainName: "scrappr.trevor.fail",
+    domainName: envDomain,
+    enableInbound: env === "dev",
   });
 }
-
-// Determine app URL by environment
-const appUrl = isLocalDev
-  ? "http://localhost:5173"
-  : env === "dev"
-    ? "https://scrappr.trevor.fail"
-    : `https://scrappr-${env}.trevor.fail`;
 
 // Auth stack — only deploy for dev/production (previews and localdev share dev Cognito)
 let authStack: AuthStack | undefined;
@@ -82,6 +87,7 @@ if (!sharesDevAuth) {
 const storageStack = new StorageStack(app, `scrappr-storage-${env}`, {
   env: awsEnv,
   stageName: env,
+  appUrl,
 });
 
 // API stack — deploy for all environments (previews and localdev use dev Cognito)
@@ -95,9 +101,8 @@ const userPoolClientId = sharesDevAuth
   ? process.env.VITE_USER_POOL_CLIENT_ID!
   : authStack!.userPoolClient.userPoolClientId;
 
-// Email config — preview/localdev share the dev SES identity
-const domainName = "scrappr.trevor.fail";
-const senderEmail = emailStack?.senderEmail ?? `noreply@${domainName}`;
+// Email config — preview/localdev share the dev SES identity (no email stack of their own)
+const senderEmail = emailStack?.senderEmail ?? `noreply@dev.scrappr.io`;
 const sendEmailPolicy =
   emailStack?.sendEmailPolicyStatement ??
   new iam.PolicyStatement({
@@ -135,20 +140,16 @@ if (!isLocalDev) {
   new UiStack(app, `scrappr-ui-${env}`, {
     env: awsEnv,
     envName: env,
-    ...(env === "dev"
-      ? {
-          domainName: "scrappr.trevor.fail",
-        }
-      : {}),
+    domains: uiDomains,
   });
 }
 
 // Monitoring stack — uptime health check (only for static environments)
-if (alertStack) {
+if (alertStack && envDomain) {
   new MonitoringStack(app, `scrappr-monitoring-${env}`, {
     env: awsEnv,
     stageName: env,
-    domainName: "scrappr.trevor.fail",
+    domainName: envDomain,
     alertTopic: alertStack.alertTopic,
   });
 }

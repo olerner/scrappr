@@ -57,6 +57,7 @@ export const MOCK_LISTINGS: Listing[] = [
     address: "123 Hennepin Ave, Minneapolis",
     status: "available",
     datePosted: "2026-03-19",
+    createdAt: "2026-03-19T14:30:00.000Z",
     estimatedValue: "$16.50 - $72.00",
   },
   {
@@ -70,6 +71,7 @@ export const MOCK_LISTINGS: Listing[] = [
     address: "456 Robert St, St. Paul",
     status: "available",
     datePosted: "2026-03-20",
+    createdAt: "2026-03-20T09:15:00.000Z",
     estimatedValue: "$8.80 - $38.40",
   },
   {
@@ -82,6 +84,7 @@ export const MOCK_LISTINGS: Listing[] = [
     address: "789 Grand Ave, St. Paul",
     status: "available",
     datePosted: "2026-03-18",
+    createdAt: "2026-03-18T16:45:00.000Z",
     estimatedValue: "$6.50 - $13.00",
   },
   {
@@ -94,6 +97,7 @@ export const MOCK_LISTINGS: Listing[] = [
     address: "321 Washington Ave N, Minneapolis",
     status: "claimed",
     datePosted: "2026-03-17",
+    createdAt: "2026-03-17T11:00:00.000Z",
     claimedBy: "MetalMike",
     estimatedValue: "$6.50",
   },
@@ -107,6 +111,7 @@ export const MOCK_LISTINGS: Listing[] = [
     address: "555 Lake St, Minneapolis",
     status: "available",
     datePosted: "2026-03-20",
+    createdAt: "2026-03-20T08:00:00.000Z",
     estimatedValue: "$7.50 flat",
   },
   {
@@ -120,6 +125,7 @@ export const MOCK_LISTINGS: Listing[] = [
     address: "100 1st Ave N, Minneapolis",
     status: "available",
     datePosted: "2026-03-19",
+    createdAt: "2026-03-19T10:20:00.000Z",
     estimatedValue: "$16.00 flat",
   },
   {
@@ -132,6 +138,7 @@ export const MOCK_LISTINGS: Listing[] = [
     address: "900 W 7th St, St. Paul",
     status: "available",
     datePosted: "2026-03-16",
+    createdAt: "2026-03-16T13:10:00.000Z",
     estimatedValue: "$1.50 - $3.60",
   },
   {
@@ -144,6 +151,7 @@ export const MOCK_LISTINGS: Listing[] = [
     address: "220 S 6th St, Minneapolis",
     status: "completed",
     datePosted: "2026-03-14",
+    createdAt: "2026-03-14T15:30:00.000Z",
     claimedBy: "ScrapQueenTC",
     estimatedValue: "$3.25 - $18.50",
   },

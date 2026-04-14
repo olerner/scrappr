@@ -1,0 +1,178 @@
+name: Deploy Environment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      base_url:
+        required: true
+        type: string
+      run_e2e:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: "221237747538"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    outputs:
+      api_url: ${{ steps.api.outputs.api_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::221237747538:role/scrappr-github-actions
+          aws-region: us-east-1
+
+      - name: Load secrets from SSM
+        run: |
+          load_secret() {
+            local name=$1 param=$2
+            local value
+            value=$(aws ssm get-parameter --name "$param" --with-decryption --query Parameter.Value --output text)
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          }
+          load_secret GOOGLE_CLIENT_ID "/scrappr/${ENV}/google-client-id"
+          load_secret GOOGLE_CLIENT_SECRET "/scrappr/${ENV}/google-client-secret"
+          load_secret VITE_GOOGLE_PLACES_API_KEY "/scrappr/${ENV}/google-places-api-key"
+          load_secret VITE_USER_POOL_ID "/scrappr/${ENV}/vite-user-pool-id"
+          load_secret VITE_USER_POOL_CLIENT_ID "/scrappr/${ENV}/vite-user-pool-client-id"
+          load_secret VITE_COGNITO_DOMAIN "/scrappr/${ENV}/vite-cognito-domain"
+          load_secret SPACESHIP_API_KEY "/scrappr/spaceship/api-key"
+          load_secret SPACESHIP_API_SECRET "/scrappr/spaceship/api-secret"
+        env:
+          ENV: ${{ inputs.environment }}
+
+      - name: Wait for any in-progress stack updates
+        run: |
+          for STACK in scrappr-email-${ENV} scrappr-alert-${ENV} scrappr-auth-${ENV} scrappr-storage-${ENV} scrappr-api-${ENV} scrappr-ui-${ENV} scrappr-monitoring-${ENV}; do
+            STATUS=$(aws cloudformation describe-stacks --stack-name "$STACK" --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+            if echo "$STATUS" | grep -q "IN_PROGRESS"; then
+              echo "Waiting for $STACK ($STATUS)..."
+              aws cloudformation wait stack-update-complete --stack-name "$STACK" || \
+              aws cloudformation wait stack-create-complete --stack-name "$STACK" || \
+              echo "::warning::Wait for $STACK failed — stack may be in a non-deployable state"
+            fi
+          done
+        env:
+          ENV: ${{ inputs.environment }}
+
+      - name: Deploy email + alert + auth + storage + API + monitoring stacks
+        id: api
+        run: |
+          cd packages/infra
+          npx cdk deploy \
+            "scrappr-email-${ENV}" \
+            "scrappr-alert-${ENV}" \
+            "scrappr-auth-${ENV}" \
+            "scrappr-storage-${ENV}" \
+            "scrappr-api-${ENV}" \
+            "scrappr-monitoring-${ENV}" \
+            --require-approval never \
+            --outputs-file /tmp/cdk-api-outputs.json 2>&1 | tail -50
+          API_URL=$(node -e "const o=require('/tmp/cdk-api-outputs.json'); console.log(o['scrappr-api-${ENV}'].ApiEndpoint)")
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+        env:
+          CDK_DEFAULT_ACCOUNT: "221237747538"
+          ENV: ${{ inputs.environment }}
+
+      - name: Build UI
+        run: yarn workspace @scrappr/ui build
+        env:
+          VITE_API_URL: ${{ steps.api.outputs.api_url }}
+
+      - name: Deploy UI stack (with Spaceship DNS sync)
+        run: |
+          cd packages/infra
+
+          # Poll sync-spaceship-dns.mjs every 30s in the background so ACM
+          # cert validation CNAMEs reach Spaceship while CloudFormation waits.
+          (
+            sleep 30
+            while true; do
+              node scripts/sync-spaceship-dns.mjs --stack "scrappr-ui-${ENV}" || echo "::warning::DNS sync failed (will retry)"
+              sleep 30
+            done
+          ) &
+          SYNC_PID=$!
+
+          npx cdk deploy "scrappr-ui-${ENV}" --require-approval never
+          CDK_EXIT=$?
+
+          kill $SYNC_PID 2>/dev/null || true
+          wait $SYNC_PID 2>/dev/null || true
+
+          # Final sync to push any remaining records
+          if [ $CDK_EXIT -eq 0 ]; then
+            node scripts/sync-spaceship-dns.mjs --stack "scrappr-ui-${ENV}"
+          fi
+
+          exit $CDK_EXIT
+        env:
+          CDK_DEFAULT_ACCOUNT: "221237747538"
+          ENV: ${{ inputs.environment }}
+
+  e2e:
+    if: ${{ inputs.run_e2e }}
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::221237747538:role/scrappr-github-actions
+          aws-region: us-east-1
+
+      - name: Load USER_POOL_ID from SSM
+        run: |
+          VALUE=$(aws ssm get-parameter --name "/scrappr/${ENV}/vite-user-pool-id" --query Parameter.Value --output text)
+          echo "::add-mask::$VALUE"
+          echo "USER_POOL_ID=$VALUE" >> "$GITHUB_ENV"
+        env:
+          ENV: ${{ inputs.environment }}
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: packages/e2e
+
+      - name: Run E2E tests
+        run: yarn workspace @scrappr/e2e test
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ inputs.environment }}
+          path: packages/e2e/test-results/
+          retention-days: 7

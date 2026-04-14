@@ -6,6 +6,7 @@ import type { Construct } from "constructs";
 
 interface StorageStackProps extends cdk.StackProps {
   stageName: string;
+  appUrl: string;
 }
 
 export class StorageStack extends cdk.Stack {
@@ -29,7 +30,11 @@ export class StorageStack extends cdk.Stack {
           allowedMethods: [s3.HttpMethods.POST],
           allowedOrigins: isPreview
             ? ["https://*"]
-            : ["http://localhost:5173", "http://localhost:4173", "https://scrappr.trevor.fail"],
+            : [
+                "http://localhost:5173",
+                "http://localhost:4173",
+                ...(props.appUrl.startsWith("http://localhost") ? [] : [props.appUrl]),
+              ],
           allowedHeaders: ["*"],
           maxAge: 3600,
         },

@@ -11,9 +11,9 @@ interface AuthStackProps extends cdk.StackProps {
   stageName: string;
   googleClientId: string;
   googleClientSecret: string;
-  /** SES-verified sender email (e.g. noreply@scrappr.trevor.fail). When provided, Cognito uses SES instead of its default email. */
+  /** SES-verified sender email (e.g. noreply@dev.scrappr.io). When provided, Cognito uses SES instead of its default email. */
   senderEmail?: string;
-  appUrl?: string;
+  appUrl: string;
 }
 
 export class AuthStack extends cdk.Stack {
@@ -63,7 +63,7 @@ export class AuthStack extends cdk.Stack {
       handler: "custom-message.handler",
       code: lambda.Code.fromAsset(path.join(__dirname, "..", "lambdas")),
       environment: {
-        APP_URL: props.appUrl || "https://scrappr.trevor.fail",
+        APP_URL: props.appUrl,
       },
     });
 
@@ -88,7 +88,7 @@ export class AuthStack extends cdk.Stack {
 
     this.userPoolDomain = this.userPool.addDomain("CognitoDomain", {
       cognitoDomain: {
-        domainPrefix: `scrappr-${props.stageName}`,
+        domainPrefix: props.stageName === "prod" ? "scrappr" : `scrappr-${props.stageName}`,
       },
     });
 
@@ -107,14 +107,14 @@ export class AuthStack extends cdk.Stack {
           "exp://127.0.0.1:8081/--/auth/callback",
           "http://localhost:8081/auth/callback",
           "http://localhost:5173/auth/callback",
-          "https://scrappr.trevor.fail/auth/callback",
+          `${props.appUrl}/auth/callback`,
         ],
         logoutUrls: [
           "scrappr://auth/sign-out",
           "exp://127.0.0.1:8081/--/auth/sign-out",
           "http://localhost:8081/auth/sign-out",
           "http://localhost:5173/auth/sign-out",
-          "https://scrappr.trevor.fail/auth/sign-out",
+          `${props.appUrl}/auth/sign-out`,
         ],
       },
       authFlows: {
