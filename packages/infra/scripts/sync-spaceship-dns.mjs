@@ -145,14 +145,15 @@ async function main() {
     }
   }
 
-  // 2. Alias CNAMEs for each additional domain
+  // 2. ALIAS records for each additional domain (ALIAS instead of CNAME so MX
+  //    records can coexist on the same subdomain for SES inbound email)
   if (outputs.AdditionalDomains && outputs.DistributionDomain) {
     const domains = outputs.AdditionalDomains.split(",").map((s) => s.trim()).filter(Boolean);
     for (const domain of domains) {
       items.push({
-        type: "CNAME",
+        type: "ALIAS",
         name: toSpaceshipName(domain),
-        cname: outputs.DistributionDomain,
+        aliasName: outputs.DistributionDomain,
         ttl: 3600,
       });
     }
@@ -168,7 +169,7 @@ async function main() {
 
   console.log(`[sync] upserting ${items.length} record(s) to Spaceship for ${SPACESHIP_DOMAIN}:`);
   for (const item of items) {
-    console.log(`  ${item.type.padEnd(5)} ${item.name} → ${item.cname}`);
+    console.log(`  ${item.type.padEnd(5)} ${item.name} → ${item.cname || item.aliasName}`);
   }
 
   await putSpaceshipRecords(apiKey, apiSecret, items);

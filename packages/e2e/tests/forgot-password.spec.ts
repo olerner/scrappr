@@ -5,7 +5,7 @@ import {
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { expect, test } from "@playwright/test";
 
-const TEST_EMAIL = "testuser1@scrappr.trevor.fail";
+const TEST_EMAIL = "testuser1@dev.scrappr.io";
 const ORIGINAL_PASSWORD = "TestPass123!";
 const TEMP_PASSWORD = "TempResetPass456!";
 const INBOX_BUCKET = "scrappr-email-inbox-dev";
