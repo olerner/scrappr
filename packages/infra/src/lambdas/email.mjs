@@ -14,6 +14,9 @@ const SENDER = process.env.SENDER_EMAIL;
 const USER_POOL_ID = process.env.USER_POOL_ID;
 const APP_URL = process.env.APP_URL;
 
+if (!SENDER) throw new Error("Missing required env var SENDER_EMAIL");
+if (!APP_URL) throw new Error("Missing required env var APP_URL");
+
 /**
  * Send a transactional email via SES.
  *
@@ -52,7 +55,7 @@ export async function getUserEmail(userId) {
       new AdminGetUserCommand({
         UserPoolId: USER_POOL_ID,
         Username: userId,
-      })
+      }),
     );
     const emailAttr = result.UserAttributes?.find((a) => a.Name === "email");
     return emailAttr?.Value || null;
@@ -73,7 +76,14 @@ export async function getUserEmail(userId) {
  * @param {object} opts.listing - Listing object (needs category, description)
  * @param {string} [opts.linkPath="/list"] - Path to link to (e.g. "/list", "/haul")
  */
-export async function notifyScrappee({ ownerUserId, subject, heading, message, listing, linkPath = "/list" }) {
+export async function notifyScrappee({
+  ownerUserId,
+  subject,
+  heading,
+  message,
+  listing,
+  linkPath = "/list",
+}) {
   try {
     const email = await getUserEmail(ownerUserId);
     if (!email) return;

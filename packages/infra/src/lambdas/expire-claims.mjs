@@ -8,6 +8,8 @@ const TABLE = process.env.LISTINGS_TABLE;
 const STATUS_INDEX = "status-index";
 const APP_URL = process.env.APP_URL;
 
+if (!APP_URL) throw new Error("Missing required env var APP_URL");
+
 const EXPIRY_HOURS = Number(process.env.CLAIM_EXPIRY_HOURS);
 const WARNING_MINUTES = 30;
 

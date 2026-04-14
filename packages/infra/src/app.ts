@@ -7,7 +7,6 @@ import { AuthStack } from "./stacks/auth-stack.js";
 import { CiStack } from "./stacks/ci-stack.js";
 import { EmailStack } from "./stacks/email-stack.js";
 import { MonitoringStack } from "./stacks/monitoring-stack.js";
-import { RedirectStack } from "./stacks/redirect-stack.js";
 import { StorageStack } from "./stacks/storage-stack.js";
 import { UiStack } from "./stacks/ui-stack.js";
 
@@ -154,12 +153,5 @@ if (alertStack && envDomain) {
     alertTopic: alertStack.alertTopic,
   });
 }
-
-// Redirect old domain to new dev domain
-new RedirectStack(app, "scrappr-redirect", {
-  env: awsEnv,
-  fromDomain: "scrappr.trevor.fail",
-  toDomain: "dev.scrappr.io",
-});
 
 app.synth();

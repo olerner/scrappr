@@ -5,7 +5,7 @@ Two-sided gig marketplace for scrap metal pickup in the Twin Cities. Scrappees l
 ## Stack
 
 - **Web:** Vite, React, Tailwind CSS, Zustand, Leaflet, react-router-dom
-- **Infra:** AWS CDK (TypeScript) — Cognito (auth), S3 + CloudFront + ACM + Route53 (hosting)
+- **Infra:** AWS CDK (TypeScript) — Cognito (auth), S3 + CloudFront + ACM (hosting), Spaceship (DNS)
 - **Local API:** SAM CLI — runs Lambda handlers locally against real AWS resources
 - **Linting:** Biome (TS/JS), Prettier (JSON, YAML, MD)
 - **Monorepo:** Yarn workspaces

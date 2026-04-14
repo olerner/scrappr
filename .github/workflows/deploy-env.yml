@@ -70,7 +70,8 @@ jobs:
             if echo "$STATUS" | grep -q "IN_PROGRESS"; then
               echo "Waiting for $STACK ($STATUS)..."
               aws cloudformation wait stack-update-complete --stack-name "$STACK" || \
-              aws cloudformation wait stack-create-complete --stack-name "$STACK" || true
+              aws cloudformation wait stack-create-complete --stack-name "$STACK" || \
+              echo "::warning::Wait for $STACK failed — stack may be in a non-deployable state"
             fi
           done
         env:
@@ -109,7 +110,7 @@ jobs:
           (
             sleep 30
             while true; do
-              node scripts/sync-spaceship-dns.mjs --stack "scrappr-ui-${ENV}" || true
+              node scripts/sync-spaceship-dns.mjs --stack "scrappr-ui-${ENV}" || echo "::warning::DNS sync failed (will retry)"
               sleep 30
             done
           ) &
@@ -123,7 +124,7 @@ jobs:
 
           # Final sync to push any remaining records
           if [ $CDK_EXIT -eq 0 ]; then
-            node scripts/sync-spaceship-dns.mjs --stack "scrappr-ui-${ENV}" || true
+            node scripts/sync-spaceship-dns.mjs --stack "scrappr-ui-${ENV}"
           fi
 
           exit $CDK_EXIT
@@ -154,6 +155,7 @@ jobs:
       - name: Load USER_POOL_ID from SSM
         run: |
           VALUE=$(aws ssm get-parameter --name "/scrappr/${ENV}/vite-user-pool-id" --query Parameter.Value --output text)
+          echo "::add-mask::$VALUE"
           echo "USER_POOL_ID=$VALUE" >> "$GITHUB_ENV"
         env:
           ENV: ${{ inputs.environment }}

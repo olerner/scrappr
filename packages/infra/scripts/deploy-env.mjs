@@ -43,9 +43,11 @@ function runSyncOnce(stackName) {
     execFileSync("node", [SYNC_SCRIPT, "--stack", stackName], {
       stdio: "inherit",
     });
-  } catch {
-    // Swallow — during early deploy phases the stack/outputs/cert may not
-    // exist yet. Next poll will try again.
+  } catch (err) {
+    // sync-spaceship-dns.mjs handles "stack not found" gracefully and exits 0.
+    // If we get here, something unexpected failed. Log it so operators can debug
+    // ACM timeout issues. The poll loop will retry.
+    console.warn(`[deploy] sync failed (will retry): ${err.message ?? err}`);
   }
 }
 

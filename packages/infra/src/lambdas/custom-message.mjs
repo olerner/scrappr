@@ -1,5 +1,7 @@
 const APP_URL = process.env.APP_URL;
 
+if (!APP_URL) throw new Error("Missing required env var APP_URL");
+
 function wrap(heading, body) {
   return `
     <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
@@ -30,7 +32,7 @@ export async function handler(event) {
          <div style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #e5e7eb; text-align: center; margin-bottom: 16px;">
            <span style="font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #059669;">${code}</span>
          </div>
-         <p style="color: #9ca3af; font-size: 13px; margin: 0;">If you didn&rsquo;t create a Scrappr account, you can ignore this email.</p>`
+         <p style="color: #9ca3af; font-size: 13px; margin: 0;">If you didn&rsquo;t create a Scrappr account, you can ignore this email.</p>`,
       );
       break;
 
@@ -42,7 +44,7 @@ export async function handler(event) {
          <div style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #e5e7eb; text-align: center; margin-bottom: 16px;">
            <span style="font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #059669;">${code}</span>
          </div>
-         <p style="color: #9ca3af; font-size: 13px; margin: 0;">If you didn&rsquo;t request a password reset, you can ignore this email.</p>`
+         <p style="color: #9ca3af; font-size: 13px; margin: 0;">If you didn&rsquo;t request a password reset, you can ignore this email.</p>`,
       );
       break;
 
@@ -54,7 +56,7 @@ export async function handler(event) {
          <div style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #e5e7eb; text-align: center; margin-bottom: 16px;">
            <span style="font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #059669;">${code}</span>
          </div>
-         <p style="color: #9ca3af; font-size: 13px; margin: 0;">If you didn&rsquo;t create a Scrappr account, you can ignore this email.</p>`
+         <p style="color: #9ca3af; font-size: 13px; margin: 0;">If you didn&rsquo;t create a Scrappr account, you can ignore this email.</p>`,
       );
       break;
 
