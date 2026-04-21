@@ -1,28 +1,16 @@
 import path from "node:path";
-import { expect, test } from "@playwright/test";
-
-const TEST_EMAIL = "test@scrappr.dev";
-const TEST_PASSWORD = "TestPass123!";
+import { expect, test } from "../fixtures";
 
 // Real address in St. Louis Park, MN (zip 55416) — within Scrappr's service area
 const ADDRESS_QUERY = "5005 Minnetonka Blvd St Louis Park";
 
-async function signInAsScrappee(page: import("@playwright/test").Page) {
-  await page.goto("/list");
-  await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
-  await page.getByPlaceholder("you@example.com").fill(TEST_EMAIL);
-  await page.getByPlaceholder("••••••••").fill(TEST_PASSWORD);
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
-  await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(`Signed in as ${TEST_EMAIL}`)).toBeVisible();
-}
-
 test.describe("Listing Creation Flow", () => {
-  test.beforeEach(async ({ page }) => {
-    await signInAsScrappee(page);
+  test.beforeEach(async ({ authedPage: page }) => {
+    await page.goto("/list");
+    await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
   });
 
-  test("create listing with photo, see it in My Listings", async ({ page }) => {
+  test("create listing with photo, see it in My Listings", async ({ authedPage: page }) => {
     // 1. Navigate to New Listing page
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
@@ -72,7 +60,9 @@ test.describe("Listing Creation Flow", () => {
     await expect(page.getByAltText("copper").first()).toBeVisible();
   });
 
-  test("phone sharing: checkbox gates input, invalid number blocks submit", async ({ page }) => {
+  test("phone sharing: checkbox gates input, invalid number blocks submit", async ({
+    authedPage: page,
+  }) => {
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
 
@@ -117,7 +107,7 @@ test.describe("Listing Creation Flow", () => {
     await expect(page.getByTestId("submit-listing-btn")).toBeEnabled();
   });
 
-  test("drag-and-drop photo upload shows preview", async ({ page }) => {
+  test("drag-and-drop photo upload shows preview", async ({ authedPage: page }) => {
     // 1. Navigate to New Listing page
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
@@ -146,7 +136,7 @@ test.describe("Listing Creation Flow", () => {
     await expect(uploadBtn).toContainText("Click or drag to upload a photo");
   });
 
-  test("edit listing description and verify persistence", async ({ page }) => {
+  test("edit listing description and verify persistence", async ({ authedPage: page }) => {
     // 1. Create a listing
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
@@ -207,7 +197,7 @@ test.describe("Listing Creation Flow", () => {
     await expect(descInputReload).toHaveValue(updatedDesc, { timeout: 10_000 });
   });
 
-  test("out-of-zone address is rejected", async ({ page }) => {
+  test("out-of-zone address is rejected", async ({ authedPage: page }) => {
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
 
@@ -240,7 +230,7 @@ test.describe("Listing Creation Flow", () => {
     }
   });
 
-  test("special characters and malicious input do not crash the page", async ({ page }) => {
+  test("special characters and malicious input do not crash the page", async ({ authedPage: page }) => {
     await page.getByRole("link", { name: "New Listing" }).click();
     await expect(page.getByText("Create a New Scrap Metal Listing")).toBeVisible();
 
@@ -257,7 +247,7 @@ test.describe("Listing Creation Flow", () => {
     }
   });
 
-  test("edit nonexistent listing ID does not crash", async ({ page }) => {
+  test("edit nonexistent listing ID does not crash", async ({ authedPage: page }) => {
     await page.goto("/list/edit/nonexistent-id-12345");
 
     const dashboard = page.getByText("Your Listings");
@@ -287,10 +277,9 @@ test.describe("Landing Page", () => {
     await expect(page).toHaveURL(/\/(haul|sign-in)/, { timeout: 10_000 });
   });
 
-  test("session persists across page refresh", async ({ page }) => {
-    await signInAsScrappee(page);
+  test("session persists across page refresh", async ({ authedPage: page, auth }) => {
     await page.reload();
     await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(`Signed in as ${TEST_EMAIL}`)).toBeVisible();
+    await expect(page.getByText(`Signed in as ${auth.email}`)).toBeVisible();
   });
 });

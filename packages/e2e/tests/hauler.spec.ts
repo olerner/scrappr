@@ -1,29 +1,17 @@
 import path from "node:path";
-import { expect, test } from "@playwright/test";
-
-// Scrappee account — creates listings for pickup
-const SCRAPPEE_EMAIL = "test@scrappr.dev";
-const SCRAPPEE_PASSWORD = "TestPass123!";
-
-// Hauler account — browses and claims listings
-// Must be pre-provisioned in the shared Cognito dev pool
-const HAULER_EMAIL = "hauler@scrappr.dev";
-const HAULER_PASSWORD = "TestPass123!";
+import { expect, HAULER_EMAIL, HAULER_PASSWORD, TEST_EMAIL, test } from "../fixtures";
 
 // Real address in St. Louis Park, MN (zip 55416) — within Scrappr's service area
 const ADDRESS_QUERY = "5005 Minnetonka Blvd St Louis Park";
 
-test("scrappee creates listing, hauler claims and marks picked up", async ({ page }) => {
+test("scrappee creates listing, hauler claims and marks picked up", async ({ signInAs }) => {
   // Unique description so we can reliably find this listing in the hauler view
   const testDescription = `E2E hauler test - aluminum scrap ${Date.now()}`;
 
   // ── Step 1: Sign in as scrappee and create a listing ──────────────────────
 
+  const page = await signInAs(TEST_EMAIL, "TestPass123!");
   await page.goto("/list");
-  await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
-  await page.getByPlaceholder("you@example.com").fill(SCRAPPEE_EMAIL);
-  await page.getByPlaceholder("••••••••").fill(SCRAPPEE_PASSWORD);
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("link", { name: "New Listing" }).click();
@@ -68,18 +56,13 @@ test("scrappee creates listing, hauler claims and marks picked up", async ({ pag
   await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(testDescription).first()).toBeVisible({ timeout: 10_000 });
 
-  // ── Step 2: Sign out ───────────────────────────────────────────────────────
+  // ── Step 2: Sign out and sign in as hauler ────────────────────────────────
 
   await page.goto("/signed-out");
   await expect(page.getByText("You've been signed out")).toBeVisible({ timeout: 10_000 });
 
-  // ── Step 3: Sign in as hauler and browse available listings ───────────────
-
+  await signInAs(HAULER_EMAIL, HAULER_PASSWORD);
   await page.goto("/haul");
-  await expect(page.getByText("Sign In to Scrappr")).toBeVisible();
-  await page.getByPlaceholder("you@example.com").fill(HAULER_EMAIL);
-  await page.getByPlaceholder("••••••••").fill(HAULER_PASSWORD);
-  await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await expect(page.getByText("Hauler Dashboard")).toBeVisible({ timeout: 15_000 });
 
   // Wait for listings to load (spinner disappears)
