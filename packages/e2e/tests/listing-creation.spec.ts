@@ -58,8 +58,9 @@ test.describe("Listing Creation Flow", () => {
     await expect(page.getByTestId("submit-listing-btn")).toBeEnabled({ timeout: 10_000 });
     await page.getByTestId("submit-listing-btn").click();
 
-    // 7. Wait for navigation back to listings
-    await expect(page.getByText("Your Listings")).toBeVisible({ timeout: 15_000 });
+    // 7. Wait for navigation back to listings and success message
+    await expect(page.getByText("Listing created!")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Your scrap metal is now live and ready to be claimed.")).toBeVisible();
 
     // 8. Assert listing appears in My Listings with photo
     await expect(page.getByText("Test copper pipe, about 10 lbs").first()).toBeVisible({

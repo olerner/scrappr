@@ -1,6 +1,6 @@
-import { Image as ImageIcon, Loader2, LogOut, Pencil, Plus } from "lucide-react";
+import { CheckCircle2, Image as ImageIcon, Loader2, LogOut, Pencil, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getMyListings } from "../api/client";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { StatusBadge } from "../components/StatusBadge";
@@ -11,8 +11,10 @@ import { formatRelativeDate } from "../utils/formatDate";
 
 export function ScrappeeDashboard() {
   const { email, accessToken } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(searchParams.get("success") === "true");
 
   const fetchListings = useCallback(async () => {
     if (!accessToken) return;
@@ -31,6 +33,21 @@ export function ScrappeeDashboard() {
     fetchListings();
   }, [fetchListings]);
 
+  // Clear success message when user manually dismisses or after a timeout
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("success");
+          return next;
+        });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess, setSearchParams]);
+
   // Remember this as the user's last-visited dashboard for post-sign-in defaults.
   useEffect(() => {
     localStorage.setItem("scrappr_last_role", "scrappee");
@@ -39,6 +56,33 @@ export function ScrappeeDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Success Feedback */}
+        {showSuccess && (
+          <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="bg-emerald-100 p-2 rounded-full text-emerald-600">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <p className="font-semibold text-emerald-900 text-sm">Listing created!</p>
+                  <p className="text-emerald-700 text-xs">
+                    Your scrap metal is now live and ready to be claimed.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSuccess(false)}
+                className="text-emerald-400 hover:text-emerald-600 p-1 transition-colors"
+                aria-label="Dismiss"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
