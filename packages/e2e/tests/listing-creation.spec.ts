@@ -60,7 +60,9 @@ test.describe("Listing Creation Flow", () => {
 
     // 7. Wait for navigation back to listings and success message
     await expect(page.getByText("Listing created!")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("Your scrap metal is now live and ready to be claimed.")).toBeVisible();
+    await expect(
+      page.getByText("Your scrap metal is now live and ready to be claimed."),
+    ).toBeVisible();
 
     // 8. Assert listing appears in My Listings with photo
     await expect(page.getByText("Test copper pipe, about 10 lbs").first()).toBeVisible({
