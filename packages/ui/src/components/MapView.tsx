@@ -1,9 +1,14 @@
 import L from "leaflet";
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
+import "leaflet-gesture-handling/dist/leaflet-gesture-handling.css";
 import { CLAIM_EXPIRY_HOURS } from "@scrappr/shared/src/constants";
+import { GestureHandling } from "leaflet-gesture-handling";
 import { CATEGORIES, getCategoryDisplayName, TWIN_CITIES_CENTER } from "../data/mockData";
 import type { Listing } from "../data/types";
+
+// Register gesture handling
+L.Map.addInitHook("addHandler", "gestureHandling", GestureHandling);
 
 interface MapViewProps {
   listings: Listing[];
@@ -32,9 +37,10 @@ export function MapView({
     map.current = L.map(mapContainer.current, {
       center: [TWIN_CITIES_CENTER.lat, TWIN_CITIES_CENTER.lng],
       zoom: TWIN_CITIES_CENTER.zoom,
-      dragging: interactive,
-      scrollWheelZoom: interactive,
+      scrollWheelZoom: false, // leaflet-gesture-handling will handle this
       zoomControl: interactive,
+      // @ts-expect-error - leaflet-gesture-handling is not in types
+      gestureHandling: interactive,
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
