@@ -83,7 +83,7 @@ export function MapView({
       const claimButton = onClaimClick
         ? `<button
             data-claim-id="${listing.listingId}"
-            style="width: 100%; margin-top: 8px; padding: 6px 12px; background: #059669; color: white;
+            style="width: 100%; margin-top: 8px; padding: 10px 12px; min-height: 44px; background: #059669; color: white;
               border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;"
           >Claim Pickup</button>`
         : "";

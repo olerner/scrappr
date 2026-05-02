@@ -41,17 +41,17 @@ export function LandingPage() {
             <MapView listings={listings} className="h-[250px] md:h-[350px] w-full" />
           </div>
 
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-4">
             <Link
               to="/list"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-700 transition-all shadow-md"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 min-h-[44px] min-w-[180px] bg-emerald-600 text-white font-semibold rounded-full hover:bg-emerald-700 transition-all shadow-md"
             >
               List Your Scrap <ArrowRight size={18} />
             </Link>
             <div>
               <Link
                 to="/haul"
-                className="inline-flex items-center gap-2 px-6 py-3 border border-emerald-600 text-emerald-700 font-semibold rounded-full hover:bg-emerald-50 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 min-h-[44px] min-w-[180px] border border-emerald-600 text-emerald-700 font-semibold rounded-full hover:bg-emerald-50 transition-all"
               >
                 Start Hauling <ArrowRight size={18} />
               </Link>
