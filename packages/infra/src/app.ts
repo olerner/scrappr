@@ -144,8 +144,8 @@ if (!isLocalDev) {
   });
 }
 
-// Monitoring stack — uptime health check (only for static environments)
-if (alertStack && envDomain) {
+// Monitoring stack — uptime health check (prod only)
+if (alertStack && env === "prod" && envDomain) {
   new MonitoringStack(app, `scrappr-monitoring-${env}`, {
     env: awsEnv,
     stageName: env,

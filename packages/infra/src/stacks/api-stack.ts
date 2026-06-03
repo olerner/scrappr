@@ -38,8 +38,9 @@ export class ApiStack extends cdk.Stack {
   private readonly alertTopic?: sns.ITopic;
   private readonly stageName: string;
   private readonly lambdasDir: string;
+  private readonly enableLambdaAlarms: boolean;
 
-  /** Create a Lambda with alarms automatically attached. All Lambdas should use this. */
+  /** Create a Lambda with alarms automatically attached when enabled. */
   private createLambda(
     id: string,
     props: Omit<lambda.FunctionProps, "runtime" | "code">,
@@ -50,6 +51,10 @@ export class ApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(10),
       ...props,
     });
+
+    if (!this.enableLambdaAlarms) {
+      return fn;
+    }
 
     // Alarm on Lambda invocation errors (crashes, timeouts, OOM)
     const invocationAlarm = fn
@@ -107,6 +112,8 @@ export class ApiStack extends cdk.Stack {
     this.alertTopic = alertTopic;
     this.lambdasDir = path.join(__dirname, "../lambdas");
     const isPreview = stageName.startsWith("pr-");
+    const isLocalDev = stageName.startsWith("localdev-");
+    this.enableLambdaAlarms = !isPreview && !isLocalDev;
 
     // ── DynamoDB Table ──────────────────────────────────────────────
 
